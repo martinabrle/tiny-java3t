@@ -1,0 +1,10 @@
+app.demo.todoapi.load-demo-data: false
+logging.level: info
+logging.level.app.demo.todoapi: debug
+spring:
+  profiles:
+    active: local
+  jpa:
+    open-in-view: false
+server:
+  port: ${PORT}

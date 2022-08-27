@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    username: ${SPRING_DATASOURCE_USERNAME}
+    jdbc-url: ${SPRING_DATASOURCE_URL}?sslmode=verify-full&sslrootcert=BaltimoreCyberTrustRoot.crt.pem
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: ${SPRING_DATASOURCE_SHOW_SQL}
+    hibernate:
+      ddl-auto: validate
+app.demo.todoweb.load-demo-data: true
+app.demo.todoweb.debug-auth-token: ${DEBUG_AUTH_TOKEN}
+app.demo.todoweb.app-client-id: ${SPRING_DATASOURCE_APP_CLIENT_ID}
+app.demo.todoweb.test-keyvault-reference: ${TEST_KEYVAULT_REFERENCE}
+logging.level: warn
+logging.level.app.demo.todoweb: debug
+azure.application-insights.instrumentation-key: ${APPINSIGHTS_INSTRUMENTATIONKEY}
+azure.application-insights.connection-string:  ${APPLICATIONINSIGHTS_CONNECTION_STRING}

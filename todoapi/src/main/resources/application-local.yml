@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    username: sa
+    url: jdbc:h2:mem:testdb
+    password: password
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+app.demo.todoapi.load-demo-data: true
+logging.level: info
+logging.level.app.demo.todoapi: debug

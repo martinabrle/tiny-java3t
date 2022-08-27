@@ -1,0 +1,166 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+#todos {
+  width: 35rem;
+  max-width: 90%;
+  margin: 3rem auto;
+}
+
+#todo-create-form {
+  width: 30rem;
+  max-width: 90%;
+  margin: 3rem auto;
+  padding: 2rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.todo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.todo-item {
+  margin: 1rem 0;
+  background: #fdfdfd;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+  color: black;
+  padding: 1rem 2rem;
+  cursor: pointer;
+}
+
+.form-control {
+  margin: 0.5rem 0;
+}
+
+.form-control label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.form-control input {
+  display: block;
+  width: 100%;
+  border: 1px solid #ccc;
+  font: inherit;
+  line-height: 1.5rem;
+  padding: 0 0.25rem;
+}
+
+.form-control input:focus {
+  outline: none;
+  background: #fad0ec;
+  border-color: #8b005d;
+}
+
+.form-control.invalid input {
+  border-color: red;
+  background: #ffd7d7;
+}
+
+.form-control.invalid label {
+  color: red;
+}
+
+.button {
+  width: 100%;
+  font: inherit;
+  padding: 0.5rem 1.5rem;
+  border: 1px solid #8b005d;
+  color: white;
+  background: #8b005d;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.26);
+  cursor: pointer;
+}
+
+.button.right {
+  float: right;
+}
+
+.button:focus {
+  outline: none;
+}
+
+.button:hover,
+.button:active {
+  background: #ac0e77;
+  border-color: #ac0e77;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.26);
+}
+
+@media (min-width: 768px) {
+  .button {
+    width: auto;
+  }
+}
+
+.complete-checkbox {
+  margin: 0 0.5rem 0 0;
+}
+
+.todo-status {
+  font-style: italic;
+  font-size: 80%;
+}
+
+.message-box {
+  position: relative;
+  border-right: 2px dashed #a7a7a7;
+  border-bottom: 2px dashed #bbb;
+  -moz-border-radius: 10x;
+  -webkit-border-radius: 10x;
+  border-radius: 3px;
+  color: #bbb;
+  min-height: 1.5rem;
+  margin-top: 19px;
+  margin-bottom: 15px;
+}
+
+.message-text {
+  margin-left: 5px;
+}
+
+.message-text.error {
+  color: red;
+}
+
+.close-img {
+  width: 20px;
+  height: 20px;
+}
+
+.close-icon {
+  float: right;
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  margin-top: -15px;
+  margin-right: -11px;
+  margin-left: 0px;
+  margin-bottom: 0px;
+  padding: 0px;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  border-width: 0px;
+  border-style: none;
+  appearance: none;
+  background-color: unset;
+}
+
+.progress-bar {
+  width: 100%;
+  margin: 0px 0px 10px 0px;
+}

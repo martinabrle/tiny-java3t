@@ -1,0 +1,9 @@
+spring:
+  profiles:
+    active: default
+  jpa:
+    open-in-view: false
+server:
+  port: ${PORT}
+
+

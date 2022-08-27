@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Demo Java Thymeleaf site" />
+    <title>Demo Java site App</title>
+    <link rel="stylesheet" href="todo.css" />
+    <script src="todo.js" defer></script>
+  </head>
+  <body>
+    <div id="root">
+      <form id="container" method="post" th:action="@{/}" th:object="${page}">
+        <section th:if="${createMode}" id="todo-create">
+          <div id="todo-create-form">
+            <div class="form-control">
+              <label id="todo-label" for="new-todo-input-text">New task</label>
+              <input type="text" id="new-todo-input-text" th:field="*{todoText}" />
+            </div>
+            <div id="todo-create-form-message-box" class="message-box" th:if="${!#strings.isEmpty(formMessage)}">
+              <div id="todo-create-form-message-box-text" class="message-text" th:text="${formMessage}" th:classappend="${#strings.isEmpty(formStatus) ? 'none' : formStatus}">Message text</div>
+              <button type="submit" class="close-icon" th:formaction="@{/close-msg-box}" id="todo-close-msg-box-button"><img src="cancel.svg" title="Clear" alt="Clear message" class="close-img" /></button>
+            </div>
+            <button type="submit" class="button" th:formaction="@{/submit}" id="todo-save-button">Save</button>
+            <button type="submit" class="button" th:formaction="@{/cancel}" id="todo-cancel-button">Cancel</button>
+          </div>
+        </section>
+        <section id="todos">
+          <div th:if="${!createMode}" id="todos-command-bar" style="display: unset">
+            <button type="submit" class="button" th:formaction="@{/add-new}" id="todos-create-button">Add Task</button>
+            <button type="submit" class="button right" th:formaction="@{/update-refresh}" id="todos-update-refresh-button">Update</button>
+          </div>
+          <div id="todos-message-box" class="message-box" th:if="${!#strings.isEmpty(todoListMessage) || (!#strings.isEmpty(formMessage) && !createMode)}">
+            <div th:if="${!#strings.isEmpty(formMessage)}" id="todos-form-message-box-text" class="message-text" th:classappend="${#strings.isEmpty(formStatus) ? 'none' : formStatus}" th:text="${formMessage}">Message text</div>
+            <div th:if="${!#strings.isEmpty(todoListMessage)}" id="todos-message-box-text" class="message-text" th:classappend="${#strings.isEmpty(todoListStatus) ? 'none' : todoListStatus}" th:text="${todoListMessage}">Message text</div>
+            <button type="submit" class="close-icon" th:formaction="@{/close-msg-box}" id="todo-close-msg-box-todo-list-button"><img src="cancel.svg" title="Clear" alt="Clear message" class="close-img" /></button>
+          </div>
+          <ul id="todo-list" class="todo-list">
+            <li class="todo-item" th:if="*{todoList != null}" th:each="todo, itemStat : *{todoList}" th:key="${todo.id}">
+              <input type="checkbox" th:id="completed-+${todo.id}" th:name="|todoList[${itemStat.index}].completed|" th:checked="${todo.completed}" class="complete-checkbox" />
+              <span th:id="todo-text-+${todo.id}" th:text="${todo.todoText}">todo text</span>
+              <div th:id="status-text-+${todo.id}" class="todo-status" th:text="${todo.statusText}">status text</div>
+              <input hidden th:name="|todoList[${itemStat.index}].id|" th:value="${todo.getId()}" />
+              <input hidden th:id="orig-completed-+${todo.id}" th:name="|todoList[${itemStat.index}].completedOrig|" th:value="${todo.completedOrig}" />
+            </li>
+          </ul>
+        </section>
+      </form>
+    </div>
+  </body>
+</html>
