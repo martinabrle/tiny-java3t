@@ -1,9 +1,6 @@
-app.demo.todoapi.load-demo-data: false
-logging.level: info
-logging.level.app.demo.todoapi: debug
 spring:
   profiles:
-    active: local
+    active: ${SPRING_PROFILE}
   jpa:
     open-in-view: false
 server:

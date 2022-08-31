@@ -8,5 +8,7 @@ spring:
     hibernate:
       ddl-auto: validate
 app.demo.todoapi.load-demo-data: true
+app.demo.todoapi.app-client-id: ${APP_CLIENT_ID}
 logging.level: warn
 logging.level.app.demo.todoapi: debug
+

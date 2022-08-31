@@ -1,9 +1,9 @@
-spring:
-  profiles:
-    active: default
-  jpa:
-    open-in-view: false
 server:
   port: ${PORT}
-
-
+app.demo.todoweb.debug-auth-token: ${DEBUG_AUTH_TOKEN}
+app.demo.todoweb.todo-api-uri: ${API_URI}
+app.demo.todoweb.app-client-id: ${APP_CLIENT_ID}
+logging.level: warn
+logging.level.app.demo.todoweb: debug
+azure.application-insights.instrumentation-key: ${APPINSIGHTS_INSTRUMENTATIONKEY}
+azure.application-insights.connection-string:  ${APPLICATIONINSIGHTS_CONNECTION_STRING}

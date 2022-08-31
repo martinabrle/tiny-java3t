@@ -1,0 +1,302 @@
+name: cicd-app-service-infra
+
+on:
+  #push:
+  #  branches:
+  #    - main
+  #  paths:
+  #    - 'api/**'
+  workflow_dispatch:
+    inputs:
+      run_cleanup:
+        type: boolean
+        description: Delete all existing resources first
+
+jobs:
+  cleanup_if_requested:
+    runs-on: ubuntu-latest
+    environment: APP-SERVICE
+    steps:
+      - name: Azure login
+        if: github.event.inputs.run_cleanup == 'true'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set default Azure subscription
+        if: github.event.inputs.run_cleanup == 'true'
+        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Remove the resource group
+        if: github.event.inputs.run_cleanup == 'true'
+        run: |
+          RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
+          if [[RG_EXISTS -eq true]]; then
+             echo "Deleting the Todo App app resource group"
+             az group delete --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
+          fi
+
+  deploy_log_analytics_if_needed:
+    # Having this as a separte Job, as there are many situations where Log Analytics
+    # workspace would be outside of the current subscription
+    needs: [cleanup_if_requested]
+    runs-on: ubuntu-latest
+    environment: APP-SERVICE
+    defaults:
+      run:
+        working-directory: ./scripts
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set default Azure subscription
+        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Check the resource group exists
+        id: logs_rg_exists
+        run: |
+          LOGS_RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
+          echo "::set-output name=LOGS_RG_EXISTS::${LOGS_RG_EXISTS}"
+
+      - name: Create Logs Workspace Azure resource group
+        if: steps.logs_rg_exists.outputs.LOGS_RG_EXISTS == 'false'
+        run: |
+          az deployment sub create \
+           --location ${{ secrets.AZURE_LOCATION }} \
+           --template-file ./templates/components/rg.bicep \
+           --parameters name=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} location=${{ secrets.AZURE_LOCATION }} resourceTags="${{ secrets.AZURE_RESOURCE_TAGS }}"
+
+      - name: Deploy Log Workspace
+        if: steps.logs_rg_exists.outputs.LOGS_RG_EXISTS == 'false'
+        run: |
+          az deployment group create --resource-group ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --template-file ./templates/components/logs.bicep \
+                        --parameters location=${{ secrets.AZURE_LOCATION }}  \
+                                     logAnalyticsWorkspaceName=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME }}
+
+  deploy_infra:
+    needs: [deploy_log_analytics_if_needed]
+    runs-on: ubuntu-latest
+    environment: APP-SERVICE
+    defaults:
+      run:
+        working-directory: ./scripts
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Set default Azure subscription
+        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Purge deleted KV if found
+        run: |
+          kvDeletedQuery="[?name == '${{secrets.AZURE_KEY_VAULT_NAME}}'].id"
+          kvDeletedExists=`az keyvault list-deleted --query "$kvDeletedQuery" -o tsv`
+          if [[ ! -z "$kvDeletedExists" ]]; then
+            echo "Deleted KeyVault exists, purging it and waiting for 10 mins"
+            az keyvault purge -l ${{secrets.AZURE_LOCATION}} -n ${{secrets.AZURE_KEY_VAULT_NAME}}
+          fi
+      
+      - name: Create Azure resource group
+        run: |
+          az deployment sub create \
+           --location ${{ secrets.AZURE_LOCATION }} \
+           --template-file ./templates/components/rg.bicep \
+           --parameters name=${{ secrets.AZURE_RESOURCE_GROUP }} location=${{ secrets.AZURE_LOCATION }} resourceTags="${{ secrets.AZURE_RESOURCE_TAGS }}"
+
+      - name: Initialize deployment variables
+        id: vars
+        run: |
+          clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
+          echo "::set-output name=DEPLOYMENT_CLIENT_IP::${clientIP}"
+          echo "Client IP: $clientIP"
+
+          dbAdminPassword="`openssl rand -hex 25`#@"
+          echo "::add-mask::$dbAdminPassword"
+          echo "::set-output name=DB_ADMIN_PASSWORD::${dbAdminPassword}"
+
+          createDB=true
+          dbAdminName=`az postgres server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
+          
+          if [[ -z "$dbAdminName" ]]; then
+            echo "This is a new deployment, generating a new admin name"
+            dbAdminName="a`openssl rand -hex 5`"
+          else
+            #echo "Re-setting password for an existing admin user"
+            #az postgres server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password $dbAdminPassword
+            createDB=false
+          fi
+          echo "Admin name: $dbAdminName"
+          echo "Admin password: $dbAdminPassword"
+          
+          echo "::set-output name=DB_ADMIN_NAME::${dbAdminName}"
+          echo "::set-output name=DB_NOT_INITIALIZED::${createDB}"
+          echo "Create DB: $createDB"
+
+          dbAppUserName=`echo "${{secrets.AZURE_APP_NAME}}" | tr '-' '_'`;
+          echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
+          echo "App user name: $dbAppUserName"
+
+          dbAppUserPassword=""
+          if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
+            echo "New app user password generated"
+            dbAppUserPassword="`openssl rand -hex 25`#@"
+            echo "::add-mask::$dbAppUserPassword"
+            echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
+            appSpringProfile="test"
+          else
+            dbaGroupId=`az ad group show --group "All TEST PGSQL Admins" --query '[id]' -o tsv`
+            echo "DBA Group Id: $dbaGroupId"
+            echo "::set-output name=AZURE_DBA_GROUP_ID::${dbaGroupId}"
+            appSpringProfile="test-mi"
+          fi
+          echo "App user password: $dbAppUserPassword"
+
+          echo "::set-output name=APP_SPRING_PROFILE::$appSpringProfile"
+          echo "App Spring profile: $appSpringProfile"
+          
+          if [[ ! -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
+             echo "::set-output name=DB_AAD_INTEGRATION::true"
+          else
+            echo "::set-output name=DB_AAD_INTEGRATION::false"
+          fi
+
+          export appName=`az webapp list -g ${{secrets.AZURE_RESOURCE_GROUP}} --query "[?name=='${{secrets.AZURE_APP_NAME}}'].name" -o tsv`
+          if [[ -z "$appName" ]]; then
+            echo "::set-output name=FIRST_DEPLOYMENT::true"
+          else
+            echo "::set-output name=FIRST_DEPLOYMENT::false"
+          fi
+      - name: Initial deployment to keep SystemAssignedIdentity fairies happy
+        id: initial_deployment
+        if: (steps.vars.outputs.FIRST_DEPLOYMENT == 'true' && steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
+        run: |
+          echo "Deploying with the following parameters:"
+          echo "App service name: '${{secrets.AZURE_APP_NAME}}'"
+          echo "App port: '${{secrets.AZURE_APP_PORT}}'"
+
+          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi-init.bicep \
+                        --parameters location=${{secrets.AZURE_LOCATION}}  \
+                                     appServiceName=${{secrets.AZURE_APP_NAME}} \
+                                     appServicePort=${{secrets.AZURE_APP_PORT}}
+
+      - name: Deploy Azure resources (AAD Integration)
+        id: deployment_aad
+        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
+        run: |
+          dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_APP_NAME}}'].appId" --out tsv`
+          echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
+
+          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi.bicep \
+                        --parameters location=${{secrets.AZURE_LOCATION}}  \
+                                     logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
+                                     logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} \
+                                     keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
+                                     appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
+                                     dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
+                                     dbName=${{secrets.AZURE_DB_NAME}} \
+                                     createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}} \
+                                     dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                     dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                     dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                                     appServiceName=${{secrets.AZURE_APP_NAME}} \
+                                     appServicePort=${{secrets.AZURE_APP_PORT}} \
+                                     deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
+          cd ..
+
+      - name: Deploy Azure resources (NO AAD Integration)
+        id: deployment_no_aad
+        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
+        run: |
+
+          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-classic.bicep \
+                        --parameters location=${{secrets.AZURE_LOCATION}}  \
+                                     logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
+                                     logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} \
+                                     keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
+                                     appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
+                                     dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
+                                     dbName=${{secrets.AZURE_DB_NAME}} \
+                                     createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}} \
+                                     dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                     dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                     dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                                     dbUserPassword=${{steps.vars.outputs.DB_APP_USER_PASSWORD}}\
+                                     appServiceName=${{secrets.AZURE_APP_NAME}} \
+                                     appServicePort=${{secrets.AZURE_APP_PORT}} \
+                                     deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
+
+      - name: Set-up DB AAD Integration
+        if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
+        run: |
+          echo "Setting AAD DB Admin Group"
+          az postgres server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ steps.vars.outputs.AZURE_DBA_GROUP_ID }} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}"
+  
+      - name: Synchronize DB Schema
+        run: |
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          psql "${dbConnectionString}" --file=./db.sql
+        
+      - name: If not AAD, set-up traditional DB User(s)
+        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
+        run: |
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          
+          dbUserExists=`psql "${dbConnectionString}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='${{steps.vars.outputs.DB_APP_USER_NAME}}';"`
+          if [[ $dbUserExists -ne '1' ]]; then
+            echo "CREATE USER ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';" > ./create_user.sql
+          else
+            echo "ALTER USER ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';" > ./create_user.sql
+          fi
+          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
+          echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
+          echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
+
+          echo "User ${{steps.vars.outputs.DB_ADMIN_NAME}} is running a user creation script:"
+          cat ./create_user.sql
+
+          psql "${dbConnectionString}" --file=./create_user.sql
+
+          echo "List of existing users:"
+          psql "${dbConnectionString}" -tAc "SELECT * FROM pg_roles;"
+          
+      - name: If AAD, set-up AAD DB User(s)
+        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
+        run: |
+          echo "SET aad_validate_oids_in_tenant = off;" > ./create_user.sql
+          echo "CREATE ROLE ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment_aad.outputs.DB_APP_USER_ID}}' IN ROLE azure_ad_user;" >> ./create_user.sql
+          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
+          echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
+          echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
+          
+          echo "User group {{secrets.AZURE_DB_SERVER_NAME}} is running AAD user creation script:"
+          cat ./create_user.sql
+
+          export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
+
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}" --file=./create_user.sql
+
+          echo "List of existing users:"
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}" -tAc "SELECT * FROM pg_roles;"
+
+      # - name: Set-up user permissions
+      #   run: |      
+      #     echo "Granting user access"
+
+      #     dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          
+      #     psql "${dbConnectionString}" -tAc "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"
+      #     psql "${dbConnectionString}" -tAc "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"
+      #     psql "${dbConnectionString}" -tAc "GRANT SELECT ON todo TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"
+      #     psql "${dbConnectionString}" -tAc "GRANT INSERT ON todo TO ${{steps.vars.outputs.DB_APP_USER_NAME}};" 
+
+      # 
+      #Debug: - name: Setup tmate session
+      #         uses: mxschmitt/action-tmate@v3.11

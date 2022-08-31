@@ -3,8 +3,6 @@ package app.demo.todoweb;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import com.microsoft.applicationinsights.TelemetryConfiguration;
-
 import app.demo.todoweb.utils.AppEnvironment;
 import app.demo.todoweb.utils.AppLogger;
 import app.demo.todoweb.utils.FileCache;
@@ -29,18 +27,7 @@ public class TodoApplication {
 
 		STARTUP_FINISHED = true;
 
-		configureTelemetry();
-
 		System.out.println(String.format("Finishing '%s'", TodoApplication.class.getName()));
-	}
-
-	private static void configureTelemetry() {
-
-		LOGGER.debug("Configuring telemetry");
-
-		if (TelemetryConfiguration.getActive() != null) {
-			TelemetryConfiguration.getActive().setRoleName("Web Frontend + API");
-		}
 	}
 
 	public static boolean isInitialized() {

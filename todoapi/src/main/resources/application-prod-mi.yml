@@ -8,8 +8,9 @@ spring:
     hibernate:
       ddl-auto: validate
 app.demo.todoapi.load-demo-data: false
-app.demo.todoapi.app-client-id: ${SPRING_DATASOURCE_APP_CLIENT_ID}
+app.demo.todoapi.debug-auth-token: ${DEBUG_AUTH_TOKEN}
+app.demo.todoapi.app-client-id: ${APP_CLIENT_ID}
 logging.level: warn
-logging.level.app.demo.todoapi: warn
+logging.level.app.demo.todo: warn
 azure.application-insights.instrumentation-key: ${APPINSIGHTS_INSTRUMENTATIONKEY}
 azure.application-insights.connection-string:  ${APPLICATIONINSIGHTS_CONNECTION_STRING}

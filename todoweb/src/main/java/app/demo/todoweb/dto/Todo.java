@@ -37,20 +37,6 @@ public class Todo {
         this.todoText = todoText;
         this.completed = completed;
         this.completedOrig = completed;
-
-    }
-
-    public Todo(app.demo.todoweb.entity.Todo todo) {
-        initFromTodo(todo);
-    }
-    
-    public void initFromTodo(app.demo.todoweb.entity.Todo todo) {
-        this.id = todo.getId();
-        this.createdDateTime = todo.getCreatedDateTime();
-        this.completedDateTime = todo.getCompletedDateTime();
-        this.todoText = todo.getTodoText();
-        this.completed = this.completedDateTime != null;
-        this.completedOrig = this.completed;
     }
 
     @Override

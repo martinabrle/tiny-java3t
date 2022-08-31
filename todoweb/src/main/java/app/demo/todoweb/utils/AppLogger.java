@@ -29,6 +29,27 @@ public class AppLogger {
         logger.debug(message);
     }
 
+    public void debug(String message, Object object) {
+        if (!TodoApplication.isInitialized()) {
+            System.out.println(message);
+            if (object == null) {
+                System.out.println("null");
+            } else {
+                System.out.println(object.toString());
+            }
+            return;
+        }
+        if (logger == null) {
+            logger = LoggerFactory.getLogger(clazz);
+        }
+        logger.debug(message);
+        if (object == null) {
+            logger.debug("null");
+        } else {
+            logger.debug(object.toString());
+        }
+    }
+
     public void error(String message) {
         if (!TodoApplication.isInitialized()) {
             System.err.println(message);

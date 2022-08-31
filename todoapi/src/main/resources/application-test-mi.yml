@@ -9,8 +9,7 @@ spring:
       ddl-auto: validate
 app.demo.todoapi.load-demo-data: true
 app.demo.todoapi.debug-auth-token: ${DEBUG_AUTH_TOKEN}
-app.demo.todoapi.app-client-id: ${SPRING_DATASOURCE_APP_CLIENT_ID}
-app.demo.todoapi.test-keyvault-reference: ${TEST_KEYVAULT_REFERENCE}
+app.demo.todoapi.app-client-id: ${APP_CLIENT_ID}
 logging.level: warn
 logging.level.app.demo.todoapi: debug
 azure.application-insights.instrumentation-key: ${APPINSIGHTS_INSTRUMENTATIONKEY}

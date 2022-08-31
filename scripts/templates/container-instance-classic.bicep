@@ -1,22 +1,24 @@
 param logAnalyticsWorkspaceName string
 param logAnalyticsWorkspaceRG string
 param appInsightsName string
-
-param keyVaultName string
 param dbServerName string
 param dbName string
-param createDB bool = true
-
+param createDB bool
 @secure()
 param dbAdminName string
 @secure()
 param dbAdminPassword string
-
+@secure()
+param dbUserName string
+@secure()
+param dbUserPassword string
+param containerRegistryName string
+param containerInstanceName string
+param containerAppName string
+param containerAppPort string
+param containerImageName string
 param deploymentClientIPAddress string
-param appServiceName string
-
 param location string = resourceGroup().location
-
 param tagsArray object = resourceGroup().tags
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview' existing = {
@@ -94,7 +96,7 @@ resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRule
 }
 
 resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: '${dbServerName}-db-logs'
+  name: '${dbServerName}-logs'
   scope: postgreSQLServer
   properties: {
     logs: [
@@ -113,99 +115,33 @@ resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@
   }
 }
 
-resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
-  name: '${appServiceName}-plan'
+resource containerRegistry 'Microsoft.ContainerRegistry/registries@2022-02-01-preview' = {
+  name: containerRegistryName
   location: location
   tags: tagsArray
-  properties: {
-    reserved: true
-  }
   sku: {
-    name: 'S1'
-  }
-  kind: 'linux'
-}
-
-resource appService 'Microsoft.Web/sites@2021-03-01' = {
-  name: appServiceName
-  location: location
-  tags: tagsArray
-  identity: {
-    type: 'SystemAssigned'
+    name: 'Standard'
   }
   properties: {
-    serverFarmId: appServicePlan.id
-    siteConfig: {
-      linuxFxVersion: 'JAVA|11-java11'
-      scmType: 'None'
-      healthCheckPath: '/health'
-    }
+    publicNetworkAccess: 'Enabled'
+    anonymousPullEnabled: true
   }
 }
 
-resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
-  name: keyVaultName
-  dependsOn: [
-    appInsights
-  ]
-  location: location
-  tags: tagsArray
-  properties: {
-    createMode: 'default'
-    tenantId: subscription().tenantId
-    sku: {
-      family: 'A'
-      name: 'standard'
-    }
-    enableRbacAuthorization: true
-    enableSoftDelete: true
-  }
-}
-
-resource kvDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: '${keyVaultName}-kv-logs'
-  scope: keyVault
-  properties: {
-    logs: [
-      {
-        categoryGroup: 'allLogs'
-        enabled: true
-      }
-      {
-        categoryGroup: 'audit'
-        enabled: true
-      }
-    ]
-    metrics: [
-      {
-        category: 'AllMetrics'
-        enabled: true
-      }
-    ]
-    workspaceId: logAnalyticsWorkspace.id
-  }
-}
-
-resource appServiceDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: '${appServiceName}-app-logs'
-  scope: appService
-  properties: {
-    logs: [
-      {
-        categoryGroup: 'allLogs'
-        enabled: true
-      }
-      {
-        categoryGroup: 'audit'
-        enabled: true
-      }
-    ]
-    metrics: [
-      {
-        category: 'AllMetrics'
-        enabled: true
-      }
-    ]
-    workspaceId: logAnalyticsWorkspace.id
+module containerInstance 'container-instance-classic-service.bicep' = {
+  name: 'deployment-container-instance-core'
+  params: {
+    containerInstanceName: containerInstanceName
+    containerAppName: containerAppName
+    containerImage: containerImageName
+    appInsightsConnectionString: appInsights.properties.ConnectionString
+    appInsightsInstrumentationKey: appInsights.properties.InstrumentationKey
+    springDatasourceUrl: 'jdbc:postgresql://${dbServerName}.postgres.database.azure.com:5432/${dbName}'
+    springDatasourceUserName: dbUserName
+    springDatasourcePassword: dbUserPassword
+    springDatasourceShowSql: 'true'
+    containerAppPort: containerAppPort
+    location: location
+    tagsArray: tagsArray
   }
 }

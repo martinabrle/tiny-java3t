@@ -1,8 +1,51 @@
+HELP.md
+!**/.mvn/wrapper/maven-wrapper.jar
+**/target/
+**/target/**
+
+#Temporary files generated locally
+**/todoapi/AI-Agent.xml
+**/todoapi/ApplicationInsights.xml
+**/todoweb/AI-Agent.xml
+**/todoweb/ApplicationInsights.xml
+
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+**/.vscode/
+
 # Compiled class file
 *.class
 
 # Log file
 *.log
+
+# Mac OS attribute store
+.DS_Store
 
 # BlueJ files
 *.ctxt

@@ -1,32 +1,25 @@
 param logAnalyticsWorkspaceName string
 param logAnalyticsWorkspaceRG string
 param appInsightsName string
-
 param keyVaultName string
 param dbServerName string
 param dbName string
 param createDB bool
-
 @secure()
 param dbAdminName string
 @secure()
 param dbAdminPassword string
 @secure()
 param dbUserName string
-
-param deploymentClientIPAddress string
-
 param containerRegistryName string
 param containerInstanceName string
-param containerInstanceIdentityName string = '${containerInstanceName}-identity'
+param containerInstanceIdentityName string
 param containerAppName string
 param containerAppPort string
 param containerImageName string
-
-param appSpringProfile string
+param deploymentClientIPAddress string
 
 param location string = resourceGroup().location
-
 param tagsArray object = resourceGroup().tags
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview' existing = {
@@ -181,6 +174,9 @@ resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
 resource kvDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: '${keyVaultName}-kv-logs'
   scope: keyVault
+  dependsOn: [
+    containerInstanceConfig
+  ]
   properties: {
     logs: [
       {
@@ -262,7 +258,7 @@ module rbacKVSecretDbUserName './components/role-assignment-kv-secret.bicep' = {
   }
 }
 
-module containerInstanceConfig 'container-instance-service.bicep' = {
+module containerInstanceConfig 'container-instance-mi-service.bicep' = {
   name: 'deployment-container-instance-core'
   params: {
     containerInstanceName: containerInstanceName
@@ -276,7 +272,6 @@ module containerInstanceConfig 'container-instance-service.bicep' = {
     springDatasourceUserName: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbUserName.name})'
     springDatasourceShowSql: 'true'
     containerAppPort: containerAppPort
-    appSpringProfile: appSpringProfile
     location: location
     tagsArray: tagsArray
   }

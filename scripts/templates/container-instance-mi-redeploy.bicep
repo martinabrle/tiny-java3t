@@ -6,16 +6,11 @@ param dbName string
 
 param dbUserName string
 
-param deploymentClientIPAddress string
-
-param containerRegistryName string
 param containerInstanceName string
-param containerInstanceIdentityName string = '${containerInstanceName}-identity'
+param containerInstanceIdentityName string
 param containerAppName string
 param containerAppPort string
 param containerImageName string
-
-param appSpringProfile string
 
 param location string = resourceGroup().location
 
@@ -97,7 +92,7 @@ module rbacKVSecretDbUserName './components/role-assignment-kv-secret.bicep' = {
   }
 }
 
-module containerInstanceConfig 'container-instance-service.bicep' = {
+module containerInstanceConfig 'container-instance-mi-service.bicep' = {
   name: 'deployment-container-instance-core'
   params: {
     containerInstanceName: containerInstanceName
@@ -111,7 +106,6 @@ module containerInstanceConfig 'container-instance-service.bicep' = {
     springDatasourceUserName: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbUserName.name})'
     springDatasourceShowSql: 'true'
     containerAppPort: containerAppPort
-    appSpringProfile: appSpringProfile
     location: location
     tagsArray: tagsArray
   }

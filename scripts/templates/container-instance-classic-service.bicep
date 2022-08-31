@@ -1,15 +1,14 @@
 param containerInstanceName string
-param containerInstanceIdentityName string
-param appClientId string
 param containerAppName string
 param containerImage string
 param appInsightsConnectionString string
 param appInsightsInstrumentationKey string
 param springDatasourceUrl string
 param springDatasourceUserName string
-param springDatasourceShowSql string
+@secure()
+param springDatasourcePassword string
+param springDatasourceShowSql string = 'true'
 param containerAppPort string
-param appSpringProfile string
 
 param location string = resourceGroup().location
 
@@ -19,12 +18,6 @@ resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2021-10-
   name: containerInstanceName
   location: location
   tags: tagsArray
-  identity: {
-    type: 'SystemAssigned, UserAssigned'
-    userAssignedIdentities: {
-      '/subscriptions/${subscription().subscriptionId}/resourcegroups/${resourceGroup().name}/providers/microsoft.managedidentity/userassignedidentities/${containerInstanceIdentityName}': {}
-    }
-  }
   properties: {
     osType: 'Linux'
     restartPolicy: 'OnFailure'
@@ -36,7 +29,7 @@ resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2021-10-
           port: int(containerAppPort)
         }
       ]
-      dnsNameLabel: replace(replace(containerInstanceName,'-',''),'_','')
+      dnsNameLabel: replace(replace(containerInstanceName, '-', ''), '_', '')
     }
     containers: [
       {
@@ -79,16 +72,16 @@ resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2021-10-
               value: springDatasourceUrl
             }
             {
-              name: 'SPRING_DATASOURCE_APP_CLIENT_ID'
-              value: appClientId
-            }
-            {
               name: 'SPRING_DATASOURCE_USERNAME'
               value: springDatasourceUserName
             }
             {
+              name: 'SPRING_DATASOURCE_PASSWORD'
+              value: springDatasourcePassword
+            }
+            {
               name: 'SPRING_PROFILES_ACTIVE'
-              value: appSpringProfile
+              value: 'test'
             }
             {
               name: 'PORT'

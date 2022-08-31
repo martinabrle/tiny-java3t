@@ -12,16 +12,14 @@ import com.azure.identity.ManagedIdentityCredentialBuilder;
 
 import app.demo.todoapi.utils.AppLogger;
 
-//https://www.azureblue.io/how-to-authenicated-aad-identity-against-postgres-using-spring-boot/
 @Configuration
-@ConfigurationProperties(prefix = "app.demo.todo")
+@ConfigurationProperties(prefix = "app.demo.todoapi")
 public class AppConfig {
     public static final AppLogger LOGGER = new AppLogger(AppConfig.class);
 
     private String applicationClientId;
     private String loadDemoData;
     private String debugAuthToken;
-    private String testKeyvaultReference;
 
     // Token identity for AAD integration while running on local machine
     @Bean
@@ -46,11 +44,6 @@ public class AppConfig {
     }
 
     public void setLoadDemoData(String loadDemoData) {
-        System.out.println("LLLLLLLLOOOOOOOOOAAAAAADDDDDD");
-        System.out.println("LLLLLLLLOOOOOOOOOAAAAAADDDDDD");
-        System.out.println("LLLLLLLLOOOOOOOOOAAAAAADDDDDD");
-        System.out.println("LLLLLLLLOOOOOOOOOAAAAAADDDDDD");
-        System.out.println("LLLLLLLLOOOOOOOOOAAAAAADDDDDD");
         this.loadDemoData = loadDemoData;
     }
 
@@ -63,26 +56,10 @@ public class AppConfig {
     }
 
     public boolean getLoadDemoData() {
-        System.out.println("GGGGGGGGEEEEEEEETTTTTTTT");
-        System.out.println("GGGGGGGGEEEEEEEETTTTTTTT");
-        System.out.println("GGGGGGGGEEEEEEEETTTTTTTT");
-        System.out.println("GGGGGGGGEEEEEEEETTTTTTTT");
-        System.out.println("GGGGGGGGEEEEEEEETTTTTTTT");
-        System.out.println("GGGGGGGGEEEEEEEETTTTTTTT");
         return loadDemoData != null && loadDemoData.toLowerCase().trim().equals("true");
     }
 
     public boolean getDebugAuthToken() {
         return debugAuthToken != null && debugAuthToken.toLowerCase().trim().equals("true");
     }
-
-    public String getTestKeyvaultReference() {
-        return testKeyvaultReference;
-    }
-
-    public void setTestKeyvaultReference(String testKeyvaultReference) {
-        LOGGER.debug(String.format("TEST_KEYVAULT_REFERENCE: '%s'", testKeyvaultReference));
-        this.testKeyvaultReference = testKeyvaultReference;
-    }
-
 }

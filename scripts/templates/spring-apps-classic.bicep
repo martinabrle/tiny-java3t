@@ -17,13 +17,13 @@ param dbUserName string
 @secure()
 param dbUserPassword string
 
-param clientIPAddress string
+param deploymentClientIPAddress string
 
 param springAppsServiceName string
 
 param appName string
 param appPort string
-
+param springDatasourceShowSql string = 'true'
 param location string = resourceGroup().location
 
 param tagsArray object = resourceGroup().tags
@@ -67,7 +67,7 @@ resource keyVaultSecretSpringDatasourceUserName 'Microsoft.KeyVault/vaults/secre
   parent: keyVault
   name: 'SPRING-DATASOURCE-USERNAME'
   properties: {
-    value: '${dbUserName}@${dbServerName}'
+    value: dbUserName
     contentType: 'string'
   }
 }
@@ -110,6 +110,9 @@ resource keyVaultSecretAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/
 resource kvDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: '${keyVaultName}-kv-logs'
   scope: keyVault
+  dependsOn: [
+    springAppsAppDeployment
+  ]
   properties: {
     logs: [
       {
@@ -167,12 +170,13 @@ resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/servers/databases@2017-12
     collation: 'en_US.utf8'
   }
 }
+
 resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
   name: 'allowClientIP'
   parent: postgreSQLServer
   properties: {
-    endIpAddress: clientIPAddress
-    startIpAddress: clientIPAddress
+    endIpAddress: deploymentClientIPAddress
+    startIpAddress: deploymentClientIPAddress
   }
 }
 resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
@@ -219,8 +223,6 @@ resource springApps 'Microsoft.AppPlatform/Spring@2022-05-01-preview' = {
   }
   properties: {
     zoneRedundant: false
-    networkProfile: {
-    }
   }
 }
 
@@ -294,19 +296,13 @@ resource springAppsAppDeployment 'Microsoft.AppPlatform/Spring/apps/deployments@
       }
       environmentVariables: {
         PORT: appPort
-        // SPRING_DATASOURCE_URL: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName={keyVaultSecretSpringDataSourceURL.name})'
-        // SPRING_DATASOURCE_USERNAME: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretSpringDatasourceUserName.name})'
-        // SPRING_DATASOURCE_PASSWORD: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretSpringDatasourceUserPassword.name})'
-        // APPLICATIONINSIGHTS_CONNECTION_STRING: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretAppInsightsKey.name})'
-        // APPINSIGHTS_INSTRUMENTATIONKEY: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretAppInsightsInstrumentationKey.name})'
         SPRING_DATASOURCE_URL: 'jdbc:postgresql://${dbServerName}.postgres.database.azure.com:5432/${dbName}'
         SPRING_DATASOURCE_USERNAME: '${dbUserName}@${dbServerName}'
         SPRING_DATASOURCE_PASSWORD: dbUserPassword
         APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.properties.ConnectionString
         APPINSIGHTS_INSTRUMENTATIONKEY: appInsights.properties.InstrumentationKey
         SPRING_PROFILES_ACTIVE: 'test'
-        SPRING_DATASOURCE_SHOW_SQL: 'true'
-        SCM_DO_BUILD_DURING_DEPLOYMENT: 'false'
+        SPRING_DATASOURCE_SHOW_SQL: springDatasourceShowSql
       }
     }
     source: any({

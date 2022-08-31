@@ -38,7 +38,8 @@ COPY --from=build ./target/todoapi-app.jar /todoapi-app.jar
 EXPOSE 80
 EXPOSE 443
 
-CMD ["-jar", "/todoapi-app.jar"]
+ENTRYPOINT ["java", "-jar", "/todoapi-app.jar" ]
+#CMD ["-jar", "/todoapi-app.jar"]
 #The distroless images are based on the CBL-Mariner 2.0 distribution by Microsoft.
 #The ENTRYPOINT of these images is already configured pointing to the java command.
 #Consuming Dockerfiles must use the CMD instruction to complete the command-line arguments of the JVM launcher process.
