@@ -104,7 +104,7 @@ resource kvSecretWebApiURI 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview
   parent: keyVault
   name: 'API-URI'
   properties: {
-    value: 'https://whatever.com.test.local/'
+    value: springAppsApiApp.properties.fqdn
     contentType: 'string'
   }
 }
