@@ -24,6 +24,10 @@ module springApiAppsInit 'spring-apps-mi-api-service.bicep' = {
 }
 
 module springWebAppsInit 'spring-apps-mi-web-service.bicep' = {
+  dependsOn: [
+    springApiAppsInit
+  ]
+
   name: 'deployment-spring-apps-web-mi-init'
   params: {
     webAppClientId: ''

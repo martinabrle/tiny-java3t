@@ -38,7 +38,7 @@ jobs:
       - name: Remove deployed resource group (if exists)
         if: steps.check_next_steps.outputs.DELETE_RG == 'true'
         run: |
-          echo "${{ steps.check_next_steps.outputs.DELETE_RG }}"
+          echo "${{steps.check_next_steps.outputs.DELETE_RG}}"
           az group delete --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
 
   deploy_log_analytics_if_needed:
@@ -73,7 +73,7 @@ jobs:
           az deployment sub create \
            --location ${{ secrets.AZURE_LOCATION }} \
            --template-file ./templates/components/rg.bicep \
-           --parameters name=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} location=${{ secrets.AZURE_LOCATION }} resourceTags="${{ secrets.AZURE_RESOURCE_TAGS }}"
+           --parameters name=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} location=${{ secrets.AZURE_LOCATION }} resourceTags="${{secrets.AZURE_RESOURCE_TAGS}}"
 
       - name: Deploy Log Workspace
         if: steps.logs_rg_exists.outputs.LOGS_RG_EXISTS == 'false'
@@ -114,7 +114,7 @@ jobs:
           az deployment sub create \
            --location ${{ secrets.AZURE_LOCATION }} \
            --template-file ./templates/components/rg.bicep \
-           --parameters name=${{ secrets.AZURE_RESOURCE_GROUP }} location=${{ secrets.AZURE_LOCATION }} resourceTags="${{ secrets.AZURE_RESOURCE_TAGS }}"
+           --parameters name=${{ secrets.AZURE_RESOURCE_GROUP }} location=${{ secrets.AZURE_LOCATION }} resourceTags="${{secrets.AZURE_RESOURCE_TAGS}}"
 
       - name: Initialize deployment variables
         id: vars
@@ -146,7 +146,7 @@ jobs:
           echo "::set-output name=DB_NOT_INITIALIZED::${createDB}"
           echo "Create DB: $createDB"
 
-          dbAppUserName=`echo "${{ secrets.AZURE_API_APP_NAME }}" | tr '-' '_'`;
+          dbAppUserName=`echo "${{secrets.AZURE_API_APP_NAME}}" | tr '-' '_'`;
           echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
           echo "API App user name: $dbAppUserName"
 

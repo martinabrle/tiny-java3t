@@ -256,6 +256,7 @@ resource springAppsWebApp 'Microsoft.AppPlatform/Spring/apps@2022-05-01-preview'
 module springAppsApiConfig 'spring-apps-mi-api-service.bicep' = {
   name: 'deployment-spring-apps-mi-api-service'
   dependsOn: [
+    springAppsApiApp
     rbacKVSecretApiSpringDsURL
     rbacKVSecretApiSpringDsUserName
     rbacKVSecretApiAppClientId
@@ -278,6 +279,8 @@ module springAppsApiConfig 'spring-apps-mi-api-service.bicep' = {
 module springAppsWebConfig 'spring-apps-mi-web-service.bicep' = {
   name: 'deployment-spring-apps-mi-web-service'
   dependsOn: [
+    springAppsWebApp
+    springAppsApiConfig
     rbacKVSecretWebAppClientId
     rbacKVSecretWebApiURI
   ]
