@@ -70,12 +70,12 @@ resource aks 'Microsoft.ContainerService/managedClusters@2022-06-02-preview' = {
           rotationPollInterval: '2m'
         }
       }
-      // omsAgent: {
-      //   enabled: true
-      //   config: {
-      //     logAnalyticsWorkspaceResourceID: logAnalyticsWorkspace.id
-      //   }
-      // }
+      omsAgent: {
+        enabled: true
+        config: {
+          logAnalyticsWorkspaceResourceID: logAnalyticsWorkspace.id
+        }
+      }
     }
     nodeResourceGroup: nodeResoureGroup
   }
