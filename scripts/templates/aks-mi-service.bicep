@@ -47,8 +47,7 @@ resource aks 'Microsoft.ContainerService/managedClusters@2022-06-02-preview' = {
           '2'
           '3'
         ]
-        nodeTaints: []
-        enableNodePublicIP: true
+        enableNodePublicIP: false
         tags: tagsArray
       }
     ]
@@ -70,12 +69,12 @@ resource aks 'Microsoft.ContainerService/managedClusters@2022-06-02-preview' = {
           rotationPollInterval: '2m'
         }
       }
-      omsAgent: {
-        enabled: true
-        config: {
-          logAnalyticsWorkspaceResourceID: logAnalyticsWorkspace.id
-        }
-      }
+      // omsAgent: {
+      //   enabled: true
+      //   config: {
+      //     logAnalyticsWorkspaceResourceID: logAnalyticsWorkspace.id
+      //   }
+      // }
     }
     nodeResourceGroup: nodeResoureGroup
   }
