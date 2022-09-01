@@ -15,7 +15,7 @@ on:
 jobs:
   cleanup_if_requested:
     runs-on: ubuntu-latest
-    environment: AKA
+    environment: AKS
     steps:
       - name: Azure login
         if: github.event.inputs.run_cleanup == 'true'
