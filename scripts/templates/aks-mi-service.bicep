@@ -25,6 +25,7 @@ resource aks 'Microsoft.ContainerService/managedClusters@2022-06-02-preview' = {
     tier: 'Paid'
   }
   properties: {
+    dnsPrefix: 'maabaks'
     agentPoolProfiles: [
       {
         name: 'agentpool'
@@ -57,7 +58,7 @@ resource aks 'Microsoft.ContainerService/managedClusters@2022-06-02-preview' = {
     disableLocalAccounts: true
     aadProfile: {
       managed: true
-      adminGroupObjectIDs: [aksAdminGroupObjectId]
+      adminGroupObjectIDs: [ aksAdminGroupObjectId ]
       enableAzureRBAC: true
     }
     addonProfiles: {
