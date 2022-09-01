@@ -5,6 +5,7 @@ param aksClusterName string
 param aksAdminGroupObjectId string
 
 param nodeResoureGroup string = resourceGroup().name
+
 param location string = resourceGroup().location
 
 param tagsArray object = resourceGroup().tags

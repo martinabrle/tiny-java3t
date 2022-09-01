@@ -173,7 +173,7 @@ jobs:
                            logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}} \
                            aksClusterName=${{secrets.AZURE_AKS_NAME}} \
                            aksAdminGroupObjectId="${{steps.vars.outputs.AZURE_AKS_ADMIN_GROUP_ID}}" \
-                           nodeResourceGroup=${{secrets.AZURE_AKS_NODE_RESOURCE_GROUP}}
+                           nodeResoureGroup=${{secrets.AZURE_AKS_NODE_RESOURCE_GROUP}}
       
       # - name: debug
       #   run: |
@@ -223,9 +223,9 @@ jobs:
                            dbUserPassword=${{steps.vars.outputs.DB_APP_USER_PASSWORD}}@${{secrets.AZURE_DB_SERVER_NAME}} \
                            containerRegistryName=${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} \
                            aksClusterName=${{secrets.AZURE_AKS_NAME}} \
-                           aksAdminGroupObjectId=${{steps.vars.outputs.AZURE_AKS_ADMIN_GROUP_ID}}
+                           aksAdminGroupObjectId=${{steps.vars.outputs.AZURE_AKS_ADMIN_GROUP_ID}} \
                            deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
-                           nodeResourceGroup=${{secrets.AZURE_AKS_NODE_RESOURCE_GROUP}} \
+                           nodeResoureGroup=${{secrets.AZURE_AKS_NODE_RESOURCE_GROUP}} \
                            createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}}
 
           dbAppUserId=`az ad sp list --display-name ${{secrets.AZURE_AKS_NAME}} --query "[?displayName=='${{secrets.AZURE_AKS_NAME}}'].appId" --out tsv`
