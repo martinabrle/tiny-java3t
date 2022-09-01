@@ -1,0 +1,174 @@
+name: cicd-aks-api
+
+on:
+  #push:
+  #  branches:
+  #    - main
+  #  paths:
+  #    - 'todo/**'  
+  workflow_dispatch:
+    inputs:
+    
+jobs:  
+  build_app:
+    runs-on: ubuntu-latest
+    environment: CONTAINER-INSTANCE
+    defaults:
+      run:
+        working-directory: ./todo
+    outputs:
+      RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
+      RELEASE_NAME: ${{ steps.version.outputs.RELEASE_NAME }}
+      RELEASE_FILE_NAME: ${{ steps.version.outputs.RELEASE_FILE_NAME }}
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set default Azure subscription
+        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'microsoft'
+
+      # Review: Implement some more mature mono repo versioning 
+      - name: Figure out the version info
+        id: version
+        run: |
+          export repoList=`az acr repository list --name ${{ secrets.AZURE_CONTAINER_REGISTRY_NAME }} -o tsv`
+          export containerRegistryVersion="0.0.0"
+          if [[ -z "$repoList" ]]; then
+            export containerRegistryVersion="1.0.0"
+          else
+            az acr repository show-tags --name ${{ secrets.AZURE_CONTAINER_REGISTRY_NAME }} --repository "tiny-java" -o tsv >container_tags.txt
+            export containerRegistryVersion=`java ../scripts/JavaUtils.java -get_highest_semver_from_file ./container_tags.txt`
+          fi
+          export pomVersion=`java ../scripts/JavaUtils.java -get_pom_version ./pom.xml`
+          export higherVersion=`java ../scripts/JavaUtils.java -get_higher_semver ${pomVersion} ${containerRegistryVersion}`
+          export newVersion=`java ../scripts/JavaUtils.java -increase_semver ${higherVersion}`
+          export containerImageName="${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/tiny-java:${newVersion}"
+
+          echo "POM Version: ${pomVersion}"
+          echo "Container Registry Version: ${containerRegistryVersion}"
+          echo "Higher Version: ${higherVersion}"
+          echo "New Version: ${newVersion}"
+          echo "Container image name: ${containerImageName}"
+
+          echo "::set-output name=RELEASE_VERSION::${newVersion}"
+          echo "::set-output name=RELEASE_NAME::todo-${newVersion}"
+          echo "::set-output name=RELEASE_FILE_NAME::todo-${newVersion}.jar"
+          echo "::set-output name=CONTAINER_IMAGE_NAME::${containerImageName}"
+          
+
+          mv ./pom.xml ./pom.xml.bak
+          java ../scripts/JavaUtils.java -update_pom_version ./pom.xml.bak ${newVersion} ./pom.xml
+          export newVersionFromPOM=`java ../scripts/JavaUtils.java -increase_semver ${higherVersion}`
+          echo "Checking new POM.xml version: ${newVersionFromPOM}"
+          
+      - name: Display next version
+        run: |
+          echo "Version: ${{ steps.version.outputs.RELEASE_VERSION }}"
+          echo "Release name: ${{ steps.version.outputs.RELEASE_NAME }}"
+          echo "Release file name: ${{ steps.version.outputs.RELEASE_FILE_NAME }}"
+          echo "Container image name: ${{ steps.version.outputs.CONTAINER_IMAGE_NAME }}"
+
+      - name: Build and upload container
+        run: |
+          az acr build ./ -t "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/tiny-java:${{steps.version.outputs.RELEASE_VERSION}}" -r "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io" --build-arg VERSION=${{steps.version.outputs.RELEASE_VERSION}}
+  
+  deploy_app:
+    needs: [build_app]
+    runs-on: ubuntu-latest
+    environment: CONTAINER-INSTANCE
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set default Azure subscription
+        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+            
+      - name: Initialize deployment variables
+        id: vars
+        run: |
+          clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
+          echo "::set-output name=DEPLOYMENT_CLIENT_IP::${clientIP}"
+          echo "Client IP: ${clientIP}"
+
+          dbAppUserName=`echo "${{secrets.AZURE_CONTAINER_APP_NAME}}" | tr '-' '_'`;
+          echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
+          echo "App user name: $dbAppUserName"
+
+          if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
+            echo "Retrieve the db user password from container params"
+            dbAppUserPassword="`az container show -g "${{secrets.AZURE_RESOURCE_GROUP}}" --name ${{secrets.AZURE_CONTAINER_INSTANCE_NAME}}  --query "[containers[0].environmentVariables][0][?name=='SPRING_DATASOURCE_PASSWORD'].value" -o tsv`"
+            echo "App user password: $dbAppUserPassword"
+            echo "::add-mask::$dbAppUserPassword"
+            echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
+          
+          else
+            dbaGroupId=`az ad group show --group "All TEST PGSQL Admins" --query '[id]' -o tsv`
+            echo "DBA Group Id: $dbaGroupId"
+            echo "::set-output name=AZURE_DBA_GROUP_ID::${dbaGroupId}"
+            echo "::set-output name=DB_APP_USER_PASSWORD::not_used_with_managed_identities"
+          fi
+          
+
+          if [[ ! -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
+             echo "::set-output name=DB_AAD_INTEGRATION::true"
+          else
+            echo "::set-output name=DB_AAD_INTEGRATION::false"
+          fi
+
+          export containerImageName="${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/tiny-java:${{needs.build_app.outputs.RELEASE_VERSION}}"
+          echo "::set-output name=CONTAINER_IMAGE_NAME::${containerImageName}"
+          echo "Container image name: ${containerImageName}"          
+
+      - name: Deploy to Container Instance (AAD)
+        if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
+        run: |
+          az deployment group create \
+            --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} \
+            --template-file ./scripts/templates/container-instance-mi-redeploy.bicep \
+            --parameters location=${{secrets.AZURE_LOCATION}}  \
+                        keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
+                        appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
+                        dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
+                        dbName=${{secrets.AZURE_DB_NAME}} \
+                        dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                        containerInstanceName=${{secrets.AZURE_CONTAINER_INSTANCE_NAME}} \
+                        containerInstanceIdentityName="${{secrets.AZURE_CONTAINER_INSTANCE_NAME}}identity" \
+                        containerAppName=${{secrets.AZURE_CONTAINER_APP_NAME}} \
+                        containerAppPort=${{secrets.AZURE_APP_PORT}} \
+                        containerImageName=${{steps.vars.outputs.CONTAINER_IMAGE_NAME}}
+                        
+      - name: Deploy to Container Instance (NON AAD)
+        if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'false')
+        run: |
+          az deployment group create \
+            --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} \
+            --template-file ./scripts/templates/container-instance-classic-redeploy.bicep \
+            --parameters location=${{secrets.AZURE_LOCATION}}  \
+                         appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
+                         dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
+                         dbName=${{secrets.AZURE_DB_NAME}} \
+                         dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                         dbUserPassword=${{steps.vars.outputs.DB_APP_USER_PASSWORD}} \
+                         containerInstanceName=${{secrets.AZURE_CONTAINER_INSTANCE_NAME}} \
+                         containerAppName=${{secrets.AZURE_CONTAINER_APP_NAME}} \
+                         containerAppPort=${{secrets.AZURE_APP_PORT}} \
+                         containerImageName=${{steps.vars.outputs.CONTAINER_IMAGE_NAME}}
+           
+      - name: Run integration test(s)
+        run: |
+          echo "Run integration tests...."

@@ -151,7 +151,7 @@ jobs:
           echo "API App user name: $dbAppUserName"
 
           dbAppUserPassword=""
-           appSpringProfile="local"
+          appSpringProfile="local"
           if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
             echo "New API app user password generated"
             dbAppUserPassword="`openssl rand -hex 25`#@"
@@ -159,7 +159,7 @@ jobs:
             echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
             appSpringProfile="test"
           else
-            dbaGroupId=`az ad group show --group "All TEST PGSQL Admins" --query '[id]' -o tsv`
+            dbaGroupId=`az ad group show --group "${{secrets.AZURE_DBA_GROUP_NAME}}" --query '[id]' -o tsv`
             echo "DBA Group Id: $dbaGroupId"
             echo "::set-output name=AZURE_DBA_GROUP_ID::${dbaGroupId}"
             echo "::set-output name=DB_APP_USER_PASSWORD::not_used_with_managed_identities"

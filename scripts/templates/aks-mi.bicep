@@ -11,12 +11,11 @@ param dbAdminName string
 param dbAdminPassword string
 @secure()
 param dbUserName string
+@secure()
+param dbUserPassword string
 param containerRegistryName string
-param containerInstanceName string
-param containerInstanceIdentityName string
-param containerAppName string
-param containerAppPort string
-param containerImageName string
+param aksClusterName string
+param aksAdminGroupObjectId string
 param deploymentClientIPAddress string
 
 param location string = resourceGroup().location
@@ -116,12 +115,6 @@ resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@
   }
 }
 
-resource containerUserManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview' = {
-  name: containerInstanceIdentityName
-  location: location
-  tags: tagsArray
-}
-
 resource containerRegistry 'Microsoft.ContainerRegistry/registries@2022-02-01-preview' = {
   name: containerRegistryName
   location: location
@@ -140,14 +133,14 @@ module rbacContainerRegistryACRPull './components/role-assignment-container-regi
   params: {
     containerRegistryName: containerRegistryName
     roleDefinitionId: acrPullRole.id
-    principalId: containerUserManagedIdentity.properties.principalId
+    principalId: aksService.identity.principalId
     roleAssignmentNameGuid: guid(resourceGroup().id, containerRegistry.id, acrPullRole.id)
   }
 }
 
-//To use system assigned identities, containerInstance needs to exist before this template runs...
-resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2021-10-01' existing = {
-  name: containerInstanceName
+//To use system assigned identities, aksService needs to exist before this template runs...
+resource aksService 'Microsoft.ContainerService/managedClusters@2022-06-02-preview' existing = {
+  name: aksClusterName
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
@@ -175,7 +168,7 @@ resource kvDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-pre
   name: '${keyVaultName}-kv-logs'
   scope: keyVault
   dependsOn: [
-    containerInstanceConfig
+    aksServiceConfiguration //this would otherwise occasionally fail if not deployed as last
   ]
   properties: {
     logs: [
@@ -211,7 +204,7 @@ resource kvSecretAppClientId 'Microsoft.KeyVault/vaults/secrets@2021-11-01-previ
   parent: keyVault
   name: 'SPRING-DATASOURCE-APP-CLIENT-ID'
   properties: {
-    value: containerInstance.identity.principalId
+    value: aksService.identity.principalId
     contentType: 'string'
   }
 }
@@ -225,53 +218,36 @@ resource kvSecretDbUserName 'Microsoft.KeyVault/vaults/secrets@2021-11-01-previe
   }
 }
 
-module rbacKVSpringDataSourceURL './components/role-assignment-kv-secret.bicep' = {
-  name: 'deployment-rbac-kv-secret-app-spring-datasource-url'
-  params: {
-    roleDefinitionId: keyVaultSecretsUser.id
-    principalId: containerInstance.identity.principalId
-    roleAssignmentNameGuid: guid(containerInstance.id, kvSecretSpringDataSourceURL.id, keyVaultSecretsUser.id)
-    kvName: keyVault.name
-    kvSecretName: kvSecretSpringDataSourceURL.name
+resource kvSecretDbUserPassword 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+  parent: keyVault
+  name: 'SPRING-DATASOURCE-PASSWORD'
+  properties: {
+    value: dbUserPassword
+    contentType: 'string'
   }
 }
 
-module rbacKVSecretAppClientId './components/role-assignment-kv-secret.bicep' = {
-  name: 'deployment-rbac-kv-secret-app-client-id'
-  params: {
-    roleDefinitionId: keyVaultSecretsUser.id
-    principalId: containerInstance.identity.principalId
-    roleAssignmentNameGuid: guid(containerInstance.id, kvSecretAppClientId.id, keyVaultSecretsUser.id)
-    kvName: keyVault.name
-    kvSecretName: kvSecretAppClientId.name
-  }
+module rbacKV './components/role-assignment-kv.bicep' = {
+   name: 'rbac-kv-aks-service'
+    params: {
+      kvName: keyVault.name
+      roleAssignmentNameGuid: guid(aksService.id, keyVault.id, keyVaultSecretsUser.id)
+      roleDefinitionId: keyVaultSecretsUser.id
+      principalId: aksService.identity.principalId
+    }
 }
 
-module rbacKVSecretDbUserName './components/role-assignment-kv-secret.bicep' = {
-  name: 'deployment-rbac-kv-secret-db-user-name'
+module aksServiceConfiguration 'aks-mi-service.bicep' = {
+  name: 'aks-mi-service'
+  dependsOn: [
+    rbacContainerRegistryACRPull
+    rbacKV
+  ]
   params: {
-    roleDefinitionId: keyVaultSecretsUser.id
-    principalId: containerInstance.identity.principalId
-    roleAssignmentNameGuid: guid(containerInstance.id, kvSecretDbUserName.id, keyVaultSecretsUser.id)
-    kvName: keyVault.name
-    kvSecretName: kvSecretDbUserName.name
-  }
-}
-
-module containerInstanceConfig 'container-instance-mi-service.bicep' = {
-  name: 'deployment-container-instance-core'
-  params: {
-    containerInstanceName: containerInstanceName
-    appClientId: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppClientId.name})'
-    containerAppName: containerAppName
-    containerImage: containerImageName
-    containerInstanceIdentityName: containerUserManagedIdentity.name
-    appInsightsConnectionString: appInsights.properties.ConnectionString
-    appInsightsInstrumentationKey: appInsights.properties.InstrumentationKey
-    springDatasourceUrl: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDataSourceURL.name})'
-    springDatasourceUserName: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbUserName.name})'
-    springDatasourceShowSql: 'true'
-    containerAppPort: containerAppPort
+    aksClusterName: aksClusterName
+    aksAdminGroupObjectId: aksAdminGroupObjectId
+    logAnalyticsWorkspaceName: logAnalyticsWorkspaceName
+    logAnalyticsWorkspaceRG: logAnalyticsWorkspaceRG
     location: location
     tagsArray: tagsArray
   }
