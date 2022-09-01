@@ -109,11 +109,6 @@ jobs:
           az deployment sub create \
            --location ${{secrets.AZURE_LOCATION}} \
            --template-file ./templates/components/rg.bicep \
-           --parameters name=${{secrets.AZURE_AKS_NODE_RESOURCE_GROUP}} location=${{secrets.AZURE_LOCATION}} resourceTags="${{secrets.AZURE_RESOURCE_TAGS}}"
-          
-          az deployment sub create \
-           --location ${{secrets.AZURE_LOCATION}} \
-           --template-file ./templates/components/rg.bicep \
            --parameters name=${{secrets.AZURE_RESOURCE_GROUP}} location=${{secrets.AZURE_LOCATION}} resourceTags="${{secrets.AZURE_RESOURCE_TAGS}}"
 
       - name: Initialize deployment variables
