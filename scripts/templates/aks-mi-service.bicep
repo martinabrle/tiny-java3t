@@ -51,10 +51,11 @@ resource aks 'Microsoft.ContainerService/managedClusters@2022-06-02-preview' = {
         tags: tagsArray
       }
     ]
-    // networkProfile: {
-    //   loadBalancerSku: 'standard'
-    //   networkPlugin: 'kubenet'
-    // }
+    networkProfile: {
+      //loadBalancerSku: 'standard'
+      networkPlugin: 'kubenet'
+
+    }
     disableLocalAccounts: true
     aadProfile: {
       managed: true
