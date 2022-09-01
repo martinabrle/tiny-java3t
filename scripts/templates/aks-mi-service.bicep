@@ -4,6 +4,7 @@ param logAnalyticsWorkspaceRG string
 param aksClusterName string
 param aksAdminGroupObjectId string
 
+param nodeResoureGroup string = resourceGroup().name
 param location string = resourceGroup().location
 
 param tagsArray object = resourceGroup().tags
@@ -76,5 +77,6 @@ resource aks 'Microsoft.ContainerService/managedClusters@2022-06-02-preview' = {
         }
       }
     }
+    nodeResourceGroup: nodeResoureGroup
   }
 }
