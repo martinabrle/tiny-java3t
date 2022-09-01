@@ -73,7 +73,7 @@ resource aks 'Microsoft.ContainerService/managedClusters@2022-06-02-preview' = {
       omsAgent: {
         enabled: true
         config: {
-          logAnalyticsWorkspaceResourceID: logAnalyticsWorkspace.id
+          logAnalyticsWorkspaceResourceID: logAnalyticsWorkspace.id 
         }
       }
     }
