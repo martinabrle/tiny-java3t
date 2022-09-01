@@ -6,7 +6,7 @@ on:
   #    - main
   #  paths:
   #    - 'api/**'
-  # example tags: { "CostCenter": "DEV", "Department": "RESEARCH", "DeleteNightly": "true", "DeleteWeekly": "true" }
+  # example tags: { 'CostCenter': 'DEV', 'Department': 'RESEARCH', 'DeleteNightly': 'true', 'DeleteWeekly': 'true' }
   workflow_dispatch:
     inputs:
       run_cleanup:
