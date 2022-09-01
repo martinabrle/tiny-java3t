@@ -52,7 +52,7 @@ resource aks 'Microsoft.ContainerService/managedClusters@2022-06-02-preview' = {
       }
     ]
     networkProfile: {
-      //loadBalancerSku: 'standard'
+      loadBalancerSku: 'standard'
       networkPlugin: 'kubenet'
 
     }
