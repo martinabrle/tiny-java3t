@@ -172,7 +172,7 @@ jobs:
                            logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} \
                            logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}} \
                            aksClusterName=${{secrets.AZURE_AKS_NAME}} \
-                           aksAdminGroupObjectId="${{secrets.AZURE_AKS_ADMIN_GROUP_ID}}"
+                           aksAdminGroupObjectId="${{steps.vars.outputs.AZURE_AKS_ADMIN_GROUP_ID}}"
       
       # - name: debug
       #   run: |
