@@ -154,13 +154,13 @@ jobs:
           echo "AKS Admin Group Id: $aksAdminGroupId"
           echo "::set-output name=AZURE_AKS_ADMIN_GROUP_ID::${aksAdminGroupId}"
           
-          aksName=`az aks list -g mabr-tiny-java3t-aks_rg --query "[?name=='mabr-tiny3t-java-aks'].name"`
+          aksName=`az aks list -g ${{secrets.AZURE_RESOURCE_GROUP}} --query "[?name=='${{secrets.AZURE_AKS_NAME}}'].name"`
           if [[ -z "$aksName" ]]; then
+            echo "This is an initial  deployment, no AKS cluster exists yet"
             echo "::set-output name=FIRST_DEPLOYMENT::true"
           else
             echo "::set-output name=FIRST_DEPLOYMENT::false"
           fi
-
 
       - name: Initial deployment to keep SystemAssignedIdentity fairies happy
         id: initial_deployment
