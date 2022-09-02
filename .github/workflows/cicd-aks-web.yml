@@ -43,7 +43,7 @@ jobs:
         id: version
         run: |
           containerRegistryVersion="1.0.0"
-          containerRegistryList=`az acr list -g ${{secrets.AZURE_RESOURCE_GROUP}} --query "[?name=='${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}'][].name" -o tsv | grep "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}"`
+          containerRegistryList=`az acr list -g ${{secrets.AZURE_RESOURCE_GROUP}} --query "[?name=='${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}'][].name" -o tsv | grep "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}"`
           if [[ ! -z "$containerRegistryList" ]]; then
             registryName=`az acr repository list --name "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}" -o tsv | grep "${{secrets.AZURE_WEB_APP_NAME}}"`
             echo "RegistryName": '$registryName'"
