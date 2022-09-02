@@ -42,13 +42,17 @@ jobs:
       - name: Figure out the version info
         id: version
         run: |
-          export repoList=`az acr repository list --name ${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} -o tsv`
-          export containerRegistryVersion="0.0.0"
-          if [[ -z "$repoList" ]]; then
-            export containerRegistryVersion="1.0.0"
-          else
-            az acr repository show-tags --name ${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} --repository "${{secrets.AZURE_WEB_APP_NAME}}" -o tsv >container_tags.txt
-            export containerRegistryVersion=`java ../scripts/JavaUtils.java -get_highest_semver_from_file ./container_tags.txt`
+          containerRegistryVersion="1.0.0"
+          containerRegistryList=`az acr list -g ${{secrets.AZURE_RESOURCE_GROUP}} --query "[?name=='${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}'][].name" -o tsv`
+          if [[ ! -z "$containerRegistryList" ]]; then
+            registryName=`az acr repository list --name ${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} --query "[]" -o tsv |grep '${{secrets.AZURE_WEB_APP_NAME}}'`
+            if [[ ! -z "$registryName" ]]; then
+              az acr repository show-tags --name ${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} --repository "${{secrets.AZURE_WEB_APP_NAME}}" -o tsv >container_tags.txt
+              containerRegistryVersion=`java ../scripts/JavaUtils.java -get_highest_semver_from_file ./container_tags.txt`
+            fi
+          fi
+          if [[ -z "$containerRegistryVersion" ]]; then
+            containerRegistryVersion="1.0.0"
           fi
           export pomVersion=`java ../scripts/JavaUtils.java -get_pom_version ./pom.xml`
           export higherVersion=`java ../scripts/JavaUtils.java -get_higher_semver ${pomVersion} ${containerRegistryVersion}`
@@ -82,7 +86,9 @@ jobs:
       - name: Build and upload container
         run: |
           az acr build ./ -t "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/${{secrets.AZURE_WEB_APP_NAME}}:${{steps.version.outputs.RELEASE_VERSION}}" -r "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io" --build-arg VERSION=${{steps.version.outputs.RELEASE_VERSION}}
-  
+          az acr build ./ -t "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/${{secrets.AZURE_API_APP_NAME}}:${{steps.version.outputs.RELEASE_VERSION}}" -r "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io" --build-arg VERSION=${{steps.version.outputs.RELEASE_VERSION}}
+
+
   deploy_app:
     needs: [build_app]
     runs-on: ubuntu-latest
