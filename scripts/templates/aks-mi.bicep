@@ -2,6 +2,7 @@ param logAnalyticsWorkspaceName string
 param logAnalyticsWorkspaceRG string
 param appInsightsName string
 param keyVaultName string
+param keyVaultAccessIndentityName string
 param dbServerName string
 param dbName string
 param createDB bool
@@ -134,8 +135,8 @@ module rbacContainerRegistryACRPull './components/role-assignment-container-regi
   params: {
     containerRegistryName: containerRegistryName
     roleDefinitionId: acrPullRole.id
-    principalId: aksService.identity.principalId
-    roleAssignmentNameGuid: guid(resourceGroup().id, containerRegistry.id, acrPullRole.id)
+    principalId: aksService.properties.identityProfile.kubeletidentity.objectId
+    roleAssignmentNameGuid: guid(aksService.properties.identityProfile.kubeletidentity.objectId, containerRegistry.id, acrPullRole.id)
   }
 }
 
@@ -143,6 +144,10 @@ module rbacContainerRegistryACRPull './components/role-assignment-container-regi
 resource aksService 'Microsoft.ContainerService/managedClusters@2022-06-02-preview' existing = {
   name: aksClusterName
 }
+
+// resource keyVaultAccessIndentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview' existing = {
+//   name: keyVaultAccessIndentityName
+// }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
   name: keyVaultName
@@ -232,9 +237,11 @@ module rbacKV './components/role-assignment-kv.bicep' = {
    name: 'rbac-kv-aks-service'
     params: {
       kvName: keyVault.name
-      roleAssignmentNameGuid: guid(aksService.id, keyVault.id, keyVaultSecretsUser.id)
+      roleAssignmentNameGuid: guid(aksService.properties.addonProfiles.azureKeyvaultSecretsProvider.identity.clientId, keyVault.id, keyVaultSecretsUser.id)
       roleDefinitionId: keyVaultSecretsUser.id
-      principalId: aksService.identity.principalId
+      principalId: aksService.properties.addonProfiles.azureKeyvaultSecretsProvider.identity.clientId
+      //aksService.properties.identityProfile.kubeletidentity.objectId
+      //keyVaultAccessIndentity.properties.principalId
     }
 }
 

@@ -154,10 +154,17 @@ jobs:
           echo "AKS Admin Group Id: $aksAdminGroupId"
           echo "::set-output name=AZURE_AKS_ADMIN_GROUP_ID::${aksAdminGroupId}"
           
+          aksName=`az aks list -g mabr-tiny-java3t-aks_rg --query "[?name=='mabr-tiny3t-java-aks'].name"`
+          if [[ -z "$aksName" ]]; then
+            echo "::set-output name=FIRST_DEPLOYMENT::true"
+          else
+            echo "::set-output name=FIRST_DEPLOYMENT::false"
+          fi
+
 
       - name: Initial deployment to keep SystemAssignedIdentity fairies happy
         id: initial_deployment
-        #if: (steps.vars.outputs.FIRST_DEPLOYMENT == 'true')
+        if: (steps.vars.outputs.FIRST_DEPLOYMENT == 'true')
         run: |
           echo "Deploying with the following parameters:"
           echo "Log analytics workspace RG: '${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} '"
@@ -200,11 +207,14 @@ jobs:
       - name: Deploy Azure resources
         id: deployment_aad
         run: |
+          kvAccessIdentityName=`az identity list -g ${{secrets.AZURE_AKS_NODE_RESOURCE_GROUP}} --query "[?contains(name, 'keyvaultsecrets')].name" -o tsv`
+
           echo "Deploying with the following parameters:"
           echo "Admin name: '${{steps.vars.outputs.DB_ADMIN_NAME}}'"
           echo "Admin password: '${{steps.vars.outputs.DB_ADMIN_PASSWORD}}'"
           echo "App user name: '${{steps.vars.outputs.DB_APP_USER_NAME}}'"
           echo "App user password: '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}'"
+          echo "KV access identity: '${kvAccessIdentityName}'"
           echo "Client IP: ${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}"
 
           az deployment group create \
@@ -214,6 +224,7 @@ jobs:
                            logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
                            logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}}  \
                            keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
+                           keyVaultAccessIndentityName=${kvAccessIdentityName} \
                            appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
                            dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
                            dbName=${{secrets.AZURE_DB_NAME}} \
