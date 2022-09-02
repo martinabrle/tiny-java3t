@@ -1,11 +1,11 @@
-name: cicd-aks-api
+name: cicd-aks-web
 
 on:
   #push:
   #  branches:
   #    - main
   #  paths:
-  #    - 'todoapi/**'  
+  #    - 'todoweb/**'  
   workflow_dispatch:
     inputs:
     
@@ -15,7 +15,7 @@ jobs:
     environment: AKS
     defaults:
       run:
-        working-directory: ./todoapi
+        working-directory: ./todoweb
     outputs:
       RELEASE_VERSION: ${{steps.version.outputs.RELEASE_VERSION}}
       RELEASE_NAME: ${{steps.version.outputs.RELEASE_NAME}}
@@ -47,13 +47,13 @@ jobs:
           if [[ -z "$repoList" ]]; then
             export containerRegistryVersion="1.0.0"
           else
-            az acr repository show-tags --name ${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} --repository "${{secrets.AZURE_API_APP_NAME}}" -o tsv >container_tags.txt
+            az acr repository show-tags --name ${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} --repository "${{secrets.AZURE_WEB_APP_NAME}}" -o tsv >container_tags.txt
             export containerRegistryVersion=`java ../scripts/JavaUtils.java -get_highest_semver_from_file ./container_tags.txt`
           fi
           export pomVersion=`java ../scripts/JavaUtils.java -get_pom_version ./pom.xml`
           export higherVersion=`java ../scripts/JavaUtils.java -get_higher_semver ${pomVersion} ${containerRegistryVersion}`
           export newVersion=`java ../scripts/JavaUtils.java -increase_semver ${higherVersion}`
-          export containerImageName="${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/${{secrets.AZURE_API_APP_NAME}}:${newVersion}"
+          export containerImageName="${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/${{secrets.AZURE_WEB_APP_NAME}}:${newVersion}"
 
           echo "POM Version: ${pomVersion}"
           echo "Container Registry Version: ${containerRegistryVersion}"
@@ -62,8 +62,8 @@ jobs:
           echo "Container image name: ${containerImageName}"
 
           echo "::set-output name=RELEASE_VERSION::${newVersion}"
-          echo "::set-output name=RELEASE_NAME::${{secrets.AZURE_API_APP_NAME}}-${newVersion}"
-          echo "::set-output name=RELEASE_FILE_NAME::${{secrets.AZURE_API_APP_NAME}}-${newVersion}.jar"
+          echo "::set-output name=RELEASE_NAME::${{secrets.AZURE_WEB_APP_NAME}}-${newVersion}"
+          echo "::set-output name=RELEASE_FILE_NAME::${{secrets.AZURE_WEB_APP_NAME}}-${newVersion}.jar"
           echo "::set-output name=CONTAINER_IMAGE_NAME::${containerImageName}"
           
 
@@ -81,7 +81,7 @@ jobs:
 
       - name: Build and upload container
         run: |
-          az acr build ./ -t "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/${{secrets.AZURE_API_APP_NAME}}:${{steps.version.outputs.RELEASE_VERSION}}" -r "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io" --build-arg VERSION=${{steps.version.outputs.RELEASE_VERSION}}
+          az acr build ./ -t "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/${{secrets.AZURE_WEB_APP_NAME}}:${{steps.version.outputs.RELEASE_VERSION}}" -r "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io" --build-arg VERSION=${{steps.version.outputs.RELEASE_VERSION}}
   
   deploy_app:
     needs: [build_app]
@@ -130,7 +130,7 @@ jobs:
       #       echo "::set-output name=DB_AAD_INTEGRATION::false"
       #     fi
 
-      #     export containerImageName="${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/${{secrets.AZURE_API_APP_NAME}}:${{needs.build_app.outputs.RELEASE_VERSION}}"
+      #     export containerImageName="${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/${{secrets.AZURE_WEB_APP_NAME}}:${{needs.build_app.outputs.RELEASE_VERSION}}"
       #     echo "::set-output name=CONTAINER_IMAGE_NAME::${containerImageName}"
       #     echo "Container image name: ${containerImageName}"          
 
