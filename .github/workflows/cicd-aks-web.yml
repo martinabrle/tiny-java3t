@@ -43,12 +43,13 @@ jobs:
         id: version
         run: |
           containerRegistryVersion="1.0.0"
-          containerRegistryList=`az acr list -g ${{secrets.AZURE_RESOURCE_GROUP}} --query "[?name=='${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}'][].name" -o tsv`
+          containerRegistryList=`az acr list -g ${{secrets.AZURE_RESOURCE_GROUP}} --query "[?name=='${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}'][].name" -o tsv | grep "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}"`
           if [[ ! -z "$containerRegistryList" ]]; then
-            registryName=`az acr repository list --name ${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} --query "[]" -o tsv |grep '${{secrets.AZURE_WEB_APP_NAME}}'`
+            registryName=`az acr repository list --name "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}" -o tsv | grep "${{secrets.AZURE_WEB_APP_NAME}}"`
             if [[ ! -z "$registryName" ]]; then
-              az acr repository show-tags --name ${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} --repository "${{secrets.AZURE_WEB_APP_NAME}}" -o tsv >container_tags.txt
+              az acr repository show-tags --name "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}" --repository "${{secrets.AZURE_WEB_APP_NAME}}" -o tsv >container_tags.txt
               containerRegistryVersion=`java ../scripts/JavaUtils.java -get_highest_semver_from_file ./container_tags.txt`
+              echo "Retrieved the last container version: $containerRegistryVersion"
             fi
           fi
           if [[ -z "$containerRegistryVersion" ]]; then
