@@ -254,7 +254,7 @@ jobs:
           psql "${dbConnectionString}" --file=./db.sql
         
       - name: Set-up classic DB User(s)
-        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
+        #if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
         run: |
           dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
           
