@@ -150,29 +150,20 @@ jobs:
           echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
           echo "API App user name: $dbAppUserName"
 
-          dbAppUserPassword=""
-          appSpringProfile="local"
           if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
             echo "New API app user password generated"
             dbAppUserPassword="`openssl rand -hex 25`#@"
             echo "::add-mask::$dbAppUserPassword"
             echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
-            appSpringProfile="test"
+            echo "::set-output name=DB_AAD_INTEGRATION::false"
+            echo "::set-output name=APP_SPRING_PROFILE::test"
           else
             dbaGroupId=`az ad group show --group "${{secrets.AZURE_DBA_GROUP_NAME}}" --query '[id]' -o tsv`
             echo "DBA Group Id: $dbaGroupId"
             echo "::set-output name=AZURE_DBA_GROUP_ID::${dbaGroupId}"
             echo "::set-output name=DB_APP_USER_PASSWORD::not_used_with_managed_identities"
-            appSpringProfile="test-mi"
-          fi
-
-          echo "::set-output name=APP_SPRING_PROFILE::$appSpringProfile"
-          echo "App Spring profile: $appSpringProfile"
-
-          if [[ ! -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
-             echo "::set-output name=DB_AAD_INTEGRATION::true"
-          else
-            echo "::set-output name=DB_AAD_INTEGRATION::false"
+            echo "::set-output name=DB_AAD_INTEGRATION::true"
+            echo "::set-output name=APP_SPRING_PROFILE::test-mi"
           fi
 
           dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_API_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_API_APP_NAME}}'].appId" --out tsv`
