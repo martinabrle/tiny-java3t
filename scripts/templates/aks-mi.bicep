@@ -239,7 +239,8 @@ module rbacKV './components/role-assignment-kv.bicep' = {
       kvName: keyVault.name
       roleAssignmentNameGuid: guid(aksService.properties.addonProfiles.azureKeyvaultSecretsProvider.identity.clientId, keyVault.id, keyVaultSecretsUser.id)
       roleDefinitionId: keyVaultSecretsUser.id
-      principalId: aksService.properties.addonProfiles.azureKeyvaultSecretsProvider.identity.clientId
+      principalId: aksService.properties.addonProfiles.azureKeyvaultSecretsProvider.identity.objectId
+      //clientId
       //aksService.properties.identityProfile.kubeletidentity.objectId
       //keyVaultAccessIndentity.properties.principalId
     }
