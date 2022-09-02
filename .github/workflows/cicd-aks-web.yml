@@ -48,7 +48,7 @@ jobs:
           az acr repository list --name "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}" -o tsv
 
           containerRegistryVersion="1.0.0"
-          containerRegistryList=`az acr list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[?name=='${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}'][].name" -o tsv`
+          containerRegistryList=`az acr list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[?name=='${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}'].name" -o tsv`
           if [[ ! -z "$containerRegistryList" ]]; then
             repositoryNames=`az acr repository list --name "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}" -o tsv`
             echo "RepositoryName: '$repositoryNames'"
