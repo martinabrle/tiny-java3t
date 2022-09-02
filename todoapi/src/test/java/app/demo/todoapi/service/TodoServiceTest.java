@@ -15,7 +15,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import app.demo.todoapi.DatabaseLoader;
 import app.demo.todoapi.dto.Todo;
 import app.demo.todoapi.repository.TodoRepository;
-import app.demo.todoapi.service.TodoService;
 import app.demo.todoapi.utils.AppLogger;
 
 @SpringBootTest
