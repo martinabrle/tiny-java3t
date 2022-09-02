@@ -154,7 +154,7 @@ jobs:
           echo "AKS Admin Group Id: $aksAdminGroupId"
           echo "::set-output name=AZURE_AKS_ADMIN_GROUP_ID::${aksAdminGroupId}"
           
-          aksName=`az aks list -g ${{secrets.AZURE_RESOURCE_GROUP}} --query "[?name=='${{secrets.AZURE_AKS_NAME}}'].name" -o tsv"`
+          aksName=`az aks list -g ${{secrets.AZURE_RESOURCE_GROUP}} --query "[?name=='${{secrets.AZURE_AKS_NAME}}'].name" -o tsv`
           if [[ -z "${aksName}" ]]; then
             echo "This is an initial  deployment, no AKS cluster exists yet"
             echo "::set-output name=FIRST_DEPLOYMENT::true"
@@ -169,8 +169,8 @@ jobs:
           echo "Deploying with the following parameters:"
           echo "Log analytics workspace RG: '${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}}'"
           echo "Log analytics workspace name: '${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}'"
-          echo "AKS Cluster name: ${{secrets.AZURE_AKS_NAME}}"
-          echo "Admin group ID: ${{steps.vars.outputs.AZURE_AKS_ADMIN_GROUP_ID}}"
+          echo "AKS Cluster name: '${{secrets.AZURE_AKS_NAME}}'"
+          echo "Admin group ID: '${{steps.vars.outputs.AZURE_AKS_ADMIN_GROUP_ID}}'"
 
           az deployment group create \
               --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} \
