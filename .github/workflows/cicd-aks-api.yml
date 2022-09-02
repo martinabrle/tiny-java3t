@@ -12,10 +12,10 @@ on:
 jobs:  
   build_app:
     runs-on: ubuntu-latest
-    environment: CONTAINER-INSTANCE
+    environment: AKS
     defaults:
       run:
-        working-directory: ./todo
+        working-directory: ./todoapi
     outputs:
       RELEASE_VERSION: ${{steps.version.outputs.RELEASE_VERSION}}
       RELEASE_NAME: ${{steps.version.outputs.RELEASE_NAME}}
@@ -86,7 +86,7 @@ jobs:
   deploy_app:
     needs: [build_app]
     runs-on: ubuntu-latest
-    environment: CONTAINER-INSTANCE
+    environment: AKS
     steps:
       - uses: actions/checkout@v3
       
