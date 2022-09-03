@@ -61,4 +61,30 @@ public class AppConfig {
     public void setTodoApiUri(String todoApiUri) {
         this.todoApiUri = todoApiUri;
     }
+
+    public String getVersion() {
+        String version = "Unknown";
+        try {
+            version = this.getClass().getPackage().getImplementationVersion();
+        } catch (Exception ignoreException) {
+            LOGGER.error("An error has occurred while trying to retrieve the package version.");
+        }
+        return version;
+    }
+
+    public String getApiVersion() {
+        String version = "Unknown";
+        try {
+            version = this.getClass().getPackage().getImplementationVersion();
+        } catch (Exception ignoreException) {
+            LOGGER.error("An error has occurred while trying to retrieve the package version.");
+        }
+        return version;
+    }
+
+    public String getEnvironment() {
+        String environment = "Unknown";
+        return environment;
+    }
+
 }

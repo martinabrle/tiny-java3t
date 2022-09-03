@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Demo Java API site" />
+    <title>Demo Java site</title>
+  </head>
+  <body>
+    <h1>Demo Java Site</h1>
+    <h3>Version: <span th:text="${version}">VERSION_STRING</span></h3>
+    <h3>API Version: <span th:text="${apiVersion}">API_VERSION_STRING</span></h3>
+    <h3>Environment: <span th:text="${environment}">ENVIRONMENT_STRING</span></h3>
+    <ul>
+      <li><a href="/v3/api-docs/">OpenAPI documentation</a></li>
+      <li><a href="/swagger-ui.html">Swagger UI</a></li>
+    </ul>
+  </body>
+</html>
