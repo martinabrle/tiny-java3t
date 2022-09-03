@@ -22,7 +22,7 @@ on:
 
 jobs:
   analyze-api:
-    name: Analyze
+    name: Analyze API
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -75,7 +75,7 @@ jobs:
       uses: github/codeql-action/analyze@v2
 
   analyze-web:
-    name: Analyze
+    name: Analyze WEB
     runs-on: ubuntu-latest
     permissions:
       actions: read
