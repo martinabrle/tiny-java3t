@@ -259,7 +259,7 @@ public class TodoRepository {
 
         try {
 
-            String apiUri = appConfig.getTodoApiUri("/version");
+            String apiUri = appConfig.getApiVersion();
 
             WebClient webClient = WebClient.create(apiUri);
 

@@ -38,15 +38,13 @@ public class AppConfig {
         if (path == null) {
             return todoApiUri;
         }
-        
+
         if (todoApiUri == null) {
             return path;
         }
 
-        if (!todoApiUri.endsWith("/"))
-        {
-            if (path.startsWith("/"))
-            {
+        if (!todoApiUri.endsWith("/")) {
+            if (path.startsWith("/")) {
                 return todoApiUri + path;
             }
             return todoApiUri + "/" + path;
@@ -56,6 +54,19 @@ public class AppConfig {
             return todoApiUri + path.substring(1);
         }
         return todoApiUri + path;
+    }
+
+    public String getVersionUri() {
+        String apiUri = this.getTodoApiUri();
+        if (apiUri.endsWith("/")) {
+            apiUri = apiUri.substring(0, apiUri.length());
+        }
+        if (apiUri.endsWith("todos")) {
+            apiUri = apiUri.substring(0, apiUri.length() - "todos".length());
+        }
+        apiUri += "/version";
+        return apiUri;
+
     }
 
     public void setTodoApiUri(String todoApiUri) {
