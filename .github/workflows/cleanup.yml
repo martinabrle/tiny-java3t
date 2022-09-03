@@ -86,9 +86,9 @@ jobs:
             az keyvault purge -l ${{secrets.AZURE_LOCATION}} -n ${{secrets.AZURE_KEY_VAULT_NAME}}
           fi
   
-  cleanup_container_instance:
+  cleanup_aks:
     runs-on: ubuntu-latest
-    environment: CONTAINER-INSTANCE
+    environment: AKS
     steps:
       - name: Azure login
         uses: azure/login@v1
@@ -98,11 +98,19 @@ jobs:
       - name: Set default Azure subscription
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
-      - name: Remove the resource group
+      - name: Remove the node resource group
+        run: |
+          RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_AKS_NODE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
+          if [[ "$RG_EXISTS" -eq true ]]; then
+             echo "Deleting the Todo App app AKS NODES resource group"
+             az group delete --resource-group ${{ secrets.AZURE_AKS_NODE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
+          fi
+
+      - name: Remove the main resource group
         run: |
           RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
           if [[ "$RG_EXISTS" -eq true ]]; then
-             echo "Deleting the Todo App app resource group"
+             echo "Deleting the Todo App app AKS resource group"
              az group delete --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
           fi
 

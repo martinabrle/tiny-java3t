@@ -42,6 +42,27 @@ jobs:
       - name: Figure out the version info
         id: version
         run: |
+          echo "ACR list:"
+          az acr list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[?name=='${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}'][].name" -o tsv
+
+          containerRegistryVersion="1.0.0"
+          containerRegistryList=`az acr list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[?name=='${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}'].name" -o tsv`
+          if [[ ! -z "$containerRegistryList" ]]; then
+            repositoryNames=`az acr repository list --name "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}" -o tsv`
+            echo "RepositoryName: '$repositoryNames'"
+            if [[ "$repositoryNames" == *"${{secrets.AZURE_API_APP_NAME}}"*  ]]; then
+              az acr repository show-tags --name "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}" --repository "${{secrets.AZURE_API_APP_NAME}}" -o tsv >container_tags.txt
+              containerRegistryVersion=`java ../scripts/JavaUtils.java -get_highest_semver_from_file ./container_tags.txt`
+              echo "Retrieved the last container version: $containerRegistryVersion"
+            else
+              echo "Repository '${{secrets.AZURE_API_APP_NAME}}' does not exist yet"
+            fi
+          fi
+          
+          if [[ -z "$containerRegistryVersion" ]]; then
+            containerRegistryVersion="1.0.0"
+          fi
+
           export repoList=`az acr repository list --name ${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} -o tsv`
           export containerRegistryVersion="0.0.0"
           if [[ -z "$repoList" ]]; then
