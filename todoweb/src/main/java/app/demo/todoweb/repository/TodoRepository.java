@@ -259,7 +259,7 @@ public class TodoRepository {
 
         try {
 
-            String apiUri = appConfig.getApiVersion();
+            String apiUri = appConfig.getApiVersionUri();
 
             WebClient webClient = WebClient.create(apiUri);
 
@@ -271,7 +271,7 @@ public class TodoRepository {
 
             retVal = getVersionResponse.getBody();
 
-            LOGGER.debug("Received back this version as a response...", retVal);
+            LOGGER.debug(String.format("Received back this version as a response: %s", retVal));
         } catch (Exception ex) {
             LOGGER.error(String.format("Retrieving the API version failed: %s", ex.getMessage()), ex);
             retVal = "unknown";

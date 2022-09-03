@@ -56,7 +56,7 @@ public class AppConfig {
         return todoApiUri + path;
     }
 
-    public String getVersionUri() {
+    public String getApiVersionUri() {
         String apiUri = this.getTodoApiUri();
         if (apiUri.endsWith("/")) {
             apiUri = apiUri.substring(0, apiUri.length());
