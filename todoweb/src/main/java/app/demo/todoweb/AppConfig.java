@@ -58,13 +58,14 @@ public class AppConfig {
 
     public String getApiVersionUri() {
         String apiUri = this.getTodoApiUri();
-        if (apiUri.endsWith("/")) {
-            apiUri = apiUri.substring(0, apiUri.length());
+
+        if (apiUri.endsWith("todos/")) {
+            apiUri = apiUri.substring(0, apiUri.length() - "todos/".length());
         }
-        if (apiUri.endsWith("todos")) {
+        else if (apiUri.endsWith("todos")) {
             apiUri = apiUri.substring(0, apiUri.length() - "todos".length());
         }
-        apiUri += "/version";
+        apiUri += "version";
         return apiUri;
 
     }
