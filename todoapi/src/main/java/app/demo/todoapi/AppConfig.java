@@ -62,4 +62,19 @@ public class AppConfig {
     public boolean getDebugAuthToken() {
         return debugAuthToken != null && debugAuthToken.toLowerCase().trim().equals("true");
     }
+
+    public String getVersion() {
+        String version = "Unknown";
+        try {
+            version = this.getClass().getPackage().getImplementationVersion();
+        } catch (Exception ignoreException) {
+            LOGGER.error("An error has occurred while trying to retrieve the package version.");
+        }
+        return version;
+    }
+
+    public String getEnvironment() {
+        String environment = "Unknown";
+        return environment;
+    }
 }

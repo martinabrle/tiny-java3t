@@ -1,7 +1,7 @@
 package app.demo.todoapi.utils;
 
 public class AppEnvironment {
-	
+
 	public static final AppLogger LOGGER = new AppLogger(AppEnvironment.class);
 
 	public static String GetCurrentDirectory() {
@@ -28,4 +28,5 @@ public class AppEnvironment {
 
 		return currentDir;
 	}
+
 }
