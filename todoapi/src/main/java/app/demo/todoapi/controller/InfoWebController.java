@@ -6,16 +6,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import app.demo.todoapi.utils.AppLogger;
 
 @Controller
-public class TodoListWebController {
+public class InfoWebController {
 
-	public static final AppLogger LOGGER = new AppLogger(TodoListWebController.class);
-
-	// private TodoService todoService;
-
-	// @Autowired
-	// public TodoListWebController(TodoService service) {
-	// this.todoService = service;
-	// }
+	public static final AppLogger LOGGER = new AppLogger(InfoWebController.class);
 
 	@GetMapping("/")
 	public String getIndex(Model model) {
@@ -27,8 +20,9 @@ public class TodoListWebController {
 			LOGGER.error("An error has occurred while trying to retrieve the package version.");
 		}
 
-		model.addAttribute("VERSION", version);
+		model.addAttribute("version", version);
+		model.addAttribute("environment", "unknown");
 
-		return "todo";
+		return "info";
 	}
 }
