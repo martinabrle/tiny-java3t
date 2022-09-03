@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import app.demo.todoapi.AppConfig;
 import app.demo.todoapi.dto.NewTodo;
 import app.demo.todoapi.dto.Todo;
 import app.demo.todoapi.exception.NewTodoIsEmptyException;
@@ -159,4 +160,14 @@ public class TodoListApiController {
 		}
 		return new ResponseEntity<Todo>(HttpStatus.OK);
 	}
+
+	@GetMapping( value = {"version"}, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	public ResponseEntity<String> getVersion() {
+
+		LOGGER.debug("Version retrieval API called");
+
+		return new ResponseEntity<String>(new AppConfig().getVersion(), HttpStatus.OK);
+	}
+
 }
