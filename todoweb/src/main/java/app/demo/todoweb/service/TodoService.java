@@ -23,4 +23,5 @@ public interface TodoService {
     public Todo updateTodo(Todo todo) throws TodoIsEmptyException, TodoUpdateFailedException, TodoNotFoundException;
     public List<Todo> updateTodos(List<Todo> todos) throws TodoIsEmptyException, TodoUpdateFailedException, TodoNotFoundException;
     public void deleteTodo(UUID fromString) throws TodoNotFoundException, TodoDeleteFailedException;
+    public String getApiVersion();
 }

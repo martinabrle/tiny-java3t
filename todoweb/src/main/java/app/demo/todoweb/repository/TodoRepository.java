@@ -1,4 +1,5 @@
 package app.demo.todoweb.repository;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -37,7 +38,8 @@ public class TodoRepository {
 
         TodoList retValList = new TodoList();
 
-        LOGGER.debug(String.format("Retrieving all TODOs synchronously using findAll(%s)", by)); //sort direction is ignored
+        LOGGER.debug(String.format("Retrieving all TODOs synchronously using findAll(%s)", by)); // sort direction is
+                                                                                                 // ignored
 
         try {
 
@@ -50,7 +52,8 @@ public class TodoRepository {
                     .bodyToMono(TodoList.class)
                     .block();
 
-            LOGGER.debug(String.format("Received back a list of TODOs (size %s) as a response:", retValList.size()), retValList);
+            LOGGER.debug(String.format("Received back a list of TODOs (size %s) as a response:", retValList.size()),
+                    retValList);
         } catch (Exception ex) {
             LOGGER.error(String.format("Retrieving all TODOs failed: '%s'", ex.getMessage()), ex);
             throw new TodosRetrievalFailedException(ex.getMessage());
@@ -76,9 +79,11 @@ public class TodoRepository {
                     .retrieve()
                     .toEntity(Todo.class)
                     .block();
-            
+
             if (findByIdResponse.getStatusCode() == HttpStatus.NOT_FOUND) {
-                LOGGER.error(String.format("Todo findById(%s) API returned a http status %s ('%s') ", id, findByIdResponse.getStatusCode().name(), Integer.toString(findByIdResponse.getStatusCodeValue())));
+                LOGGER.error(String.format("Todo findById(%s) API returned a http status %s ('%s') ", id,
+                        findByIdResponse.getStatusCode().name(),
+                        Integer.toString(findByIdResponse.getStatusCodeValue())));
                 throw new TodoNotFoundException(String.format("Todo '%s' does not exist", id));
             }
 
@@ -87,18 +92,16 @@ public class TodoRepository {
                 throw new TodoNotFoundException("Unable to retrieve the Todo or Todo does not exist.");
 
             LOGGER.debug("Received back this TODO structure as a response...", retVal);
-        } 
-        catch (WebClientResponseException ex) {
+        } catch (WebClientResponseException ex) {
             if (ex.getStatusCode() == HttpStatus.NOT_FOUND) {
                 throw new TodoNotFoundException("Todo not found.");
             }
             if (ex.getStatusCode() == HttpStatus.BAD_REQUEST) {
                 throw new TodosRetrievalFailedException(ex.getMessage());
-                
+
             }
             throw new Exception(String.format("Server returned '%s'", ex.getStatusText()));
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             LOGGER.error(String.format("Retrieving the TODO '%s' failed: %s", id, ex.getMessage()), ex);
             throw new TodosRetrievalFailedException(ex.getMessage());
         }
@@ -139,10 +142,11 @@ public class TodoRepository {
             LOGGER.debug(String.format("Save a modified Todo synchronously using update(%s)", modifiedTodo.getId()));
 
             String apiUri = appConfig.getTodoApiUri("/" + modifiedTodo.getId().toString());
-            
+
             WebClient webClient = WebClient.create(apiUri);
 
-            var todo = new RepositoryTodo(modifiedTodo.getId(), modifiedTodo.getTodoText(), modifiedTodo.getCreatedDateTime(), modifiedTodo.getCompletedDateTime());
+            var todo = new RepositoryTodo(modifiedTodo.getId(), modifiedTodo.getTodoText(),
+                    modifiedTodo.getCreatedDateTime(), modifiedTodo.getCompletedDateTime());
 
             LOGGER.debug("Sending a PUT request with a modified TODO: ", todo);
 
@@ -152,9 +156,11 @@ public class TodoRepository {
                     .retrieve()
                     .toEntity(Todo.class)
                     .block();
-            
+
             if (updateTodoResponse.getStatusCode() == HttpStatus.NOT_FOUND) {
-                LOGGER.error(String.format("Todo update(%s) returned a http status code '%s' ('%s') ", modifiedTodo.getId(), Integer.toString(updateTodoResponse.getStatusCodeValue()), updateTodoResponse.getStatusCode().name()));
+                LOGGER.error(String.format("Todo update(%s) returned a http status code '%s' ('%s') ",
+                        modifiedTodo.getId(), Integer.toString(updateTodoResponse.getStatusCodeValue()),
+                        updateTodoResponse.getStatusCode().name()));
                 throw new TodoNotFoundException(String.format("Todo '%s' does not exist", modifiedTodo.getId()));
             }
 
@@ -167,7 +173,7 @@ public class TodoRepository {
         return updatedTodo;
     }
 
-    public void deleteById(UUID id) throws TodoDeleteFailedException, TodoNotFoundException{
+    public void deleteById(UUID id) throws TodoDeleteFailedException, TodoNotFoundException {
         try {
             LOGGER.debug(String.format("Delete a Todo using deleteById('%s')", id));
 
@@ -183,35 +189,38 @@ public class TodoRepository {
                     .block();
 
             if (deleteTodoResponse.getStatusCode() == HttpStatus.NOT_FOUND) {
-                LOGGER.error(String.format("Todo delete(%s) returned a http status code '%s' ('%s') ", id, Integer.toString(deleteTodoResponse.getStatusCodeValue()), deleteTodoResponse.getStatusCode().name()));
+                LOGGER.error(String.format("Todo delete(%s) returned a http status code '%s' ('%s') ", id,
+                        Integer.toString(deleteTodoResponse.getStatusCodeValue()),
+                        deleteTodoResponse.getStatusCode().name()));
                 throw new TodoNotFoundException(String.format("Todo '%s' does not exist", id));
             }
-        
+
             LOGGER.debug(String.format("Received back the following responce: '%s'", deleteTodoResponse));
-        }
-        catch (TodoNotFoundException ex) {
+        } catch (TodoNotFoundException ex) {
             throw ex;
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             LOGGER.error(String.format("Todo deletion failed: %s", ex.getMessage()), ex);
             throw new TodoDeleteFailedException(ex.getMessage());
         }
     }
 
-	public List<Todo> updateAll(List<Todo> modifiedTodos) throws TodoNotFoundException, TodoUpdateFailedException{
-		List<Todo> updatedTodos = new ArrayList<Todo>();
+    public List<Todo> updateAll(List<Todo> modifiedTodos) throws TodoNotFoundException, TodoUpdateFailedException {
+        List<Todo> updatedTodos = new ArrayList<Todo>();
         try {
-            LOGGER.debug(String.format("Save modified Todos synchronously using updateAll(no of Todos: %s)", modifiedTodos.size()));
+            LOGGER.debug(String.format("Save modified Todos synchronously using updateAll(no of Todos: %s)",
+                    modifiedTodos.size()));
 
             String apiUri = appConfig.getTodoApiUri();
-            
+
             WebClient webClient = WebClient.create(apiUri);
 
             var modifiedRepositoryTodos = new ArrayList<RepositoryTodo>();
             for (var e : modifiedTodos) {
-                modifiedRepositoryTodos.add(new RepositoryTodo(e.getId(), e.getTodoText(), e.getCreatedDateTime(), e.getCompletedDateTime()));
+                modifiedRepositoryTodos.add(new RepositoryTodo(e.getId(), e.getTodoText(), e.getCreatedDateTime(),
+                        e.getCompletedDateTime()));
             }
-            LOGGER.debug(String.format("Sending a PUT request with a list of modified TODOs (no of Todos: %s): ", modifiedTodos.size()));
+            LOGGER.debug(String.format("Sending a PUT request with a list of modified TODOs (no of Todos: %s): ",
+                    modifiedTodos.size()));
 
             ResponseEntity<RepositoryTodoList> updateTodosResponse = webClient.post()
                     .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -219,37 +228,69 @@ public class TodoRepository {
                     .retrieve()
                     .toEntity(RepositoryTodoList.class)
                     .block();
-            
+
             if (updateTodosResponse.getStatusCode() == HttpStatus.NOT_FOUND) {
-                LOGGER.error(String.format("Todo updateAll(no of Todos: %s) returned a http status code '%s' ('%s') ", modifiedTodos.size(), Integer.toString(updateTodosResponse.getStatusCodeValue()), updateTodosResponse.getStatusCode().name()));
+                LOGGER.error(String.format("Todo updateAll(no of Todos: %s) returned a http status code '%s' ('%s') ",
+                        modifiedTodos.size(), Integer.toString(updateTodosResponse.getStatusCodeValue()),
+                        updateTodosResponse.getStatusCode().name()));
                 throw new TodoNotFoundException(String.format("Some or all Todos do not not exist"));
             }
 
             var updatedTodoEntities = updateTodosResponse.getBody();
-            for (var e: updatedTodoEntities) {
-                updatedTodos.add(new Todo(e.getId(), e.getTodoText(), e.getCreatedDateTime(), e.getCompletedDateTime(), e.getCompletedDateTime() != null));
+            for (var e : updatedTodoEntities) {
+                updatedTodos.add(new Todo(e.getId(), e.getTodoText(), e.getCreatedDateTime(), e.getCompletedDateTime(),
+                        e.getCompletedDateTime() != null));
             }
             LOGGER.debug("Received back a list of updated TODOs as a response:", updateTodosResponse.getBody());
-        } 
-        catch (TodoNotFoundException ex) {
+        } catch (TodoNotFoundException ex) {
             throw ex;
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             LOGGER.error(String.format("Todos update failed: %s", ex.getMessage()), ex);
             throw new TodoUpdateFailedException(ex.getMessage());
         }
         return updatedTodos;
-	}
+    }
+
+    public String getApiVersion() {
+
+        String retVal = "unknown";
+
+        LOGGER.debug(String.format("Retrieving an API Version synchronously using getApiVersion()"));
+
+        try {
+
+            String apiUri = appConfig.getTodoApiUri("/version");
+
+            WebClient webClient = WebClient.create(apiUri);
+
+            var getVersionResponse = webClient.get()
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                    .retrieve()
+                    .toEntity(String.class)
+                    .block();
+
+            retVal = getVersionResponse.getBody();
+
+            LOGGER.debug("Received back this version as a response...", retVal);
+        } catch (Exception ex) {
+            LOGGER.error(String.format("Retrieving the API version failed: %s", ex.getMessage()), ex);
+            retVal = "unknown";
+        }
+        if (retVal == null)
+            retVal = "unknown";
+
+        return retVal;
+    }
 }
 
 class RepositoryTodo {
-    
+
     private UUID id;
 
     private String todoText;
 
     private Date createdDateTime;
-    
+
     private Date completedDateTime;
 
     public RepositoryTodo(UUID id, String todoText, Date createdDateTime, Date completedDateTime) {

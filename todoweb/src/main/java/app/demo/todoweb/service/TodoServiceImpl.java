@@ -199,4 +199,23 @@ public class TodoServiceImpl implements TodoService {
         }
         return retVal;
     }
+
+    @Override
+    public String getApiVersion() {
+        LOGGER.debug(String.format("Retrieving API version synchronously using getApiVersion()"));
+
+        String retVal = "unknown";
+
+        try {
+            retVal = repository.getApiVersion();
+        } catch (Exception ex) {
+            LOGGER.error(String.format("Retrieving API version failed (%s)", ex.getMessage()), ex);
+            retVal = "unknown";
+        }
+        if (retVal == null) {
+            retVal = "unknown";
+        }
+        LOGGER.debug(String.format("Retrievend an API version synchronously using getApiVersion(): %s", retVal));
+        return retVal;
+    }
 }
