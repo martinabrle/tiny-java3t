@@ -51,10 +51,12 @@ jobs:
             repositoryNames=`az acr repository list --name "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}" -o tsv`
             echo "Repository names:"
             echo "$repositoryNames"
-            
+
             if [[ "$repositoryNames" == *todo-java-web* ]]; then
               echo "Repository '${{secrets.AZURE_WEB_APP_NAME}}' exists already"
               az acr repository show-tags --name "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}" --repository "${{secrets.AZURE_WEB_APP_NAME}}" -o tsv >./container_tags.txt
+              echo "Retrieved tags:"
+              cat ./container_tags.txt
               containerRegistryVersion=`java ../scripts/JavaUtils.java -get_highest_semver_from_file ./container_tags.txt`
               echo "Retrieved the last container version: $containerRegistryVersion"
             else
