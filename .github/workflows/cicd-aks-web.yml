@@ -51,7 +51,7 @@ jobs:
             az acr repository list --name "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}" -o tsv > ./repo_names.txt
             echo "Repository names:"
             cat ./repo_names.txt
-            if [[ grep -Fxq "${{secrets.AZURE_WEB_APP_NAME}}"" ./repo_names.txt ]]; then
+            if [[ grep -Fxq "${{secrets.AZURE_WEB_APP_NAME}}" ./repo_names.txt ]]; then
               echo "Repository '${{secrets.AZURE_WEB_APP_NAME}}' exists already"
               az acr repository show-tags --name "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}" --repository "${{secrets.AZURE_WEB_APP_NAME}}" -o tsv >./container_tags.txt
               containerRegistryVersion=`java ../scripts/JavaUtils.java -get_highest_semver_from_file ./container_tags.txt`
