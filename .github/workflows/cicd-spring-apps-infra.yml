@@ -12,6 +12,7 @@ on:
       run_cleanup:
         type: boolean
         description: Delete all existing resources first
+        required: true
 
 jobs:
   cleanup_if_requested:
