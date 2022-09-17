@@ -49,9 +49,14 @@ jobs:
           containerRegistryList=`az acr list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[?name=='${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}'].name" -o tsv`
           if [[ ! -z "$containerRegistryList" ]]; then
             repositoryNames=`az acr repository list --name "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}" -o tsv`
-            echo "RepositoryName: '$repositoryNames'"
-            if [[ "$repositoryNames" == *"${{secrets.AZURE_API_APP_NAME}}"*  ]]; then
-              az acr repository show-tags --name "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}" --repository "${{secrets.AZURE_API_APP_NAME}}" -o tsv >container_tags.txt
+            echo "Repository names:"
+            echo "$repositoryNames"
+
+            if [[ "$repositoryNames" == *${{secrets.AZURE_API_APP_NAME}}* ]]; then
+              echo "Repository '${{secrets.AZURE_API_APP_NAME}}' exists already"
+              az acr repository show-tags --name "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}" --repository "${{secrets.AZURE_API_APP_NAME}}" -o tsv >./container_tags.txt
+              echo "Retrieved tags:"
+              cat ./container_tags.txt
               containerRegistryVersion=`java ../scripts/JavaUtils.java -get_highest_semver_from_file ./container_tags.txt`
               echo "Retrieved the last container version: $containerRegistryVersion"
             else
