@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: ${SPRING_PROFILE}
+    active: ${SPRING_PROFILES_ACTIVE}
   jpa:
     open-in-view: false
 server:
