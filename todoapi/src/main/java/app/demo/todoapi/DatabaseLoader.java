@@ -135,6 +135,7 @@ public class DatabaseLoader implements CommandLineRunner {
         }
 
         private boolean loadDemoData() {
-                return appConfig != null && appConfig.getLoadDemoData();
+                //return appConfig != null && appConfig.getLoadDemoData();
+                return true;
         }
 }
