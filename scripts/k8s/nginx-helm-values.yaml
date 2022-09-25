@@ -1,0 +1,6 @@
+controller:
+  metrics:
+    enabled: true
+  config:
+    hsts: "false"
+    redirect-ssl: "false"

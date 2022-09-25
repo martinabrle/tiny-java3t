@@ -1,0 +1,96 @@
+log in into AKS with 
+az aks get-credentials --resource-group myResourceGroup --name myAKSCluster
+
+# Cheatsheet https://kubernetes.io/docs/reference/kubectl/cheatsheet/
+
+# Delete deployments
+####################
+kubectl get deploy -n web
+kubectl delete deploy todoweb -n web
+kubectl delete deploy todoapi -n api
+kubectl delete service todoweb -n web
+kubectl delete service todoapi -n api
+kubectl delete secret secrets-app-insights -n web
+kubectl delete secret secrets-db -n api
+kubectl delete secret secrets-app-insights -n api
+
+
+# Deploy secrets:
+#################
+https://learn.microsoft.com/en-us/azure/aks/csi-secrets-store-driver
+
+az aks enable-addons \
+    -g $RESOURCE_GROUP \
+    -n $CLUSTER_NAME \
+    --addons azure-keyvault-secrets-provider
+
+export SECRETS_PROVIDER_IDENTITY=$(az aks show \
+    -g $RESOURCE_GROUP \
+    -n $CLUSTER_NAME \
+    --query "addonProfiles.azureKeyvaultSecretsProvider.identity.clientId" -o tsv)
+
+kubectl apply -f ./kv-secrets-api.yaml
+kubectl apply -f ./kv-secrets-web.yaml
+
+
+# Install NGINX:
+####################
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+
+helm install ingress-nginx ingress-nginx/ingress-nginx \
+    --create-namespace --namespace $NAMESPACE \
+    -f nginx-helm-values.yaml
+
+kubectl get namespaces
+kubectl get ingress -A
+kubectl port-forward svc/todoapi -n api 8080:80
+
+# Deploy Namespaces:
+####################
+kubectl apply -f ./namespaces.yaml
+kubectl get namespace
+
+
+
+# Deploy API:
+#################
+# https://kubernetes.io/docs/tasks/debug/debug-application/determine-reason-pod-failure/
+kubectl apply -f ./todo-api.yaml
+kubectl get pods
+kubectl describe pod todoapi-664fb75c69-zx8s4 -n api
+kubectl logs POD_NAME ...or.... kubectl logs -l app=todoapi ...or... kubectl logs -l app=todoapi -c todoapi --tail 1000
+kubectl exec --stdin --tty todoapi-565cd455dc-k8xkh -- /bin/bash
+apt update
+apt install curl
+curl http://localhost:80
+kubectl port-forward todoapi.... 8080:80 (TCP)
+(PROXY)
+
+# Deploy WEB:
+#################
+kubectl apply -f ./todo-web.yaml
+kubectl port-forward todoweb.... 8080:80 (TCP)
+...rinse & repeat
+# .. and get the public IP
+kubectl get services --namespace nginx-ingress -o wide -w ingress-nginx-controller
+
+curl http://52.149.189.47:80 and curl http://52.149.189.47:80/backend, where 52.149.189.47 is a public IP
+
+# Deploy RBAC:
+#################
+kubectl apply -f ./rolebinding-api.yaml
+kubectl apply -f ./rolebinding-web.yaml
+
+
+# Log in as Bob:
+#################
+rm -r ~/.kube
+az logout
+az cache purge
+kubelogin
+az aks get-credentials --name mabr-tiny3t-java-aks --resource-group mabr-tiny-java3t-aks_rg
+kubectl get pods --all-namespaces
+kubectl get pods -n api
+kubectl get pods -n api
+kubectl delete pod todoapi-694467c67f-2k7h6 -n api

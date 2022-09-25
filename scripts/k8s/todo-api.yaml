@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todoapi
+  namespace: api
+  labels:
+    deploy: todoapi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todoapi
+  template:
+    metadata:
+      labels:
+        app: todoapi
+    spec:
+      containers:
+      - image: "maabrtiny3tjavaaksreg.azurecr.io/todo-java-api:1.0.4"
+        imagePullPolicy: Always
+        name: todoapi
+        resources:
+          limits:
+            memory: 512Mi
+            cpu: "1"
+          requests:
+            memory: 256Mi
+            cpu: "0.3"
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        - containerPort: 443
+          name: https
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "80"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "test" #in this one, we use the classic auth as IDMP is not available here
+        - name: SPRING_DATASOURCE_SHOW_SQL
+          value: "true"
+        - name: APP_CLIENT_ID
+          value: ""
+        - name: APPLICATIONINSIGHTS_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: kv-secrets-api
+              key: APPLICATIONINSIGHTS-CONNECTION-STRING
+              optional: false
+        - name: APPINSIGHTS_INSTRUMENTATIONKEY
+          valueFrom:
+            secretKeyRef:
+              name: kv-secrets-api
+              key: APPINSIGHTS-INSTRUMENTATIONKEY
+              optional: false
+        - name: SPRING_DATASOURCE_URL
+          valueFrom:
+            secretKeyRef:
+              name: kv-secrets-api
+              key: SPRING-DATASOURCE-URL
+              optional: false
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: kv-secrets-api
+              key: SPRING-DATASOURCE-USERNAME
+              optional: false
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: kv-secrets-api
+              key: SPRING-DATASOURCE-PASSWORD
+              optional: false
+        volumeMounts:
+          - name: secrets-store01-inline
+            mountPath: /mnt/secrets-store
+            readOnly: true
+      volumes:
+        - name: secrets-store01-inline
+          csi: 
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: kv-secrets-api
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todoapi
+  namespace: api
+spec:
+  type: ClusterIP
+  selector:
+    app: todoapi
+  ports:
+  - protocol: TCP
+    name: http
+    port: 80
+    targetPort: 80
+  - protocol: TCP
+    name: https
+    port: 443
+    targetPort: 443
