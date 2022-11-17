@@ -3,6 +3,7 @@ package app.demo.todoapi.repository;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.List;
 import java.util.UUID;
@@ -49,7 +50,7 @@ public class TodoRepositoryTest {
                 throw ex;
             });
         }
-
+        assertNotNull(retrievedTodos);
         assertEquals(retrievedTodos.size(), 1);
         assertTrue(retrievedTodos.get(0) != null);
         assertTrue(retrievedTodos.get(0).getId().equals(existingTodoId));
