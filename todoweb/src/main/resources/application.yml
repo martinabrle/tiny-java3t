@@ -7,3 +7,30 @@ logging.level: warn
 logging.level.app.demo.todoweb: debug
 azure.application-insights.instrumentation-key: ${APPINSIGHTS_INSTRUMENTATIONKEY}
 azure.application-insights.connection-string:  ${APPLICATIONINSIGHTS_CONNECTION_STRING}
+
+management:
+  defaults:
+    metrics:
+      export:
+        enabled: true
+  endpoints:
+    enabled-by-default: false #new
+    web:
+      exposure:
+        include: "health,info,prometheus"
+  endpoint:
+    info:
+      enabled: true
+    health:
+      enabled: true
+    prometheus:
+      enabled: true
+  info:
+    git:
+      enabled: false
+  health:
+    probes:
+      enabled: true
+      add-additional-paths: true
+
+
