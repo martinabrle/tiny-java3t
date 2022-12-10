@@ -17,6 +17,7 @@ public class DatabaseLoader implements CommandLineRunner {
 
         private final TodoRepository todoRepository;
 
+        //TODO: try to load appConfig with a new constructor
         @Autowired
         private AppConfig appConfig;
 

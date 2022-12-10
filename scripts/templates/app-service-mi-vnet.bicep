@@ -37,6 +37,76 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
   scope: resourceGroup(logAnalyticsWorkspaceRG)
 }
 
+var vnetAddressPrefix = '10.0.0.0/16'
+
+var webAppSubnetAddressPrefix = '10.0.0.0/24'
+var apiAppSubnetAddressPrefix = '10.0.1.0/24'
+
+var bastionSubnetAddressPrefix = '10.0.2.0/24'
+var mgmtSubnetAddressPrefix = '10.0.3.0/24'
+
+var dbSubnetAddressPrefix = '10.0.4.0/24'
+
+resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
+  name: '${apiAppServiceName}-vnet'
+  location: location
+  tags: tagsArray
+  properties: {
+    addressSpace: {
+      addressPrefixes: [
+        vnetAddressPrefix
+      ]
+    }
+    subnets: [
+      {
+        name: 'web'
+        properties: {
+          addressPrefix: webAppSubnetAddressPrefix
+        }
+      }
+      {
+        name: 'api'
+        properties: {
+          addressPrefix: apiAppSubnetAddressPrefix
+        }
+      }
+      {
+        name: 'mgmt'
+        properties: {
+          addressPrefix: mgmtSubnetAddressPrefix
+        }
+      }
+      {
+        name: 'AzureBastionSubnet'
+        properties: {
+          addressPrefix: bastionSubnetAddressPrefix
+        }
+      }
+      {
+        name: 'db'
+        properties: {
+          addressPrefix: dbSubnetAddressPrefix
+        }
+      }
+    ]
+  }
+}
+
+resource dbSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' existing = {
+  parent: vnet
+  name: 'db'
+}
+
+resource apiSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' existing = {
+  parent: vnet
+  name: 'api'
+}
+
+resource webSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' existing = {
+  parent: vnet
+  name: 'web'
+}
+
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: appInsightsName
   dependsOn: [
@@ -56,10 +126,10 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/servers@2017-12-01' = {
   location: location
   tags: tagsArray
   sku: {
-    name: 'B_Gen5_1'
-    tier: 'Basic'
+    name: 'GP_Gen5_2' //Basic tier does not support private endpoints
+    tier: 'GeneralPurpose'
     family: 'Gen5'
-    capacity: 1
+    capacity: 2
   }
   properties: {
     storageProfile: {
@@ -106,6 +176,165 @@ resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRule
   }
 }
 
+resource privateEndpointPostgresqlServer 'Microsoft.Network/privateEndpoints@2022-07-01' = {
+  location: location
+  name: '${dbServerName}-private-endpoint'
+  tags: tagsArray
+  properties: {
+    subnet: {
+      id: dbSubnet.id
+    }
+    privateLinkServiceConnections: [
+      {
+        name: '${dbServerName}-private-endpoint'
+        properties: {
+          privateLinkServiceId: postgreSQLServer.id
+          groupIds: [ 'postgresqlServer' ]
+        }
+      }
+    ]
+    customNetworkInterfaceName: '${dbServerName}-private-endpoint-nic'
+  }
+}
+
+resource privateEndpointApiAppService 'Microsoft.Network/privateEndpoints@2022-07-01' = {
+  location: location
+  name: '${apiAppServiceName}-private-endpoint'
+  tags: tagsArray
+  properties: {
+    subnet: {
+      id: apiSubnet.id
+    }
+    privateLinkServiceConnections: [
+      {
+        name: '${apiAppServiceName}-private-endpoint'
+        properties: {
+          privateLinkServiceId: apiAppService.id
+          groupIds: [ 'sites' ]
+        }
+      }
+    ]
+    customNetworkInterfaceName: '${apiAppServiceName}-private-endpoint-nic'
+  }
+}
+
+resource privateEndpointWebAppService 'Microsoft.Network/privateEndpoints@2022-07-01' = {
+  location: location
+  name: '${webAppServiceName}-private-endpoint'
+  tags: tagsArray
+  properties: {
+    subnet: {
+      id: webSubnet.id
+    }
+    privateLinkServiceConnections: [
+      {
+        name: '${webAppServiceName}-private-endpoint'
+        properties: {
+          privateLinkServiceId: webAppService.id
+          groupIds: [ 'sites' ]
+        }
+      }
+    ]
+    customNetworkInterfaceName: '${webAppServiceName}-private-endpoint-nic'
+  }
+}
+
+resource privateDNSZonePostgresqlServer 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.postgres.database.azure.com'
+  location: 'global'
+  tags: tagsArray
+}
+
+resource privateDNSZoneAppService 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.azurewebsites.net'
+  location: 'global'
+  tags: tagsArray
+}
+
+resource privateLinkDNSZonePostgresqlServer 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  parent: privateDNSZonePostgresqlServer
+  name: 'link'
+  location: 'global'
+  tags: tagsArray
+  properties: {
+    virtualNetwork: {
+      id: vnet.id
+    }
+    registrationEnabled: false
+  }
+}
+
+resource privateLinkDNSZoneAppService 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  parent: privateDNSZoneAppService
+  name: 'link'
+  location: 'global'
+  tags: tagsArray
+  properties: {
+    virtualNetwork: {
+      id: vnet.id
+    }
+    registrationEnabled: false
+  }
+}
+
+resource pvtEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
+  name: '${privateEndpointPostgresqlServer.name}/default'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'privatelink-postgres-database-azure-com'
+        properties: {
+          privateDnsZoneId: privateDNSZonePostgresqlServer.id
+        }
+      }
+    ]
+  }
+}
+
+resource pvtEndpointDnsGroupApiAppService 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
+  name: '${privateEndpointApiAppService.name}/default'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'api-privatelink-azurewebsites-net'
+        properties: {
+          privateDnsZoneId: privateDNSZoneAppService.id
+        }
+      }
+    ]
+  }
+}
+
+resource pvtEndpointDnsGroupWebAppService 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
+  name: '${privateEndpointWebAppService.name}/default'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'web-privatelink-azurewebsites-net'
+        properties: {
+          privateDnsZoneId: privateDNSZoneAppService.id
+        }
+      }
+    ]
+  }
+}
+
+// https://docs.microsoft.com/en-us/azure/private-link/create-private-endpoint-bicep?tabs=CLI
+
+// resource privateEndpointName_default 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-05-01' = {
+//   name: '${privateEndpoint.name}/default'
+//   properties: {
+//     privateDnsZoneConfigs: [
+//       {
+//         name: 'privatelink-postgres-database-azure-com'
+//         properties: {
+//           privateDnsZoneId: privateLinkDNSZonePostgresqlServer.id
+//         }
+//       }
+//     ]
+//   }
+// }
+
 resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: '${dbServerName}-db-logs'
   scope: postgreSQLServer
@@ -148,10 +377,15 @@ resource apiAppService 'Microsoft.Web/sites@2022-03-01' = {
   }
   properties: {
     serverFarmId: appServicePlan.id
+    //virtualNetworkSubnetId: vnet.properties.subnets[0].id
+    httpsOnly: true
+
     siteConfig: {
       linuxFxVersion: 'JAVA|11-java11'
       scmType: 'None'
       healthCheckPath: healthCheckPath
+      vnetRouteAllEnabled: true
+      http20Enabled: true
     }
   }
 }
@@ -182,10 +416,15 @@ resource webAppService 'Microsoft.Web/sites@2022-03-01' = {
   }
   properties: {
     serverFarmId: appServicePlan.id
+    //virtualNetworkSubnetId: vnet.properties.subnets[0].id
+    httpsOnly: true
+
     siteConfig: {
       linuxFxVersion: 'JAVA|11-java11'
       scmType: 'None'
       healthCheckPath: healthCheckPath
+      vnetRouteAllEnabled: true
+      http20Enabled: true
     }
   }
 }
@@ -665,7 +904,10 @@ resource apiAppServiceStagingPARMS 'Microsoft.Web/sites/slots/config@2022-03-01'
       }
       {
         name: 'SPRING_PROFILES_ACTIVE'
-        value: 'test-mi'
+        value: 'local' // as we do not have an access to the database from the staging slot,
+                       // here I will only run the tests against the local in-memory storage.
+                       // If I will ever get to deploying my own GitHub runner into the VNET,
+                       // than this can be changed again to 'test-mi'
       }
       {
         name: 'PORT'

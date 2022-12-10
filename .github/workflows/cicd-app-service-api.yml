@@ -1,0 +1,199 @@
+name: cicd-app-service
+
+on:
+  push:
+   branches:
+     - main
+   paths:
+     - 'todoapi/**'  
+  workflow_dispatch:     
+
+jobs:  
+  build_app:
+    runs-on: ubuntu-latest
+    environment: APP-SERVICE
+    defaults:
+      run:
+        working-directory: ./todoapi
+    outputs:
+      RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
+      RELEASE_NAME: ${{ steps.version.outputs.RELEASE_NAME }}
+      RELEASE_FILE_NAME: ${{ steps.version.outputs.RELEASE_FILE_NAME }}
+      
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'microsoft'
+      
+      - name: Build the .jar
+        run: |
+          ./mvnw clean package -DskipTests
+      
+      # Review: Implement some more mature mono repo versioning 
+      - name: Figure out the version info
+        id: version
+        run: |
+          cd ./target
+          files=(todoapi*.jar)
+          mv "$files" "./todoapi-${GITHUB_SHA}.jar"
+          ls -la
+          cd ..
+          echo "::set-output name=RELEASE_VERSION::${GITHUB_SHA}"
+          echo "::set-output name=RELEASE_NAME::todoapi-${GITHUB_SHA}"
+          echo "::set-output name=RELEASE_FILE_NAME::todoapi-${GITHUB_SHA}.jar"
+          
+      - name: Display next version
+        run: |
+          echo "Version: ${{ steps.version.outputs.RELEASE_VERSION }}"
+          echo "Release name: ${{ steps.version.outputs.RELEASE_NAME }}"
+          echo "Release file name: ${{ steps.version.outputs.RELEASE_FILE_NAME }}"
+      
+      - name: 'Upload build artifact'
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.version.outputs.RELEASE_NAME }}
+          path: ./todoapi/target/${{ steps.version.outputs.RELEASE_FILE_NAME }}
+          if-no-files-found: error
+          retention-days: 1
+  
+  deploy_app:
+    needs: [build_app]
+    runs-on: ubuntu-latest
+    environment: APP-SERVICE
+    steps:
+      - name: Download build artefacts
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{needs.build_app.outputs.RELEASE_NAME}}
+      - name: Check downloaded files
+        run: |
+          pwd
+          ls -la
+          ls -la ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
+      
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set default Azure subscription
+        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Start the STAGING slot
+        run: |
+          az webapp start -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_API_APP_NAME}} --slot staging
+
+      # Sometimes it helps to use the following - as azure/webapps-deploy@v2 output may be a bit confusing at times
+      - name: Deploy to STAGING AppService
+        run: az webapp deploy -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_API_APP_NAME}} --slot staging --type jar --src-path ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
+      
+      - name: Process input variables
+        id: input_vars
+        run: |
+          echo "Processing PUSH event: ${{github.event_name}}"
+          if [[ $(az group exists --name "${{secrets.AZURE_RESOURCE_GROUP}}") = false ]]; then
+            echo "Nothing deployed yet, should not happen here, choosing MANAGED_IDENTITIES"
+            echo "::set-output name=DEPLOYMENT_ENVIRONMENT::MANAGED_IDENTITIES"
+          else
+            vnetList=`az network vnet list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[]" -o tsv`
+            if [[ -z "$vnetList" ]]; then
+              appClientIdExists=$(az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "contains([].id, 'https://${{secrets.AZURE_KEY_VAULT_NAME}}.vault.azure.net/secrets/SPRING-DATASOURCE-APP-CLIENT-ID')")
+              if [ $appClientIdExists == true ]; then
+                echo "App client ID exists, setting MANAGED_IDENTITIES"
+                echo "::set-output name=DEPLOYMENT_ENVIRONMENT::MANAGED_IDENTITIES"
+              else
+                echo "App client ID does not exist, setting CLASSIC"
+                echo "::set-output name=DEPLOYMENT_ENVIRONMENT::CLASSIC"
+              fi
+            else
+              echo "VNET Deployed, setting VNET"
+              echo "::set-output name=DEPLOYMENT_ENVIRONMENT::VNET"
+            fi
+          fi
+      
+      - name: Wait for STAGING AppService warm-up
+        run: |
+          ###################################################
+          #TODO:set firewall exception for the staging slot
+          ###################################################
+          currentDateTime=`date`
+          echo "Starting the warm-up wait: ${currentDateTime}"
+          sleep 240 #First wait for 4 mins, sometimes it may take time for the deployment process to start
+          noOfAttempts=0
+          until $(curl --silent --output /dev/null --head --fail https://${{secrets.AZURE_API_APP_NAME}}-staging.azurewebsites.net/actuator/health/readiness); do
+            if [[ ${noOfAttempts} -eq 60 ]];then
+              echo "Web site failed to come online within 10 mins"
+              exit 1
+            fi
+            noOfAttempts=$(($noOfAttempts+1))
+            sleep 10
+          done
+          currentDateTime=`date`
+          echo "Finnished the warm-up wait: ${currentDateTime}"
+          echo "Service warmed up after ${noOfAttempts} attempts"
+
+      # - name: Deploy to AppService
+      #   uses: azure/webapps-deploy@v2
+      #   with: 
+      #     app-name: ${{secrets.AZURE_API_APP_NAME}}
+      #     package: ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
+
+      - name: Run STAGING integration test(s)
+        run: |
+          status_code=$(curl --write-out "%{http_code}\n" --silent --output /dev/null "https://${{secrets.AZURE_API_APP_NAME}}-staging.azurewebsites.net/api/todos/")
+          if [[ "$status_code" -ne '200' ]] ; then
+            echo "Integration tests have failed"
+            exit 1
+          fi
+
+      - name: Remove AppService Liveness probe
+        run: |
+          az webapp config set -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_API_APP_NAME}} --generic-configurations '{"healthCheckPath": ""}'
+          sleep 180
+      
+      # - name: Deploy to PRODUCTION AppService
+      #   run:  |
+      #     az webapp deploy -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_API_APP_NAME}} --type jar --src-path ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
+      
+      - name: Swap STAGING and PRODUCTION
+        run:  |
+          az webapp deployment slot swap -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_API_APP_NAME}} --slot staging
+          sleep 180
+
+      - name: Check the new PRODUCTION has warmed-up
+        if: steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT != 'VNET'
+        run: |
+          currentDateTime=`date`
+          echo "Production: starting the warm-up wait: ${currentDateTime}"
+          sleep 240 #First wait for 4 mins, sometimes it may take time for the swap process to finish (unless warm up optimization has been done)
+          noOfAttempts=0
+          until $(curl --silent --output /dev/null --head --fail https://${{secrets.AZURE_API_APP_NAME}}.azurewebsites.net/actuator/health/readiness); do
+            if [[ ${noOfAttempts} -eq 60 ]];then
+              echo "Web site failed to come online within 10 mins"
+              exit 1
+            fi
+            noOfAttempts=$(($noOfAttempts+1))
+            sleep 10
+          done
+          currentDateTime=`date`
+          echo "Production: finnished the warm-up wait: ${currentDateTime}"
+          echo "Production: service warmed up after ${noOfAttempts} attempts"
+
+      - name: Set PRODUCTION AppService Liveness probe
+        run: |
+          currentDateTime=`date`
+          echo "Starting the probe set-up: ${currentDateTime}"
+          az webapp config set -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_API_APP_NAME}} --generic-configurations '{"healthCheckPath": "/actuator/health/liveness"}'
+          currentDateTime=`date`
+          echo "Finnished the probe set-up: ${currentDateTime}"
+      
+      - name: Stop STAGING slot
+        run: |
+          az webapp stop -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_API_APP_NAME}} --slot staging
+          ###################################################
+          #TODO:unset firewall exception for the staging slot
+          ###################################################
