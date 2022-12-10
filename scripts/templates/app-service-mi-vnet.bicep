@@ -26,7 +26,8 @@ param webAppServicePort string
 
 param deploymentClientIPAddress string
 
-param healthCheckPath string = '/'
+param apiHealthCheckPath string = '/'
+param webHealthCheckPath string = '/'
 
 param location string = resourceGroup().location
 
@@ -383,7 +384,7 @@ resource apiAppService 'Microsoft.Web/sites@2022-03-01' = {
     siteConfig: {
       linuxFxVersion: 'JAVA|11-java11'
       scmType: 'None'
-      healthCheckPath: healthCheckPath
+      healthCheckPath: apiHealthCheckPath
       vnetRouteAllEnabled: true
       http20Enabled: true
     }
@@ -422,7 +423,7 @@ resource webAppService 'Microsoft.Web/sites@2022-03-01' = {
     siteConfig: {
       linuxFxVersion: 'JAVA|11-java11'
       scmType: 'None'
-      healthCheckPath: healthCheckPath
+      healthCheckPath: webHealthCheckPath
       vnetRouteAllEnabled: true
       http20Enabled: true
     }
