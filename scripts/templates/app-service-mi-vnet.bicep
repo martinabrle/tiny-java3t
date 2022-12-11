@@ -533,7 +533,7 @@ resource kvApiUri 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'API-URI'
   properties: {
-    value: 'https://${apiAppServiceName}.azurewebsites.net/api/'
+    value: 'https://${apiAppServiceName}.azurewebsites.net/api/todos/'
     contentType: 'string'
   }
 }
@@ -542,7 +542,7 @@ resource kvApiUriStaging 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'API-URI-STAGING'
   properties: {
-    value: 'https://${apiAppServiceName}-staging.azurewebsites.net/api/'
+    value: 'https://${apiAppServiceName}-staging.azurewebsites.net/api/todos/'
     contentType: 'string'
   }
 }
