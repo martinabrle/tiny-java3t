@@ -25,7 +25,7 @@ jobs:
       - name: Remove the resource group
         run: |
           RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[ "$RG_EXISTS" -eq true ]]; then
+          if [[ "$RG_EXISTS" == "true" ]]; then
              echo "Deleting the Todo App app resource group"
              az group delete --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
           fi
@@ -34,7 +34,7 @@ jobs:
         if: github.event.inputs.run_cleanup_log_analytics == 'true'
         run: |
           LOG_RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[ "$LOG_RG_EXISTS" -eq true ]]; then
+          if [[ "$LOG_RG_EXISTS" == "true" ]]; then
              echo "Deleting the Log Analytics Workspace resource group"
              az group delete --resource-group ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
           fi
@@ -63,7 +63,7 @@ jobs:
       - name: Remove the resource group
         run: |
           RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[ "$RG_EXISTS" -eq true ]]; then
+          if [[ "$RG_EXISTS" == "true" ]]; then
              echo "Deleting the Todo App app resource group"
              az group delete --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
           fi
@@ -72,7 +72,7 @@ jobs:
         if: github.event.inputs.run_cleanup_log_analytics == 'true'
         run: |
           LOG_RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[ "$LOG_RG_EXISTS" -eq true ]]; then
+          if [[ "$LOG_RG_EXISTS" == "true" ]]; then
              echo "Deleting the Log Analytics Workspace resource group"
              az group delete --resource-group ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
           fi
@@ -101,7 +101,7 @@ jobs:
       - name: Remove the node resource group
         run: |
           RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_AKS_NODE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[ "$RG_EXISTS" -eq true ]]; then
+          if [[ "$RG_EXISTS" == "true" ]]; then
              echo "Deleting the Todo App app AKS NODES resource group"
              az group delete --resource-group ${{ secrets.AZURE_AKS_NODE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
           fi
@@ -109,7 +109,7 @@ jobs:
       - name: Remove the main resource group
         run: |
           RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[ "$RG_EXISTS" -eq true ]]; then
+          if [[ "$RG_EXISTS" == "true" ]]; then
              echo "Deleting the Todo App app AKS resource group"
              az group delete --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
           fi
@@ -118,7 +118,7 @@ jobs:
         if: github.event.inputs.run_cleanup_log_analytics == 'true'
         run: |
           LOG_RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[ "$LOG_RG_EXISTS" -eq true ]]; then
+          if [[ "$LOG_RG_EXISTS" == "true" ]]; then
              echo "Deleting the Log Analytics Workspace resource group"
              az group delete --resource-group ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
           fi

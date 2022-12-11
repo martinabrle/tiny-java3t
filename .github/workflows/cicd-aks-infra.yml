@@ -31,7 +31,7 @@ jobs:
         if: github.event.inputs.run_cleanup == 'true'
         run: |
           RG_EXISTS=$(az group exists --name ${{secrets.AZURE_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}})
-          if [[RG_EXISTS -eq true]]; then
+          if [[ "$RG_EXISTS" == "true" ]]; then
              echo "Deleting the Todo App app resource group"
              az group delete --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}} --yes
           fi
