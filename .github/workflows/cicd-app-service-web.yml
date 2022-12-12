@@ -1,11 +1,11 @@
-name: cicd-app-service-api
+name: cicd-app-service-web
 
 on:
   push:
    branches:
      - main
    paths:
-     - 'todoapi/**'  
+     - 'todoweb/**'  
   workflow_dispatch:     
 
 jobs:  
@@ -14,7 +14,7 @@ jobs:
     environment: APP-SERVICE
     defaults:
       run:
-        working-directory: ./todoapi
+        working-directory: ./todoweb
     outputs:
       RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
       RELEASE_NAME: ${{ steps.version.outputs.RELEASE_NAME }}
@@ -38,13 +38,13 @@ jobs:
         id: version
         run: |
           cd ./target
-          files=(todoapi*.jar)
-          mv "$files" "./todoapi-${GITHUB_SHA}.jar"
+          files=(todoweb*.jar)
+          mv "$files" "./todoweb-${GITHUB_SHA}.jar"
           ls -la
           cd ..
           echo "::set-output name=RELEASE_VERSION::${GITHUB_SHA}"
-          echo "::set-output name=RELEASE_NAME::todoapi-${GITHUB_SHA}"
-          echo "::set-output name=RELEASE_FILE_NAME::todoapi-${GITHUB_SHA}.jar"
+          echo "::set-output name=RELEASE_NAME::todoweb-${GITHUB_SHA}"
+          echo "::set-output name=RELEASE_FILE_NAME::todoweb-${GITHUB_SHA}.jar"
           
       - name: Display next version
         run: |
@@ -56,7 +56,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ steps.version.outputs.RELEASE_NAME }}
-          path: ./todoapi/target/${{ steps.version.outputs.RELEASE_FILE_NAME }}
+          path: ./todoweb/target/${{ steps.version.outputs.RELEASE_FILE_NAME }}
           if-no-files-found: error
           retention-days: 1
   
