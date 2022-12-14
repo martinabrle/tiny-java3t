@@ -526,9 +526,9 @@ module rbacKVWebApiUri './components/role-assignment-kv-secret.bicep' = {
   params: {
     roleDefinitionId: keyVaultSecretsUser.id
     principalId: webAppService.identity.principalId
-    roleAssignmentNameGuid: guid(webAppService.id, kvApiUri.id, keyVaultSecretsUser.id)
+    roleAssignmentNameGuid: guid(webAppService.id, kvApiUriStaging.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
-    kvSecretName: kvApiUri.name
+    kvSecretName: kvApiUriStaging.name
   }
 }
 

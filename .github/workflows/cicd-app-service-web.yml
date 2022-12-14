@@ -139,12 +139,12 @@ jobs:
       # - name: Deploy to AppService
       #   uses: azure/webapps-deploy@v2
       #   with: 
-      #     app-name: ${{secrets.AZURE_API_APP_NAME}}
+      #     app-name: ${{secrets.AZURE_WEB_APP_NAME}}
       #     package: ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
 
       - name: Run STAGING integration test(s)
         run: |
-          status_code=$(curl --write-out "%{http_code}\n" --silent --output /dev/null "https://${{secrets.AZURE_API_APP_NAME}}-staging.azurewebsites.net/api/todos/")
+          status_code=$(curl --write-out "%{http_code}\n" --silent --output /dev/null "https://${{secrets.AZURE_WEB_APP_NAME}}-staging.azurewebsites.net/api/todos/")
           if [[ "$status_code" -ne '200' ]] ; then
             echo "Integration tests have failed"
             exit 1
@@ -152,16 +152,16 @@ jobs:
 
       - name: Remove AppService Liveness probe
         run: |
-          az webapp config set -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_API_APP_NAME}} --generic-configurations '{"healthCheckPath": ""}'
+          az webapp config set -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_WEB_APP_NAME}} --generic-configurations '{"healthCheckPath": ""}'
           sleep 180
       
       # - name: Deploy to PRODUCTION AppService
       #   run:  |
-      #     az webapp deploy -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_API_APP_NAME}} --type jar --src-path ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
+      #     az webapp deploy -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_WEB_APP_NAME}} --type jar --src-path ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
       
       - name: Swap STAGING and PRODUCTION
         run:  |
-          az webapp deployment slot swap -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_API_APP_NAME}} --slot staging
+          az webapp deployment slot swap -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_WEB_APP_NAME}} --slot staging
           sleep 180
 
       - name: Check the new PRODUCTION has warmed-up
@@ -171,7 +171,7 @@ jobs:
           echo "Production: starting the warm-up wait: ${currentDateTime}"
           sleep 240 #First wait for 4 mins, sometimes it may take time for the swap process to finish (unless warm up optimization has been done)
           noOfAttempts=0
-          until $(curl --silent --output /dev/null --head --fail https://${{secrets.AZURE_API_APP_NAME}}.azurewebsites.net/actuator/health/readiness); do
+          until $(curl --silent --output /dev/null --head --fail https://${{secrets.AZURE_WEB_APP_NAME}}.azurewebsites.net/actuator/health/readiness); do
             if [[ ${noOfAttempts} -eq 60 ]];then
               echo "Web site failed to come online within 10 mins"
               exit 1
@@ -187,13 +187,13 @@ jobs:
         run: |
           currentDateTime=`date`
           echo "Starting the probe set-up: ${currentDateTime}"
-          az webapp config set -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_API_APP_NAME}} --generic-configurations '{"healthCheckPath": "/actuator/health/liveness"}'
+          az webapp config set -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_WEB_APP_NAME}} --generic-configurations '{"healthCheckPath": "/actuator/health/liveness"}'
           currentDateTime=`date`
           echo "Finnished the probe set-up: ${currentDateTime}"
       
       - name: Stop STAGING slot
         run: |
-          az webapp stop -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_API_APP_NAME}} --slot staging
+          az webapp stop -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_WEB_APP_NAME}} --slot staging
           ###################################################
           #TODO:unset firewall exception for the staging slot
           ###################################################

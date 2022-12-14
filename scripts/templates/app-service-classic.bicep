@@ -561,9 +561,9 @@ module rbacKVWebApiUriStaging './components/role-assignment-kv-secret.bicep' = {
   params: {
     roleDefinitionId: keyVaultSecretsUser.id
     principalId: webAppServiceStaging.identity.principalId
-    roleAssignmentNameGuid: guid(webAppServiceStaging.id, kvApiUri.id, keyVaultSecretsUser.id)
+    roleAssignmentNameGuid: guid(webAppServiceStaging.id, kvApiUriStaging.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
-    kvSecretName: kvApiUri.name
+    kvSecretName: kvApiUriStaging.name
   }
 }
 
