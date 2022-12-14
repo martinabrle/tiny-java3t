@@ -959,7 +959,7 @@ resource webAppServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
       }
       {
         name: 'API_URI'
-        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvApiUriStaging.name})'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvApiUri.name})'
       }
       {
         name: 'SPRING_PROFILES_ACTIVE'
