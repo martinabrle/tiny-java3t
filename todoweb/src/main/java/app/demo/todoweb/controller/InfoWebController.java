@@ -21,7 +21,6 @@ public class InfoWebController {
 		this.todoService = service;
 	}
 
-
 	@GetMapping("/info")
 	public String getIndex(Model model) {
 		LOGGER.debug("TODO GET called with action '/info'");

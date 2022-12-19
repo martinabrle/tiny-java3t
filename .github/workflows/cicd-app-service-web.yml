@@ -83,7 +83,11 @@ jobs:
       - name: Set default Azure subscription
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
-      - name: Start the STAGING slot
+      - name: Start API STAGING slot
+        run: |
+          az webapp start -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_API_APP_NAME}} --slot staging
+      
+      - name: Start WEB STAGING slot
         run: |
           az webapp start -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_WEB_APP_NAME}} --slot staging
 
@@ -191,9 +195,16 @@ jobs:
           currentDateTime=`date`
           echo "Finnished the probe set-up: ${currentDateTime}"
       
-      - name: Stop STAGING slot
+      - name: Stop WEB STAGING slot
         run: |
           az webapp stop -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_WEB_APP_NAME}} --slot staging
+          ###################################################
+          #TODO:unset firewall exception for the staging slot
+          ###################################################
+      
+      - name: Stop STAGING slot
+        run: |
+          az webapp stop -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_API_APP_NAME}} --slot staging
           ###################################################
           #TODO:unset firewall exception for the staging slot
           ###################################################
