@@ -29,7 +29,7 @@ param location string = resourceGroup().location
 
 param tagsArray object = resourceGroup().tags
 
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview' existing = {
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
   name: logAnalyticsWorkspaceName
   scope: resourceGroup(logAnalyticsWorkspaceRG)
 }
@@ -45,7 +45,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
+resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
   name: keyVaultName
   dependsOn: [
     appInsights
@@ -64,7 +64,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
   }
 }
 
-resource kvSecretApiAppClientId 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretApiAppClientId 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'API-APP-CLIENT-ID'
   properties: {
@@ -73,7 +73,7 @@ resource kvSecretApiAppClientId 'Microsoft.KeyVault/vaults/secrets@2021-11-01-pr
   }
 }
 
-resource kvSecretSpringDsApiUserName 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretSpringDsApiUserName 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-USERNAME'
   properties: {
@@ -82,7 +82,7 @@ resource kvSecretSpringDsApiUserName 'Microsoft.KeyVault/vaults/secrets@2021-11-
   }
 }
 
-resource kvSecretSpringDsURL 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretSpringDsURL 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-URL'
   properties: {
@@ -91,7 +91,7 @@ resource kvSecretSpringDsURL 'Microsoft.KeyVault/vaults/secrets@2021-11-01-previ
   }
 }
 
-resource kvSecretWebAppClientId 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretWebAppClientId 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'WEB-APP-CLIENT-ID'
   properties: {
@@ -100,7 +100,7 @@ resource kvSecretWebAppClientId 'Microsoft.KeyVault/vaults/secrets@2021-11-01-pr
   }
 }
 
-resource kvSecretWebApiURI 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretWebApiURI 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'API-URI'
   properties: {
@@ -215,7 +215,7 @@ resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@
   }
 }
 
-resource springApps 'Microsoft.AppPlatform/Spring@2022-05-01-preview' existing = {
+resource springApps 'Microsoft.AppPlatform/Spring@2022-11-01-preview' existing = {
   name: springAppsServiceName
 }
 
@@ -243,12 +243,12 @@ resource springAppsDiagnosticsLogs 'Microsoft.Insights/diagnosticSettings@2021-0
   }
 }
 
-resource springAppsApiApp 'Microsoft.AppPlatform/Spring/apps@2022-05-01-preview' existing = {
+resource springAppsApiApp 'Microsoft.AppPlatform/Spring/apps@2022-11-01-preview' existing = {
   name: apiAppName
   parent: springApps
 }
 
-resource springAppsWebApp 'Microsoft.AppPlatform/Spring/apps@2022-05-01-preview' existing = {
+resource springAppsWebApp 'Microsoft.AppPlatform/Spring/apps@2022-11-01-preview' existing = {
   name: webAppName
   parent: springApps
 }
@@ -298,7 +298,7 @@ module springAppsWebConfig 'spring-apps-mi-web-service.bicep' = {
 }
 
 @description('This is the built-in Key Vault Secrets User role. See https://docs.microsoft.com/en-gb/azure/role-based-access-control/built-in-roles#key-vault-secrets-user')
-resource keyVaultSecretsUser 'Microsoft.Authorization/roleDefinitions@2018-01-01-preview' existing = {
+resource keyVaultSecretsUser 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
   scope: keyVault
   name: '4633458b-17de-408a-b874-0445c86b69e6'
 }
