@@ -2,20 +2,23 @@ param logAnalyticsWorkspaceName string
 param logAnalyticsWorkspaceRG string
 param appInsightsName string
 param keyVaultName string
-param keyVaultAccessIndentityName string
 param dbServerName string
 param dbName string
-param createDB bool
+
 @secure()
 param dbAdminName string
 @secure()
 param dbAdminPassword string
 @secure()
+param appClientId string
+@secure()
 param dbUserName string
 @secure()
 param dbUserPassword string
+@secure()
 param containerRegistryName string
 param aksClusterName string
+param apiUserManagedIdentityName string
 param aksAdminGroupObjectId string
 param deploymentClientIPAddress string
 
@@ -23,9 +26,15 @@ param nodeResoureGroup string = resourceGroup().name
 param location string = resourceGroup().location
 param tagsArray object = resourceGroup().tags
 
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview' existing = {
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
   name: logAnalyticsWorkspaceName
   scope: resourceGroup(logAnalyticsWorkspaceRG)
+}
+
+resource apiUserManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview' = {
+  name: apiUserManagedIdentityName
+  location: location
+  tags: tagsArray
 }
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
@@ -42,35 +51,39 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-resource postgreSQLServer 'Microsoft.DBforPostgreSQL/servers@2017-12-01' = {
+resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01' = {
   name: dbServerName
   location: location
   tags: tagsArray
   sku: {
-    name: 'B_Gen5_1'
-    tier: 'Basic'
-    family: 'Gen5'
-    capacity: 1
+    name: 'Standard_B2s'
+    tier: 'Burstable'
   }
   properties: {
-    storageProfile: {
-      storageMB: 5120
+    backup: {
       backupRetentionDays: 7
       geoRedundantBackup: 'Disabled'
-      storageAutogrow: 'Disabled'
     }
     createMode: 'Default'
-    version: '11'
-    sslEnforcement: 'Enabled'
-    minimalTlsVersion: 'TLSEnforcementDisabled'
-    infrastructureEncryption: 'Disabled'
-    publicNetworkAccess: 'Enabled'
+    version: '14'
+    storage: {
+      storageSizeGB: 32
+    }
+
+    authConfig: {
+      activeDirectoryAuth: 'Enabled'
+      passwordAuth: 'Enabled'
+    }
+    highAvailability: {
+      mode: 'Disabled'
+    }
+
     administratorLogin: dbAdminName
     administratorLoginPassword: dbAdminPassword
   }
 }
 
-resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/servers/databases@2017-12-01' = if (createDB) {
+resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
   parent: postgreSQLServer
   name: dbName
   properties: {
@@ -79,7 +92,7 @@ resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/servers/databases@2017-12
   }
 }
 
-resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
+resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
   name: 'AllowDeploymentClientIP'
   parent: postgreSQLServer
   properties: {
@@ -88,7 +101,7 @@ resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRu
   }
 }
 
-resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
+resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
   name: 'AllowAllWindowsAzureIps'
   parent: postgreSQLServer
   properties: {
@@ -97,27 +110,7 @@ resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRule
   }
 }
 
-resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: '${dbServerName}-logs'
-  scope: postgreSQLServer
-  properties: {
-    logs: [
-      {
-        categoryGroup: 'allLogs'
-        enabled: true
-      }
-    ]
-    metrics: [
-      {
-        category: 'AllMetrics'
-        enabled: true
-      }
-    ]
-    workspaceId: logAnalyticsWorkspace.id
-  }
-}
-
-resource containerRegistry 'Microsoft.ContainerRegistry/registries@2022-02-01-preview' = {
+resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-01-01-preview' = {
   name: containerRegistryName
   location: location
   tags: tagsArray
@@ -141,15 +134,78 @@ module rbacContainerRegistryACRPull './components/role-assignment-container-regi
 }
 
 //To use system assigned identities, aksService needs to exist before this template runs...
-resource aksService 'Microsoft.ContainerService/managedClusters@2022-06-02-preview' existing = {
+resource aksService 'Microsoft.ContainerService/managedClusters@2022-11-02-preview' = {
   name: aksClusterName
+  location: location
+  tags: tagsArray
+  identity: {
+    type: 'SystemAssigned'
+  }
+  sku: {
+    name: 'Basic'
+    tier: 'Paid'
+  }
+  properties: {
+    dnsPrefix: 'maabaks'
+    agentPoolProfiles: [
+      {
+        name: 'agentpool'
+        osDiskSizeGB: 0 //pick VMs default 
+        count: 3
+        enableAutoScaling: true
+        minCount: 3
+        maxCount: 5
+        vmSize: 'Standard_D4s_v3'
+        osType: 'Linux'
+        #disable-next-line BCP037
+        storageProfile: 'ManagedDisks'
+        type: 'VirtualMachineScaleSets'
+        mode: 'System'
+        maxPods: 110
+        availabilityZones: [
+          '1'
+          '2'
+          '3'
+        ]
+        enableNodePublicIP: false
+        tags: tagsArray
+      }
+    ]
+    networkProfile: {
+      loadBalancerSku: 'standard'
+      networkPlugin: 'kubenet'
+
+    }
+    disableLocalAccounts: true
+    aadProfile: {
+      managed: true
+      adminGroupObjectIDs: [ aksAdminGroupObjectId ]
+      enableAzureRBAC: true
+    }
+    addonProfiles: {
+      azureKeyvaultSecretsProvider: {
+        enabled: true
+        config: {
+          enableSecretRotation: 'false'
+          rotationPollInterval: '2m'
+        }
+      }
+      omsAgent: {
+        enabled: true
+        config: {
+          logAnalyticsWorkspaceResourceID: logAnalyticsWorkspace.id 
+        }
+      }
+    }
+    nodeResourceGroup: nodeResoureGroup
+  }
 }
 
 // resource keyVaultAccessIndentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview' existing = {
 //   name: keyVaultAccessIndentityName
 // }
 
-resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
+resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
   name: keyVaultName
   dependsOn: [
     appInsights
@@ -173,9 +229,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
 resource kvDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: '${keyVaultName}-kv-logs'
   scope: keyVault
-  dependsOn: [
-    aksServiceConfiguration //this would otherwise occasionally fail if not deployed as last
-  ]
   properties: {
     logs: [
       {
@@ -197,7 +250,7 @@ resource kvDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-pre
   }
 }
 
-resource kvSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-URL'
   properties: {
@@ -206,16 +259,16 @@ resource kvSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2021-11-
   }
 }
 
-resource kvSecretAppClientId 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretAppClientId 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-APP-CLIENT-ID'
   properties: {
-    value: aksService.identity.principalId
+    value: appClientId
     contentType: 'string'
   }
 }
 
-resource kvSecretDbUserName 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretDbUserName 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-USERNAME'
   properties: {
@@ -224,7 +277,7 @@ resource kvSecretDbUserName 'Microsoft.KeyVault/vaults/secrets@2021-11-01-previe
   }
 }
 
-resource kvSecretDbUserPassword 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretDbUserPassword 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-PASSWORD'
   properties: {
@@ -234,32 +287,15 @@ resource kvSecretDbUserPassword 'Microsoft.KeyVault/vaults/secrets@2021-11-01-pr
 }
 
 module rbacKV './components/role-assignment-kv.bicep' = {
-   name: 'rbac-kv-aks-service'
-    params: {
-      kvName: keyVault.name
-      roleAssignmentNameGuid: guid(aksService.properties.addonProfiles.azureKeyvaultSecretsProvider.identity.clientId, keyVault.id, keyVaultSecretsUser.id)
-      roleDefinitionId: keyVaultSecretsUser.id
-      principalId: aksService.properties.addonProfiles.azureKeyvaultSecretsProvider.identity.objectId
-      //clientId
-      //aksService.properties.identityProfile.kubeletidentity.objectId
-      //keyVaultAccessIndentity.properties.principalId
-    }
-}
-
-module aksServiceConfiguration 'aks-mi-service.bicep' = {
-  name: 'aks-mi-service'
-  dependsOn: [
-    rbacContainerRegistryACRPull
-    rbacKV
-  ]
+  name: 'rbac-kv-aks-service'
   params: {
-    aksClusterName: aksClusterName
-    aksAdminGroupObjectId: aksAdminGroupObjectId
-    logAnalyticsWorkspaceName: logAnalyticsWorkspaceName
-    logAnalyticsWorkspaceRG: logAnalyticsWorkspaceRG
-    nodeResoureGroup: nodeResoureGroup
-    location: location
-    tagsArray: tagsArray
+    kvName: keyVault.name
+    roleAssignmentNameGuid: guid(aksService.properties.addonProfiles.azureKeyvaultSecretsProvider.identity.clientId, keyVault.id, keyVaultSecretsUser.id)
+    roleDefinitionId: keyVaultSecretsUser.id
+    principalId: aksService.properties.addonProfiles.azureKeyvaultSecretsProvider.identity.objectId
+    //clientId
+    //aksService.properties.identityProfile.kubeletidentity.objectId
+    //keyVaultAccessIndentity.properties.principalId
   }
 }
 
@@ -270,7 +306,7 @@ resource acrPullRole 'Microsoft.Authorization/roleDefinitions@2022-04-01' existi
 }
 
 @description('This is the built-in Key Vault Secrets User role. See https://docs.microsoft.com/en-gb/azure/role-based-access-control/built-in-roles#key-vault-secrets-user')
-resource keyVaultSecretsUser 'Microsoft.Authorization/roleDefinitions@2018-01-01-preview' existing = {
+resource keyVaultSecretsUser 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
   scope: keyVault
   name: '4633458b-17de-408a-b874-0445c86b69e6'
 }
