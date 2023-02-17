@@ -252,7 +252,7 @@ jobs:
           else
             echo "ALTER USER ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';" > ./create_user.sql
           fi
-          echo "GRANT CONNECT ON DATABASE ${secrets.AZURE_DB_NAME}} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
+          echo "GRANT CONNECT ON DATABASE ${{secrets.AZURE_DB_NAME}} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
           echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
           echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
           echo "User ${{steps.vars.outputs.DB_ADMIN_NAME}} is running a user creation script:"
