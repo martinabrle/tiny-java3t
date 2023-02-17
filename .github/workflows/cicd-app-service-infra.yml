@@ -30,19 +30,19 @@ jobs:
         if: github.event.inputs.run_cleanup == 'true'
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          creds: ${{secrets.AZURE_CREDENTIALS}}
 
       - name: Set default Azure subscription
         if: github.event.inputs.run_cleanup == 'true'
-        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
 
       - name: Remove the resource group
         if: github.event.inputs.run_cleanup == 'true'
         run: |
-          RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
+          RG_EXISTS=$(az group exists --name ${{secrets.AZURE_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}})
           if [[ "$RG_EXISTS" == "true" ]]; then
              echo "Deleting the Todo App app resource group"
-             az group delete --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
+             az group delete --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}} --yes
           fi
 
   deploy_log_analytics_if_needed:
@@ -60,31 +60,31 @@ jobs:
       - name: Azure login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          creds: ${{secrets.AZURE_CREDENTIALS}}
 
       - name: Set default Azure subscription
-        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
 
       - name: Check the resource group exists
         id: logs_rg_exists
         run: |
-          LOGS_RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
+          LOGS_RG_EXISTS=$(az group exists --name ${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}})
           echo "::set-output name=LOGS_RG_EXISTS::${LOGS_RG_EXISTS}"
 
       - name: Create Logs Workspace Azure resource group
         if: steps.logs_rg_exists.outputs.LOGS_RG_EXISTS == 'false'
         run: |
           az deployment sub create \
-           --location ${{ secrets.AZURE_LOCATION }} \
+           --location ${{secrets.AZURE_LOCATION}} \
            --template-file ./templates/components/rg.bicep \
-           --parameters name=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} location=${{ secrets.AZURE_LOCATION }} resourceTags="${{ secrets.AZURE_RESOURCE_TAGS }}"
+           --parameters name=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} location=${{secrets.AZURE_LOCATION}} resourceTags="${{secrets.AZURE_RESOURCE_TAGS}}"
 
       - name: Deploy Log Workspace
         if: steps.logs_rg_exists.outputs.LOGS_RG_EXISTS == 'false'
         run: |
-          az deployment group create --resource-group ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --template-file ./templates/components/logs.bicep \
-                        --parameters location=${{ secrets.AZURE_LOCATION }}  \
-                                     logAnalyticsWorkspaceName=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME }}
+          az deployment group create --resource-group ${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} --template-file ./templates/components/logs.bicep \
+                        --parameters location=${{secrets.AZURE_LOCATION}}  \
+                                     logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}
 
   deploy_infra:
     needs: [deploy_log_analytics_if_needed]
@@ -99,10 +99,10 @@ jobs:
       - name: Azure login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          creds: ${{secrets.AZURE_CREDENTIALS}}
       
       - name: Set default Azure subscription
-        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
       
       - name: Purge deleted KV if found
         run: |
@@ -112,7 +112,7 @@ jobs:
             echo "Deleted KeyVault exists, purging it and waiting for 10 mins"
             az keyvault purge -l ${{secrets.AZURE_LOCATION}} -n ${{secrets.AZURE_KEY_VAULT_NAME}}
           fi
-
+      
       - name: Process input variables
         id: input_vars
         run: |
@@ -145,9 +145,9 @@ jobs:
       - name: Create Azure resource group
         run: |
           az deployment sub create \
-           --location ${{ secrets.AZURE_LOCATION }} \
+           --location ${{secrets.AZURE_LOCATION}} \
            --template-file ./templates/components/rg.bicep \
-           --parameters name=${{ secrets.AZURE_RESOURCE_GROUP }} location=${{ secrets.AZURE_LOCATION }} resourceTags="${{ secrets.AZURE_RESOURCE_TAGS }}"
+           --parameters name=${{secrets.AZURE_RESOURCE_GROUP}} location=${{secrets.AZURE_LOCATION}} resourceTags="${{secrets.AZURE_RESOURCE_TAGS}}"
 
       - name: Initialize deployment variables
         id: vars
@@ -344,7 +344,7 @@ jobs:
         if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
         run: |
           echo "Setting AAD DB Admin Group"
-          az postgres server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ steps.vars.outputs.AZURE_DBA_GROUP_ID }} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}"
+          az postgres server ad-admin create -s ${{secrets.AZURE_DB_SERVER_NAME}} -g ${{secrets.AZURE_RESOURCE_GROUP}} --object-id ${{steps.vars.outputs.AZURE_DBA_GROUP_ID}} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}"
   
       - name: Synchronize DB Schema
         run: |
@@ -362,7 +362,7 @@ jobs:
           else
             echo "ALTER USER ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';" > ./create_user.sql
           fi
-          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
+          echo "GRANT CONNECT ON DATABASE ${{secrets.AZURE_DB_NAME}} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
           echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
           echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
 
@@ -385,7 +385,7 @@ jobs:
           else
             echo "ALTER USER ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} WITH PASSWORD '${{steps.vars.outputs.DB_STAGING_APP_USER_PASSWORD}}';" > ./create_user.sql
           fi
-          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
+          echo "GRANT CONNECT ON DATABASE ${{secrets.AZURE_DB_NAME}} TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
           echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
           echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
 
@@ -402,7 +402,7 @@ jobs:
         run: |
           echo "SET aad_validate_oids_in_tenant = off;" > ./create_user.sql
           echo "CREATE ROLE ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment_aad.outputs.DB_APP_USER_ID}}' IN ROLE azure_ad_user;" >> ./create_user.sql
-          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
+          echo "GRANT CONNECT ON DATABASE ${{secrets.AZURE_DB_NAME}} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
           echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
           echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
           
@@ -421,7 +421,7 @@ jobs:
         run: |
           echo "SET aad_validate_oids_in_tenant = off;" > ./create_user.sql
           echo "CREATE ROLE ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment_aad.outputs.DB_STAGING_APP_USER_ID}}' IN ROLE azure_ad_user;" >> ./create_user.sql
-          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
+          echo "GRANT CONNECT ON DATABASE ${{secrets.AZURE_DB_NAME}} TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
           echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
           echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
           
@@ -437,4 +437,4 @@ jobs:
 
       - name: Remove DB Firewall exception used for Schema sync
         run: |
-          az postgres server firewall-rule delete --name "AllowDeploymentClientIP" --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --server-name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
+          az postgres server firewall-rule delete --name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --server-name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
