@@ -7,7 +7,6 @@ on:
   #  paths:
   #    - 'todoweb/**'  
   workflow_dispatch:
-    inputs:
     
 jobs:  
   build_app:
@@ -107,7 +106,7 @@ jobs:
 
       - name: Build and upload container
         run: |
-          az acr build ./ -t "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/${{secrets.AZURE_WEB_APP_NAME}}:${{steps.version.outputs.RELEASE_VERSION}}" -r "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io" --build-arg VERSION=${{steps.version.outputs.RELEASE_VERSION}}
+          az acr build ./ -r ${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} -t "${{secrets.AZURE_WEB_APP_NAME}}:${{steps.version.outputs.RELEASE_VERSION}}" --build-arg VERSION=${{steps.version.outputs.RELEASE_VERSION}}
   
   deploy_app:
     needs: [build_app]
