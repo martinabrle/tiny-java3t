@@ -231,10 +231,10 @@ jobs:
       
       - name: Set-up DB AAD Integration
         run: |
-          dbAdminName=`az postgres flexible-server ad-admin list -g ${{secrets.AZURE_RESOURCE_GROUP }} -s ${{secrets.AZURE_DB_SERVER_NAME}} --query "[?principalName == '${{secrets.AZURE_DBA_GROUP_NAME}}'].principalName" -o tsv`
+          dbAdminName=`az postgres flexible-server ad-admin list -g ${{secrets.AZURE_RESOURCE_GROUP}} -s ${{secrets.AZURE_DB_SERVER_NAME}} --query "[?principalName == '${{secrets.AZURE_DBA_GROUP_NAME}}'].principalName" -o tsv`
           if [[ -z "$dbAdminName" ]]; then
             echo "Setting AAD DB Admin Group"
-            az postgres flexible-server ad-admin create -s ${{secrets.AZURE_DB_SERVER_NAME}} -g ${{ secrets.AZURE_RESOURCE_GROUP}} --object-id ${{steps.vars.outputs.AZURE_DBA_GROUP_ID}} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}" -t Group
+            az postgres flexible-server ad-admin create -s ${{secrets.AZURE_DB_SERVER_NAME}} -g ${{secrets.AZURE_RESOURCE_GROUP}} --object-id ${{steps.vars.outputs.AZURE_DBA_GROUP_ID}} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}" -t Group
           fi
       
       - name: Synchronize DB Schema
@@ -252,7 +252,7 @@ jobs:
           else
             echo "ALTER USER ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';" > ./create_user.sql
           fi
-          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
+          echo "GRANT CONNECT ON DATABASE ${secrets.AZURE_DB_NAME}} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
           echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
           echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
           echo "User ${{steps.vars.outputs.DB_ADMIN_NAME}} is running a user creation script:"
@@ -274,7 +274,7 @@ jobs:
           echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running security label assignment script:"
           cat ./security_label.sql
           psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./security_label.sql
-          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME_EXTERNAL}};"> ./grant_rights.sql
+          echo "GRANT CONNECT ON DATABASE ${{secrets.AZURE_DB_NAME}} TO ${{steps.vars.outputs.DB_APP_USER_NAME_EXTERNAL}};"> ./grant_rights.sql
           echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME_EXTERNAL}};">> ./grant_rights.sql
           echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME_EXTERNAL}};">> ./grant_rights.sql
           echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running a script to GRANT permissions:"
@@ -286,4 +286,4 @@ jobs:
       
       - name: Remove DB Firewall exception used for Schema sync
         run: |
-          az postgres flexible-server firewall-rule delete --rule-name "AllowDeploymentClientIP" --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
+          az postgres flexible-server firewall-rule delete --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
