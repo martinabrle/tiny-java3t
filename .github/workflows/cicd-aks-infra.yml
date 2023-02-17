@@ -275,4 +275,4 @@ jobs:
       
       - name: Remove DB Firewall exception used for Schema sync
         run: |
-          az postgres server firewall-rule delete --name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --server-name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
+          az postgres flexible-server firewall-rule delete --rule-name "AllowDeploymentClientIP" --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
