@@ -106,7 +106,7 @@ jobs:
 
       - name: Build and upload container
         run: |
-          az acr build ./ -t "${{secrets.AZURE_API_APP_NAME}}:${{steps.version.outputs.RELEASE_VERSION}}" -r "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}" --build-arg VERSION=${{steps.version.outputs.RELEASE_VERSION}}
+          az acr build ./ -t "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/${{secrets.AZURE_API_APP_NAME}}:${{steps.version.outputs.RELEASE_VERSION}}" -r "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}" --build-arg VERSION=${{steps.version.outputs.RELEASE_VERSION}}
   
   deploy_app:
     needs: [build_app]
