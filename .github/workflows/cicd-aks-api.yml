@@ -7,7 +7,6 @@ on:
   #  paths:
   #    - 'todoapi/**'  
   workflow_dispatch:
-    inputs:
     
 jobs:  
   build_app:
