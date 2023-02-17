@@ -252,7 +252,7 @@ resource kvSecretDbAdminPassword 'Microsoft.KeyVault/vaults/secrets@2022-07-01' 
   parent: keyVault
   name: 'DB-ADMIN-PASSWORD'
   properties: {
-    value: dbAdminName
+    value: dbAdminPassword
     contentType: 'string'
   }
 }
