@@ -344,8 +344,8 @@ jobs:
       - name: Set-up DB AAD Integration
         if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
         run: |
-          dbAdminName=`az postgres flexible-server ad-admin list -g ${{secrets.AZURE_RESOURCE_GROUP}} -s ${{secrets.AZURE_DB_SERVER_NAME}} --query "[?principalName == '${{secrets.AZURE_DBA_GROUP_NAME}}'].principalName" -o tsv`
-          if [[ -z "$dbAdminName" ]]; then
+          dbPrincipalName=`az postgres flexible-server ad-admin list -g ${{secrets.AZURE_RESOURCE_GROUP}} -s ${{secrets.AZURE_DB_SERVER_NAME}} --query "[?principalName == '${{secrets.AZURE_DBA_GROUP_NAME}}'].principalName" -o tsv`
+          if [[ -z "$dbPrincipalName" ]]; then
             echo "Setting AAD DB Admin Group"
             az postgres flexible-server ad-admin create -s ${{secrets.AZURE_DB_SERVER_NAME}} -g ${{secrets.AZURE_RESOURCE_GROUP}} --object-id ${{steps.vars.outputs.AZURE_DBA_GROUP_ID}} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}" -t Group
           fi
