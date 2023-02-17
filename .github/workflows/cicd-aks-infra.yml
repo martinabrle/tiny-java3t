@@ -180,8 +180,6 @@ jobs:
       
       - name: Deploy Azure resources
         run: |
-          kvAccessIdentityName=`az identity list -g ${{secrets.AZURE_AKS_NODE_RESOURCE_GROUP}} --query "[?contains(name, 'keyvaultsecrets')].name" -o tsv`
-
           echo "Deploying with the following parameters:"
           echo "Admin name: '${{steps.vars.outputs.DB_ADMIN_NAME}}'"
           echo "Admin password: '${{steps.vars.outputs.DB_ADMIN_PASSWORD}}'"
@@ -197,7 +195,6 @@ jobs:
                            logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
                            logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}}  \
                            keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
-                           keyVaultAccessIndentityName=${kvAccessIdentityName} \
                            appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
                            dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
                            dbName=${{secrets.AZURE_DB_NAME}} \
