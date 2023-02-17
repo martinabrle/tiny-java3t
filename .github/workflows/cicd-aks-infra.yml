@@ -145,7 +145,6 @@ jobs:
           echo "::add-mask::$dbAdminPassword"
           echo "::set-output name=DB_ADMIN_PASSWORD::${dbAdminPassword}"
           
-          
           dbAppUserName=`echo "${{secrets.AZURE_API_APP_NAME}}" | tr '-' '_'`;
           echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
           echo "App user name: $dbAppUserName"

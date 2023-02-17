@@ -245,6 +245,15 @@ resource kvAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/secrets@2022
   }
 }
 
+resource kvSecretDbAdminPassword 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
+  name: 'DB-ADMIN-PASSWORD'
+  properties: {
+    value: dbAdminPassword
+    contentType: 'string'
+  }
+}
+
 resource kvSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-URL'
