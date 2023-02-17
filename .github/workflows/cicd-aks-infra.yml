@@ -179,7 +179,6 @@ jobs:
       #   uses: mxschmitt/action-tmate@v3.11
       
       - name: Deploy Azure resources
-        id: deployment_aad
         run: |
           kvAccessIdentityName=`az identity list -g ${{secrets.AZURE_AKS_NODE_RESOURCE_GROUP}} --query "[?contains(name, 'keyvaultsecrets')].name" -o tsv`
 
