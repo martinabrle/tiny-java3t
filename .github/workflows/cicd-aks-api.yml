@@ -69,11 +69,11 @@ jobs:
 
           export repoList=`az acr repository list --name ${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} -o tsv`
           export containerRegistryVersion="0.0.0"
-          if [[ -z "$repoList" ]]; then
-            export containerRegistryVersion="1.0.0"
-          else
+          if [[ "$repoList" == *${{secrets.AZURE_API_APP_NAME}}* ]]; then
             az acr repository show-tags --name ${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} --repository "${{secrets.AZURE_API_APP_NAME}}" -o tsv >container_tags.txt
             export containerRegistryVersion=`java ../scripts/JavaUtils.java -get_highest_semver_from_file ./container_tags.txt`
+          else
+            export containerRegistryVersion="1.0.0"
           fi
           export pomVersion=`java ../scripts/JavaUtils.java -get_pom_version ./pom.xml`
           export higherVersion=`java ../scripts/JavaUtils.java -get_higher_semver ${pomVersion} ${containerRegistryVersion}`
