@@ -128,12 +128,23 @@ jobs:
             dbAdminName="a`openssl rand -hex 5`"
           fi
           echo "Admin name: $dbAdminName"
-          echo "Admin password: $dbAdminPassword"
+          echo "::set-output name=DB_ADMIN_NAME::${dbAdminName}"
           
-          dbAdminPassword="`openssl rand -hex 25`#@"
+          dbAdminPassword=""
+          kvExists=`az keyvault list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[?name=='${{secrets.AZURE_KEY_VAULT_NAME}}'].name" -o tsv`
+          if [[ ! -z "$kvExists" ]]; then
+            kvSecretExists=`az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "[?name=='DB-ADMIN-PASSWORD'].name" -o tsv`
+            if [[ ! -z "$kvExists" ]]; then
+              dbAdminPassword=`az keyvault secret show --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --name "DB-ADMIN-PASSWORD" --query "[value] -o tsv`
+            fi
+          fi
+          if [[ -z "$dbAdminPassword" ]]; then
+            dbAdminPassword="`openssl rand -hex 25`#@"
+          fi
+          echo "Admin password: $dbAdminPassword"
           echo "::add-mask::$dbAdminPassword"
           echo "::set-output name=DB_ADMIN_PASSWORD::${dbAdminPassword}"
-          echo "::set-output name=DB_ADMIN_NAME::${dbAdminName}"
+          
           
           dbAppUserName=`echo "${{secrets.AZURE_API_APP_NAME}}" | tr '-' '_'`;
           echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
