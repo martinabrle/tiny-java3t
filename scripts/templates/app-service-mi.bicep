@@ -52,35 +52,38 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-resource postgreSQLServer 'Microsoft.DBforPostgreSQL/servers@2017-12-01' = {
+resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01' = {
   name: dbServerName
   location: location
   tags: tagsArray
   sku: {
-    name: 'B_Gen5_1'
-    tier: 'Basic'
-    family: 'Gen5'
-    capacity: 1
+    name: 'Standard_B2s'
+    tier: 'Burstable'
   }
   properties: {
-    storageProfile: {
-      storageMB: 5120
+    backup: {
       backupRetentionDays: 7
       geoRedundantBackup: 'Disabled'
-      storageAutogrow: 'Disabled'
     }
     createMode: 'Default'
-    version: '11'
-    sslEnforcement: 'Enabled'
-    minimalTlsVersion: 'TLSEnforcementDisabled'
-    infrastructureEncryption: 'Disabled'
-    publicNetworkAccess: 'Enabled'
+    version: '14'
+    storage: {
+      storageSizeGB: 32
+    }
+
+    authConfig: {
+      activeDirectoryAuth: 'Enabled'
+      passwordAuth: 'Enabled'
+    }
+    highAvailability: {
+      mode: 'Disabled'
+    }
     administratorLogin: dbAdminName
     administratorLoginPassword: dbAdminPassword
   }
 }
 
-resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/servers/databases@2017-12-01' = if (createDB) {
+resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
   parent: postgreSQLServer
   name: dbName
   properties: {
@@ -89,7 +92,7 @@ resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/servers/databases@2017-12
   }
 }
 
-resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
+resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
   name: 'AllowDeploymentClientIP'
   parent: postgreSQLServer
   properties: {
@@ -98,7 +101,7 @@ resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRu
   }
 }
 
-resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
+resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
   name: 'AllowAllWindowsAzureIps'
   parent: postgreSQLServer
   properties: {
