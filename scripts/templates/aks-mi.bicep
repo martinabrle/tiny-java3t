@@ -174,7 +174,6 @@ resource aksService 'Microsoft.ContainerService/managedClusters@2022-11-02-previ
     networkProfile: {
       loadBalancerSku: 'standard'
       networkPlugin: 'kubenet'
-
     }
     disableLocalAccounts: true
     aadProfile: {
