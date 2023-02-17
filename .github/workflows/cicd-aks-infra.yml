@@ -259,7 +259,7 @@ jobs:
       - name: Set-up AAD DB User(s)
         run: |
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
-          echo "create role ${{steps.vars.outputs.DB_APP_USER_NAME_EXTERNAL} login;" > ./create_role.sql
+          echo "create role ${{steps.vars.outputs.DB_APP_USER_NAME_EXTERNAL}} login;" > ./create_role.sql
           echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running AAD role creation script:"
           cat ./create_role.sql
           psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./create_role.sql
