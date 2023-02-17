@@ -122,7 +122,7 @@ jobs:
           echo "::set-output name=APP_CLIENT_ID::${appClientId}"
           echo "AppClientId: $appClientId"
   
-          dbAdminName=`az postgres server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
+          dbAdminName=`az postgres flexible-server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
           if [[ -z "$dbAdminName" ]]; then
             echo "This is a new deployment, generating a new admin name"
             dbAdminName="a`openssl rand -hex 5`"
