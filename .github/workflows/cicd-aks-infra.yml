@@ -210,7 +210,7 @@ jobs:
                            containerRegistryName=${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} \
                            aksClusterName=${{secrets.AZURE_AKS_NAME}} \
                            aksAdminGroupObjectId=${{steps.vars.outputs.AZURE_AKS_ADMIN_GROUP_ID}} \
-                           apiUserManagedIdentityName=${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME} \
+                           apiUserManagedIdentityName=${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}} \
                            deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
                            nodeResoureGroup=${{secrets.AZURE_AKS_NODE_RESOURCE_GROUP}}
 
