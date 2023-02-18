@@ -60,7 +60,8 @@ jobs:
         id: logs_rg_exists
         run: |
           LOGS_RG_EXISTS=$(az group exists --name ${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}})
-          echo "::set-output name=LOGS_RG_EXISTS::${LOGS_RG_EXISTS}"
+          #echo "::set-output name=LOGS_RG_EXISTS::${LOGS_RG_EXISTS}"
+          echo "LOGS_RG_EXISTS=${LOGS_RG_EXISTS}" >> $GITHUB_OUTPUT
 
       - name: Create Logs Workspace Azure resource group
         if: steps.logs_rg_exists.outputs.LOGS_RG_EXISTS == 'false'
@@ -115,11 +116,13 @@ jobs:
         id: vars
         run: |
           clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
-          echo "::set-output name=DEPLOYMENT_CLIENT_IP::${clientIP}"
+          #echo "::set-output name=DEPLOYMENT_CLIENT_IP::${clientIP}"
+          echo "DEPLOYMENT_CLIENT_IP=${clientIP}" >> $GITHUB_OUTPUT
           echo "Client IP: $clientIP"
 
           appClientId=`az ad sp list --display-name "${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}" --query "[?displayName=='${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}'].appId" --out tsv`
-          echo "::set-output name=APP_CLIENT_ID::${appClientId}"
+          #echo "::set-output name=APP_CLIENT_ID::${appClientId}"
+          echo "APP_CLIENT_ID=${appClientId}" >> $GITHUB_OUTPUT
           echo "AppClientId: $appClientId"
   
           dbAdminName=`az postgres flexible-server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
@@ -128,7 +131,8 @@ jobs:
             dbAdminName="a`openssl rand -hex 5`"
           fi
           echo "Admin name: $dbAdminName"
-          echo "::set-output name=DB_ADMIN_NAME::${dbAdminName}"
+          #echo "::set-output name=DB_ADMIN_NAME::${dbAdminName}"
+          echo "DB_ADMIN_NAME=${dbAdminName}" >> $GITHUB_OUTPUT
           
           dbAdminPassword=""
           kvExists=`az keyvault list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[?name=='${{secrets.AZURE_KEY_VAULT_NAME}}'].name" -o tsv`
@@ -143,27 +147,33 @@ jobs:
           fi
           echo "Admin password: $dbAdminPassword"
           echo "::add-mask::$dbAdminPassword"
-          echo "::set-output name=DB_ADMIN_PASSWORD::${dbAdminPassword}"
+          #echo "::set-output name=DB_ADMIN_PASSWORD::${dbAdminPassword}"
+          echo "DB_ADMIN_PASSWORD=${dbAdminPassword}" >> $GITHUB_OUTPUT
           
           dbAppUserName=`echo "${{secrets.AZURE_API_APP_NAME}}" | tr '-' '_'`;
-          echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
+          #echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
+          echo "DB_APP_USER_NAME=${dbAppUserName}" >> $GITHUB_OUTPUT
           echo "App user name: $dbAppUserName"
 
           dbAppUserNameExternal=`echo "${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}" | tr '-' '_'`;
-          echo "::set-output name=DB_APP_USER_NAME_EXTERNAL::${dbAppUserNameExternal}"
+          #echo "::set-output name=DB_APP_USER_NAME_EXTERNAL::${dbAppUserNameExternal}"
+          echo "DB_APP_USER_NAME_EXTERNAL=${dbAppUserNameExternal}" >> $GITHUB_OUTPUT
           echo "External app user name: $dbAppUserNameExternal"
 
           dbAppUserPassword="`openssl rand -hex 25`#@"
           echo "::add-mask::$dbAppUserPassword"
-          echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
+          #echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
+          echo "DB_APP_USER_PASSWORD=${dbAppUserPassword}" >> $GITHUB_OUTPUT
           
           dbaGroupId=`az ad group show --group "${{secrets.AZURE_DBA_GROUP_NAME}}" --query '[id]' -o tsv`
           echo "DBA Group Id: $dbaGroupId"
-          echo "::set-output name=AZURE_DBA_GROUP_ID::${dbaGroupId}"
-          
+          #echo "::set-output name=AZURE_DBA_GROUP_ID::${dbaGroupId}"
+          echo "AZURE_DBA_GROUP_ID=${dbaGroupId}" >> $GITHUB_OUTPUT
+
           aksAdminGroupId=`az ad group show --group "${{secrets.AZURE_AKS_ADMIN_GROUP_NAME}}" --query '[id]' -o tsv`
           echo "AKS Admin Group Id: $aksAdminGroupId"
-          echo "::set-output name=AZURE_AKS_ADMIN_GROUP_ID::${aksAdminGroupId}"
+          #echo "::set-output name=AZURE_AKS_ADMIN_GROUP_ID::${aksAdminGroupId}"
+          echo "AZURE_AKS_ADMIN_GROUP_ID=${aksAdminGroupId}" >> $GITHUB_OUTPUT
       
       
       # - name: debug
@@ -224,7 +234,8 @@ jobs:
         id: deployment_aad
         run: |
           dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}" --query "[?displayName=='${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}'].appId" --out tsv`
-          echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
+          #echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
+          echo "name=DB_APP_USER_ID=${dbAppUserId}" >> $GITHUB_OUTPUT
           #Following is a workaround - I still did not figure out how to retrieve AppId in bicep
           az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${dbAppUserId}"
       

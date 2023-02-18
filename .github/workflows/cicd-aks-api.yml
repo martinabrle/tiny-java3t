@@ -86,12 +86,16 @@ jobs:
           echo "New Version: ${newVersion}"
           echo "Container image name: ${containerImageName}"
 
-          echo "::set-output name=RELEASE_VERSION::${newVersion}"
-          echo "::set-output name=RELEASE_NAME::${{secrets.AZURE_API_APP_NAME}}-${newVersion}"
-          echo "::set-output name=RELEASE_FILE_NAME::${{secrets.AZURE_API_APP_NAME}}-${newVersion}.jar"
-          echo "::set-output name=CONTAINER_IMAGE_NAME::${containerImageName}"
+          #echo "::set-output name=RELEASE_VERSION::${newVersion}"
+          #echo "::set-output name=RELEASE_NAME::${{secrets.AZURE_API_APP_NAME}}-${newVersion}"
+          #echo "::set-output name=RELEASE_FILE_NAME::${{secrets.AZURE_API_APP_NAME}}-${newVersion}.jar"
+          #echo "::set-output name=CONTAINER_IMAGE_NAME::${containerImageName}"
           
-
+          echo "RELEASE_VERSION=${newVersion}" >> $GITHUB_OUTPUT
+          echo "RELEASE_NAME=${{secrets.AZURE_API_APP_NAME}}-${newVersion}" >> $GITHUB_OUTPUT
+          echo "RELEASE_FILE_NAME=${{secrets.AZURE_API_APP_NAME}}-${newVersion}.jar" >> $GITHUB_OUTPUT
+          echo "CONTAINER_IMAGE_NAME=${containerImageName}" >> $GITHUB_OUTPUT
+          
           mv ./pom.xml ./pom.xml.bak
           java ../scripts/JavaUtils.java -update_pom_version ./pom.xml.bak ${newVersion} ./pom.xml
           export newVersionFromPOM=`java ../scripts/JavaUtils.java -increase_semver ${higherVersion}`
