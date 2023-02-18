@@ -5,7 +5,6 @@ param appInsightsName string
 param keyVaultName string
 param dbServerName string
 param dbName string
-param createDB bool = true
 
 @secure()
 param dbAdminName string
