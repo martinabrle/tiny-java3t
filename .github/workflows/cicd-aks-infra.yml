@@ -231,7 +231,7 @@ jobs:
                            nodeResoureGroup=${{secrets.AZURE_AKS_NODE_RESOURCE_GROUP}}
 
       - name: Init AAD ClientId
-        id: deployment_aad
+        id: aadclient
         run: |
           dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}" --query "[?displayName=='${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}'].appId" --out tsv`
           #echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
@@ -274,6 +274,7 @@ jobs:
 
       - name: Set-up AAD DB User(s)
         run: |
+          echo "App Client Id: ${{steps.aadclient.outputs.DB_APP_USER_ID}}""
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
           echo "create role ${{steps.vars.outputs.DB_APP_USER_NAME_EXTERNAL}} login;" > ./create_role.sql
           echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running AAD role creation script:"
@@ -281,7 +282,7 @@ jobs:
           psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./create_role.sql
           echo "security label for pgaadauth " > ./security_label.sql
           echo "    on role ${{steps.vars.outputs.DB_APP_USER_NAME_EXTERNAL}} " >> ./security_label.sql
-          echo "    is 'aadauth,oid=${{steps.deployment_aad.outputs.DB_APP_USER_ID}},type=service'; " >> ./security_label.sql
+          echo "    is 'aadauth,oid=${{steps.aadclient.outputs.DB_APP_USER_ID}},type=service'; " >> ./security_label.sql
           echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running security label assignment script:"
           cat ./security_label.sql
           psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./security_label.sql
