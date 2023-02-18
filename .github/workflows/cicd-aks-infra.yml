@@ -236,6 +236,7 @@ jobs:
           dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}" --query "[?displayName=='${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}'].appId" --out tsv`
           #echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
           echo "name=DB_APP_USER_ID=${dbAppUserId}" >> $GITHUB_OUTPUT
+          echo "App Client Id: ${dbAppUserId}"
           #Following is a workaround - I still did not figure out how to retrieve AppId in bicep
           az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${dbAppUserId}"
       
