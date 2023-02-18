@@ -274,7 +274,7 @@ jobs:
 
       - name: Set-up AAD DB User(s)
         run: |
-          echo "App Client Id: ${{steps.aadclient.outputs.DB_APP_USER_ID}}""
+          echo "App Client Id: ${{steps.aadclient.outputs.DB_APP_USER_ID}}"
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
           echo "create role ${{steps.vars.outputs.DB_APP_USER_NAME_EXTERNAL}} login;" > ./create_role.sql
           echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running AAD role creation script:"
