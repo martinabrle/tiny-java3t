@@ -42,9 +42,9 @@ jobs:
           mv "$files" "./todoapi-${GITHUB_SHA}.jar"
           ls -la
           cd ..
-          echo "::set-output name=RELEASE_VERSION::${GITHUB_SHA}"
-          echo "::set-output name=RELEASE_NAME::todoapi-${GITHUB_SHA}"
-          echo "::set-output name=RELEASE_FILE_NAME::todoapi-${GITHUB_SHA}.jar"
+          echo "RELEASE_VERSION=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+          echo "RELEASE_NAME=todoapi-${GITHUB_SHA}" >> $GITHUB_OUTPUT
+          echo "RELEASE_FILE_NAME=todoapi-${GITHUB_SHA}.jar" >> $GITHUB_OUTPUT
           
       - name: Display next version
         run: |
@@ -97,21 +97,21 @@ jobs:
           echo "Processing PUSH event: ${{github.event_name}}"
           if [[ $(az group exists --name "${{secrets.AZURE_RESOURCE_GROUP}}") = false ]]; then
             echo "Nothing deployed yet, should not happen here, choosing MANAGED_IDENTITIES"
-            echo "::set-output name=DEPLOYMENT_ENVIRONMENT::MANAGED_IDENTITIES"
+            echo "DEPLOYMENT_ENVIRONMENT=MANAGED_IDENTITIES" >> $GITHUB_OUTPUT
           else
             vnetList=`az network vnet list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[]" -o tsv`
             if [[ -z "$vnetList" ]]; then
               appClientIdExists=$(az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "contains([].id, 'https://${{secrets.AZURE_KEY_VAULT_NAME}}.vault.azure.net/secrets/SPRING-DATASOURCE-APP-CLIENT-ID')")
               if [ $appClientIdExists == true ]; then
                 echo "App client ID exists, setting MANAGED_IDENTITIES"
-                echo "::set-output name=DEPLOYMENT_ENVIRONMENT::MANAGED_IDENTITIES"
+                echo "DEPLOYMENT_ENVIRONMENT=MANAGED_IDENTITIES" >> $GITHUB_OUTPUT
               else
                 echo "App client ID does not exist, setting CLASSIC"
-                echo "::set-output name=DEPLOYMENT_ENVIRONMENT::CLASSIC"
+                echo "DEPLOYMENT_ENVIRONMENT=CLASSIC" >> $GITHUB_OUTPUT
               fi
             else
               echo "VNET Deployed, setting VNET"
-              echo "::set-output name=DEPLOYMENT_ENVIRONMENT::VNET"
+              echo "DEPLOYMENT_ENVIRONMENT=VNET" >> $GITHUB_OUTPUT
             fi
           fi
       

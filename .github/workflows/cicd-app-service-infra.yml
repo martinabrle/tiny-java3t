@@ -69,7 +69,7 @@ jobs:
         id: logs_rg_exists
         run: |
           LOGS_RG_EXISTS=$(az group exists --name ${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}})
-          echo "::set-output name=LOGS_RG_EXISTS::${LOGS_RG_EXISTS}"
+          echo "LOGS_RG_EXISTS=${LOGS_RG_EXISTS}" >> $GITHUB_OUTPUT
 
       - name: Create Logs Workspace Azure resource group
         if: steps.logs_rg_exists.outputs.LOGS_RG_EXISTS == 'false'
@@ -118,26 +118,26 @@ jobs:
         run: |
           if [[ "${{github.event_name}}" == 'workflow_dispatch' ]]; then
             echo "Processing manual dispatch (${{github.event_name}}): ${{github.event.inputs.deployment_environment}}"
-            echo "::set-output name=DEPLOYMENT_ENVIRONMENT::${{github.event.inputs.deployment_environment}}"
+            echo "DEPLOYMENT_ENVIRONMENT=${{github.event.inputs.deployment_environment}}" >> $GITHUB_OUTPUT
           else
             echo "Processing PUSH event: ${{github.event_name}}"
             if [[ $(az group exists --name "${{secrets.AZURE_RESOURCE_GROUP}}") = false ]]; then
               echo "Nothing deployed yet, choosing MANAGED_IDENTITIES"
-              echo "::set-output name=DEPLOYMENT_ENVIRONMENT::MANAGED_IDENTITIES"
+              echo "DEPLOYMENT_ENVIRONMENT=MANAGED_IDENTITIES" >> $GITHUB_OUTPUT
             else
               vnetList=`az network vnet list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[]" -o tsv`
               if [[ -z "$vnetList" ]]; then
                 appClientIdExists=$(az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "contains([].id, 'https://${{secrets.AZURE_KEY_VAULT_NAME}}.vault.azure.net/secrets/SPRING-DATASOURCE-APP-CLIENT-ID')")
                 if [ $appClientIdExists == true ]; then
                   echo "App client ID exists, setting MANAGED_IDENTITIES"
-                  echo "::set-output name=DEPLOYMENT_ENVIRONMENT::MANAGED_IDENTITIES"
+                  echo "DEPLOYMENT_ENVIRONMENT=MANAGED_IDENTITIES" >> $GITHUB_OUTPUT
                 else
                   echo "App client ID does not exist, setting CLASSIC"
-                  echo "::set-output name=DEPLOYMENT_ENVIRONMENT::CLASSIC"
+                  echo "DEPLOYMENT_ENVIRONMENT=CLASSIC" >> $GITHUB_OUTPUT
                 fi
               else
                 echo "VNET Deployed already, setting VNET"
-                echo "::set-output name=DEPLOYMENT_ENVIRONMENT::VNET"
+                echo "DEPLOYMENT_ENVIRONMENT=VNET" >> $GITHUB_OUTPUT
               fi
             fi
           fi
@@ -153,7 +153,7 @@ jobs:
         id: vars
         run: |
           clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
-          echo "::set-output name=DEPLOYMENT_CLIENT_IP::${clientIP}"
+          echo "DEPLOYMENT_CLIENT_IP=${clientIP}" >> $GITHUB_OUTPUT
           echo "Client IP: $clientIP"
           echo "Deployment type: ${{steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT}}"
 
@@ -163,7 +163,7 @@ jobs:
             dbAdminName="a`openssl rand -hex 5`"
           fi
           echo "Admin name: $dbAdminName"
-          echo "::set-output name=DB_ADMIN_NAME::${dbAdminName}"
+          echo "DB_ADMIN_NAME=${dbAdminName}" >> $GITHUB_OUTPUT
           
           dbAdminPassword=""
           kvExists=`az keyvault list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[?name=='${{secrets.AZURE_KEY_VAULT_NAME}}'].name" -o tsv`
@@ -178,14 +178,14 @@ jobs:
           fi
           echo "Admin password: $dbAdminPassword"
           echo "::add-mask::$dbAdminPassword"
-          echo "::set-output name=DB_ADMIN_PASSWORD::${dbAdminPassword}"
+          echo "DB_ADMIN_PASSWORD=${dbAdminPassword}" >> $GITHUB_OUTPUT
           
           dbAppUserName=`echo "${{secrets.AZURE_API_APP_NAME}}" | tr '-' '_'`;
-          echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
+          echo "DB_APP_USER_NAME=${dbAppUserName}" >> $GITHUB_OUTPUT
           echo "App user name: $dbAppUserName"
 
           dbStagingAppUserName=`echo "${{secrets.AZURE_API_APP_NAME}}-staging" | tr '-' '_'`;
-          echo "::set-output name=DB_STAGING_APP_USER_NAME::${dbStagingAppUserName}"
+          echo "DB_STAGING_APP_USER_NAME=${dbStagingAppUserName}" >> $GITHUB_OUTPUT
           echo "Staging app user name: $dbStagingAppUserName"         
 
           if [[ "${{steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT}}" -ne 'CLASSIC' ]]; then
@@ -200,35 +200,35 @@ jobs:
             echo "::add-mask::$dbAppUserPassword"
             dbStagingAppUserPassword="`openssl rand -hex 25`#@"
             echo "::add-mask::$dbStagingAppUserPassword"
-            echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
-            echo "::set-output name=DB_STAGING_APP_USER_PASSWORD::${dbStagingAppUserPassword}"
-            echo "::set-output name=DB_AAD_INTEGRATION::false"
-            echo "::set-output name=APP_SPRING_PROFILE::test"
+            echo "DB_APP_USER_PASSWORD=${dbAppUserPassword}" >> $GITHUB_OUTPUT
+            echo "DB_STAGING_APP_USER_PASSWORD=${dbStagingAppUserPassword}" >> $GITHUB_OUTPUT
+            echo "DB_AAD_INTEGRATION=false" >> $GITHUB_OUTPUT
+            echo "APP_SPRING_PROFILE=test" >> $GITHUB_OUTPUT
           else
             dbaGroupId=`az ad group show --group "${{secrets.AZURE_DBA_GROUP_NAME}}" --query '[id]' -o tsv`
             echo "DBA Group Id: $dbaGroupId"
-            echo "::set-output name=AZURE_DBA_GROUP_ID::${dbaGroupId}"
-            echo "::set-output name=DB_AAD_INTEGRATION::true"
-            echo "::set-output name=APP_SPRING_PROFILE::test-mi"
+            echo "AZURE_DBA_GROUP_ID=${dbaGroupId}" >> $GITHUB_OUTPUT
+            echo "DB_AAD_INTEGRATION=true" >> $GITHUB_OUTPUT
+            echo "APP_SPRING_PROFILE=test-mi" >> $GITHUB_OUTPUT
           fi
 
           export appName=`az webapp list -g ${{secrets.AZURE_RESOURCE_GROUP}} --query "[?name=='${{secrets.AZURE_API_APP_NAME}}'].name" -o tsv`
           if [[ -z "$appName" ]]; then
-            echo "::set-output name=FIRST_DEPLOYMENT::true"
-            echo "::set-output name=API_HEALTH_CHECK_PATH::"
-            echo "::set-output name=WEB_HEALTH_CHECK_PATH::"
-            echo "::set-output name=APP_CLIENT_ID::"
-            echo "::set-output name=STAGING_APP_CLIENT_ID::"
+            echo "FIRST_DEPLOYMENT=true" >> $GITHUB_OUTPUT
+            echo "API_HEALTH_CHECK_PATH=" >> $GITHUB_OUTPUT
+            echo "WEB_HEALTH_CHECK_PATH=" >> $GITHUB_OUTPUT
+            echo "APP_CLIENT_ID=" >> $GITHUB_OUTPUT
+            echo "STAGING_APP_CLIENT_ID=" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=FIRST_DEPLOYMENT::false"
+            echo "FIRST_DEPLOYMENT=false" >> $GITHUB_OUTPUT
             healthCheckPath=`az webapp show -g ${{secrets.AZURE_RESOURCE_GROUP}} -n "${{secrets.AZURE_API_APP_NAME}}" --query "siteConfig.healthCheckPath" -o tsv`
-            echo "::set-output name=API_HEALTH_CHECK_PATH::${healthCheckPath}"
+            echo "API_HEALTH_CHECK_PATH=${healthCheckPath}" >> $GITHUB_OUTPUT
             healthCheckPath=`az webapp show -g ${{secrets.AZURE_RESOURCE_GROUP}} -n "${{secrets.AZURE_WEB_APP_NAME}}" --query "siteConfig.healthCheckPath" -o tsv`
-            echo "::set-output name=WEB_HEALTH_CHECK_PATH::${healthCheckPath}"
+            echo "WEB_HEALTH_CHECK_PATH=${healthCheckPath}" >> $GITHUB_OUTPUT
             appClientId=`az ad sp list --display-name "${{secrets.AZURE_API_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_API_APP_NAME}}'].appId" --out tsv`
-            echo "::set-output name=APP_CLIENT_ID::${appClientId}"
+            echo "APP_CLIENT_ID=${appClientId}" >> $GITHUB_OUTPUT
             stagingAppClientId=`az ad sp list --display-name "${{secrets.AZURE_API_APP_NAME}}/slots/staging" --query "[?displayName=='${{secrets.AZURE_API_APP_NAME}}/slots/staging'].appId" --out tsv`
-            echo "::set-output name=STAGING_APP_CLIENT_ID::${stagingAppClientId}"
+            echo "STAGING_APP_CLIENT_ID=${stagingAppClientId}" >> $GITHUB_OUTPUT
           fi
       
       - name: Deploy Azure resources (AAD Integration)
@@ -300,10 +300,10 @@ jobs:
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
         run: |
           dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_API_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_API_APP_NAME}}'].appId" --out tsv`
-          echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
+          echo "DB_APP_USER_ID=${dbAppUserId}" >> $GITHUB_OUTPUT
 
           dbStagingAppUserId=`az ad sp list --display-name "${{secrets.AZURE_API_APP_NAME}}/slots/staging" --query "[?displayName=='${{secrets.AZURE_API_APP_NAME}}/slots/staging'].appId" --out tsv`
-          echo "::set-output name=DB_STAGING_APP_USER_ID::${dbStagingAppUserId}"
+          echo "DB_STAGING_APP_USER_ID=${dbStagingAppUserId}" >> $GITHUB_OUTPUT
 
           #Following is a workaround - I still did not figure out how to retrieve AppId in bicep
           az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${dbAppUserId}"
