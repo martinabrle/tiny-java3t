@@ -86,6 +86,14 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
         name: 'db'
         properties: {
           addressPrefix: dbSubnetAddressPrefix
+          delegations: [
+            {
+              name: 'Microsoft.DBforPostgreSQL/flexibleServers'
+              properties: {
+                serviceName: 'Microsoft.DBforPostgreSQL/flexibleServers'
+              }
+            }
+          ]
         }
       }
     ]
@@ -824,7 +832,7 @@ resource apiAppServiceSlotConfigNames 'Microsoft.Web/sites/config@2022-03-01' = 
   name: 'slotConfigNames'
   kind: 'string'
   parent: apiAppService
-  dependsOn: [apiAppServicePARMS]
+  dependsOn: [ apiAppServicePARMS ]
   properties: {
     appSettingNames: [
       'SPRING_DATASOURCE_URL', 'SPRING_DATASOURCE_USERNAME', 'SPRING_DATASOURCE_APP_CLIENT_ID', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'APPINSIGHTS_INSTRUMENTATIONKEY', 'SPRING_PROFILES_ACTIVE', 'PORT', 'SPRING_DATASOURCE_SHOW_SQL', 'DEBUG_AUTH_TOKEN'
@@ -922,9 +930,9 @@ resource apiAppServiceStagingPARMS 'Microsoft.Web/sites/slots/config@2022-03-01'
       {
         name: 'SPRING_PROFILES_ACTIVE'
         value: 'local' // as we do not have an access to the database from the staging slot,
-                       // here I will only run the tests against the local in-memory storage.
-                       // If I will ever get to deploying my own GitHub runner into the VNET,
-                       // than this can be changed again to 'test-mi'
+        // here I will only run the tests against the local in-memory storage.
+        // If I will ever get to deploying my own GitHub runner into the VNET,
+        // than this can be changed again to 'test-mi'
       }
       {
         name: 'PORT'
@@ -946,7 +954,7 @@ resource webAppServiceSlotConfigNames 'Microsoft.Web/sites/config@2021-03-01' = 
   name: 'slotConfigNames'
   kind: 'string'
   parent: webAppService
-  dependsOn: [webAppServicePARMS]
+  dependsOn: [ webAppServicePARMS ]
   properties: {
     appSettingNames: [
       'APPLICATIONINSIGHTS_CONNECTION_STRING', 'APPINSIGHTS_INSTRUMENTATIONKEY', 'API_URI', 'SPRING_PROFILES_ACTIVE', 'PORT', 'DEBUG_AUTH_TOKEN'
