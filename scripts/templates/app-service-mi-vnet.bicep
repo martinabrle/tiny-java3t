@@ -284,19 +284,19 @@ resource privateLinkDNSZoneAppService 'Microsoft.Network/privateDnsZones/virtual
   }
 }
 
-resource pvtEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
-  name: '${privateEndpointPostgresqlServer.name}/default'
-  properties: {
-    privateDnsZoneConfigs: [
-      {
-        name: 'privatelink-postgres-database-azure-com'
-        properties: {
-          privateDnsZoneId: privateDNSZonePostgresqlServer.id
-        }
-      }
-    ]
-  }
-}
+// resource pvtEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
+//   name: '${privateEndpointPostgresqlServer.name}/default'
+//   properties: {
+//     privateDnsZoneConfigs: [
+//       {
+//         name: 'privatelink-postgres-database-azure-com'
+//         properties: {
+//           privateDnsZoneId: privateDNSZonePostgresqlServer.id
+//         }
+//       }
+//     ]
+//   }
+// }
 
 resource pvtEndpointDnsGroupApiAppService 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
   name: '${privateEndpointApiAppService.name}/default'
