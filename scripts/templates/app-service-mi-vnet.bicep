@@ -149,6 +149,9 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
     }
     administratorLogin: dbAdminName
     administratorLoginPassword: dbAdminPassword
+    network: {
+      delegatedSubnetResourceId: dbSubnet.id
+    }
   }
 }
 
@@ -179,27 +182,27 @@ resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/fire
   }
 }
 
-resource privateEndpointPostgresqlServer 'Microsoft.Network/privateEndpoints@2022-07-01' = {
-  location: location
-  name: '${dbServerName}-private-endpoint'
-  tags: tagsArray
-  properties: {
-    subnet: {
-      id: dbSubnet.id
-    }
-    privateLinkServiceConnections: [
-      {
-        name: '${dbServerName}-private-endpoint'
-        properties: {
-          privateLinkServiceId: postgreSQLServer.id
-          //todo:review
-          groupIds: [ 'postgresqlFlexibleServer' ]
-        }
-      }
-    ]
-    customNetworkInterfaceName: '${dbServerName}-private-endpoint-nic'
-  }
-}
+// resource privateEndpointPostgresqlServer 'Microsoft.Network/privateEndpoints@2022-07-01' = {
+//   location: location
+//   name: '${dbServerName}-private-endpoint'
+//   tags: tagsArray
+//   properties: {
+//     subnet: {
+//       id: dbSubnet.id
+//     }
+//     privateLinkServiceConnections: [
+//       {
+//         name: '${dbServerName}-private-endpoint'
+//         properties: {
+//           privateLinkServiceId: postgreSQLServer.id
+//           //todo:review
+//           groupIds: [ 'postgresqlFlexibleServer' ]
+//         }
+//       }
+//     ]
+//     customNetworkInterfaceName: '${dbServerName}-private-endpoint-nic'
+//   }
+// }
 
 resource privateEndpointApiAppService 'Microsoft.Network/privateEndpoints@2022-07-01' = {
   location: location
