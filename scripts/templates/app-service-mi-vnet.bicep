@@ -193,7 +193,7 @@ resource privateEndpointPostgresqlServer 'Microsoft.Network/privateEndpoints@202
         properties: {
           privateLinkServiceId: postgreSQLServer.id
           //todo:review
-          groupIds: [ 'postgresqlServe2r' ]
+          groupIds: [ 'postgresqlFlexibleServer' ]
         }
       }
     ]
