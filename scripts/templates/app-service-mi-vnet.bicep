@@ -151,6 +151,7 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
     administratorLoginPassword: dbAdminPassword
     network: {
       delegatedSubnetResourceId: dbSubnet.id
+      privateDnsZoneArmResourceId: privateDNSZonePostgresqlServer.id
     }
   }
 }
