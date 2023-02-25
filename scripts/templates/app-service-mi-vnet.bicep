@@ -88,12 +88,15 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
           addressPrefix: dbSubnetAddressPrefix
           delegations: [
             {
-              name: 'Microsoft.DBforPostgreSQL/flexibleServers'
+              name: 'dlg-Microsoft.DBforPostgreSQL-flexibleServers'
               properties: {
                 serviceName: 'Microsoft.DBforPostgreSQL/flexibleServers'
               }
+              type: 'Microsoft.Network/virtualNetworks/subnets/delegations'
             }
           ]
+          privateEndpointNetworkPolicies: 'Disabled'
+          privateLinkServiceNetworkPolicies: 'Enabled'
         }
       }
     ]
@@ -256,7 +259,7 @@ resource privateEndpointWebAppService 'Microsoft.Network/privateEndpoints@2022-0
 }
 
 resource privateDNSZonePostgresqlServer 'Microsoft.Network/privateDnsZones@2020-06-01' = {
-  name: 'privatelink.postgres.database.azure.com'
+  name: '${dbServerName}.private.postgres.database.azure.com'
   location: 'global'
   tags: tagsArray
 }
@@ -267,7 +270,7 @@ resource privateDNSZoneAppService 'Microsoft.Network/privateDnsZones@2020-06-01'
   tags: tagsArray
 }
 
-resource privateLinkDNSZonePostgresqlServer 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+resource privateDNSZonePostgresqlServerNetworkLink'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
   parent: privateDNSZonePostgresqlServer
   name: 'link'
   location: 'global'
