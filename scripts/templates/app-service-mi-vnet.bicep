@@ -307,7 +307,7 @@ resource privateDNSZonePostgresqlServerNetworkLink 'Microsoft.Network/privateDns
   location: 'global'
   tags: tagsArray
   properties: {
-    registrationEnabled: true
+    registrationEnabled: false
     virtualNetwork: {
       id: vnet.id
     }
