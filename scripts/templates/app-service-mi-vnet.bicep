@@ -82,10 +82,37 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
           addressPrefix: bastionSubnetAddressPrefix
         }
       }
+      // {
+      //   name: 'db'
+      //   properties: {
+      //     addressPrefix: dbSubnetAddressPrefix
+      //     delegations: [
+      //       {
+      //         name: 'dlg-Microsoft.DBforPostgreSQL-flexibleServers'
+      //         properties: {
+      //           serviceName: 'Microsoft.DBforPostgreSQL/flexibleServers'
+      //         }
+      //         type: 'Microsoft.Network/virtualNetworks/subnets/delegations'
+      //       }
+      //     ]
+      //     privateEndpointNetworkPolicies: 'Disabled'
+      //     privateLinkServiceNetworkPolicies: 'Enabled'
+      //   }
+      // }
       {
         name: 'db'
         properties: {
-          addressPrefix: dbSubnetAddressPrefix
+          addressPrefix: dbSubnetAddressPrefix //'10.0.8.0/24'
+          serviceEndpoints: [
+            {
+              service: 'Microsoft.Storage'
+              locations: [
+                'eastus'
+                'westus'
+                'westus3'
+              ]
+            }
+          ]
           delegations: [
             {
               name: 'dlg-Microsoft.DBforPostgreSQL-flexibleServers'
@@ -98,6 +125,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
           privateEndpointNetworkPolicies: 'Disabled'
           privateLinkServiceNetworkPolicies: 'Enabled'
         }
+        type: 'Microsoft.Network/virtualNetworks/subnets'
       }
     ]
   }
@@ -136,6 +164,9 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
   name: dbServerName
   location: location
   tags: tagsArray
+  dependsOn: [
+    privateDNSZonePostgresqlServerNetworkLink
+  ]
   sku: {
     name: 'Standard_B2s'
     tier: 'Burstable'
@@ -270,16 +301,17 @@ resource privateDNSZoneAppService 'Microsoft.Network/privateDnsZones@2020-06-01'
   tags: tagsArray
 }
 
-resource privateDNSZonePostgresqlServerNetworkLink'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+resource privateDNSZonePostgresqlServerNetworkLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
   parent: privateDNSZonePostgresqlServer
-  name: 'link'
+  name: 'gsqra4itxbbtglink'
   location: 'global'
   tags: tagsArray
   properties: {
+    registrationEnabled: true
     virtualNetwork: {
       id: vnet.id
     }
-    registrationEnabled: false
+
   }
 }
 
