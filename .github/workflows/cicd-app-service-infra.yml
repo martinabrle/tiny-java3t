@@ -282,7 +282,7 @@ jobs:
                                       dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
                                       dbName=${{secrets.AZURE_DB_NAME}} \
                                       bastionName=${{secrets.AZURE_BASTION_NAME}} \
-                                      managementVMName=${{secrets.AZURE_MGMT_VM_NAME} \
+                                      managementVMName=${{secrets.AZURE_MGMT_VM_NAME}} \
                                       ghRunnerVMName=${{secrets.AZURE_GH_RUNNER_NAME}} \
                                       dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                       dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
