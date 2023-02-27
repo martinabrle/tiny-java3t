@@ -280,6 +280,8 @@ jobs:
                                       keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
                                       appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
                                       dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
+                                      dbServerAADAdminGroupObjectId=${{secrets.AZURE_DBA_GROUP_NAME}} \
+                                      dbServerAADAdminGroupName=${{steps.vars.outputs.AZURE_DBA_GROUP_ID}} \
                                       dbName=${{secrets.AZURE_DB_NAME}} \
                                       bastionName=${{secrets.AZURE_BASTION_NAME}} \
                                       managementVMName=${{secrets.AZURE_MGMT_VM_NAME}} \
@@ -344,8 +346,8 @@ jobs:
                                      apiHealthCheckPath="${{steps.vars.outputs.API_HEALTH_CHECK_PATH}}" \
                                      webHealthCheckPath="${{steps.vars.outputs.WEB_HEALTH_CHECK_PATH}}"
 
-      - name: Set-up DB AAD Integration
-        if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
+      - name: Set-up DB AAD Integration (NON VNET MI ONLY)
+        if: steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT == 'MANAGED_IDENTITIES'
         run: |
           dbPrincipalName=`az postgres flexible-server ad-admin list -g ${{secrets.AZURE_RESOURCE_GROUP}} -s ${{secrets.AZURE_DB_SERVER_NAME}} --query "[?principalName == '${{secrets.AZURE_DBA_GROUP_NAME}}'].principalName" -o tsv`
           if [[ -z "$dbPrincipalName" ]]; then

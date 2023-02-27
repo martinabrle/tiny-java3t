@@ -4,6 +4,8 @@ param appInsightsName string
 
 param keyVaultName string
 param dbServerName string
+param dbServerAADAdminGroupObjectId string
+param dbServerAADAdminGroupName string
 param dbName string
 
 param bastionName string
@@ -88,23 +90,6 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
           privateLinkServiceNetworkPolicies: 'Disabled'
         }
       }
-      // {
-      //   name: 'db'
-      //   properties: {
-      //     addressPrefix: dbSubnetAddressPrefix
-      //     delegations: [
-      //       {
-      //         name: 'dlg-Microsoft.DBforPostgreSQL-flexibleServers'
-      //         properties: {
-      //           serviceName: 'Microsoft.DBforPostgreSQL/flexibleServers'
-      //         }
-      //         type: 'Microsoft.Network/virtualNetworks/subnets/delegations'
-      //       }
-      //     ]
-      //     privateEndpointNetworkPolicies: 'Disabled'
-      //     privateLinkServiceNetworkPolicies: 'Enabled'
-      //   }
-      // }
       {
         name: 'db'
         properties: {
@@ -240,9 +225,22 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
   }
 }
 
+resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
+  parent: postgreSQLServer
+  name: dbServerAADAdminGroupObjectId
+  properties: {
+    principalType: 'Group'
+    principalName: dbServerAADAdminGroupName
+    tenantId: tenant().tenantId
+  }
+}
+
 resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
   parent: postgreSQLServer
   name: dbName
+  dependsOn: [
+    postgreSQLServerAdmin
+  ]
   properties: {
     charset: 'utf8'
     collation: 'en_US.utf8'
