@@ -6,6 +6,10 @@ param keyVaultName string
 param dbServerName string
 param dbName string
 
+param bastionName string
+param managementVMName string
+param ghRunnerVMName string
+
 @secure()
 param dbAdminName string
 @secure()
@@ -80,6 +84,8 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
         name: 'AzureBastionSubnet'
         properties: {
           addressPrefix: bastionSubnetAddressPrefix
+          privateEndpointNetworkPolicies: 'Disabled'
+          privateLinkServiceNetworkPolicies: 'Disabled'
         }
       }
       // {
@@ -144,6 +150,42 @@ resource apiSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' existi
 resource webSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' existing = {
   parent: vnet
   name: 'web'
+}
+
+resource bastionSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' existing = {
+  parent: vnet
+  name: 'AzureBastionSubnet'
+}
+
+resource publicIpAddressForBastion 'Microsoft.Network/publicIPAddresses@2022-01-01' = {
+  name: '${bastionName}-ip'
+  location: location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIPAllocationMethod: 'Static'
+  }
+}
+
+resource bastionHost 'Microsoft.Network/bastionHosts@2022-01-01' = {
+  name: bastionName
+  location: location
+  properties: {
+    ipConfigurations: [
+      {
+        name: 'IpConf'
+        properties: {
+          subnet: {
+            id: bastionSubnet.id
+          }
+          publicIPAddress: {
+            id: publicIpAddressForBastion.id
+          }
+        }
+      }
+    ]
+  }
 }
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
@@ -311,7 +353,6 @@ resource privateDNSZonePostgresqlServerNetworkLink 'Microsoft.Network/privateDns
     virtualNetwork: {
       id: vnet.id
     }
-
   }
 }
 
