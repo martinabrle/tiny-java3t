@@ -280,7 +280,7 @@ jobs:
                                       keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
                                       appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
                                       dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
-                                      dbServerAADAdminGroupObjectId=${{secrets.AZURE_DBA_GROUP_NAME}} \
+                                      dbServerAADAdminGroupObjectId="${{secrets.AZURE_DBA_GROUP_NAME}}" \
                                       dbServerAADAdminGroupName=${{steps.vars.outputs.AZURE_DBA_GROUP_ID}} \
                                       dbName=${{secrets.AZURE_DB_NAME}} \
                                       bastionName=${{secrets.AZURE_BASTION_NAME}} \
