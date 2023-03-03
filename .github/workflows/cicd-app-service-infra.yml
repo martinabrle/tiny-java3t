@@ -1,11 +1,11 @@
 name: cicd-app-service-infra
 
 on:
-  push:
-   branches:
-     - main
-   paths:
-     - 'scripts/**'     
+  # push:
+  #  branches:
+  #    - main
+  #  paths:
+  #    - 'scripts/**'     
   workflow_dispatch:
     inputs:
       run_cleanup:
@@ -285,7 +285,11 @@ jobs:
                                       dbName=${{secrets.AZURE_DB_NAME}} \
                                       bastionName=${{secrets.AZURE_BASTION_NAME}} \
                                       managementVMName=${{secrets.AZURE_MGMT_VM_NAME}} \
+                                      managementVMAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                      managementVMAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                                       ghRunnerVMName=${{secrets.AZURE_GH_RUNNER_NAME}} \
+                                      ghRunnerVMAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                      ghRunnerVMAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                                       dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                       dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                                       dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \

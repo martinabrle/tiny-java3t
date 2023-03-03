@@ -4,13 +4,18 @@ param appInsightsName string
 
 param keyVaultName string
 param dbServerName string
+
 param dbServerAADAdminGroupObjectId string
 param dbServerAADAdminGroupName string
 param dbName string
 
 param bastionName string
 param managementVMName string
+param managementVMAdminName string
+param managementVMAdminPassword string
 param ghRunnerVMName string
+param ghRunnerVMAdminName string
+param ghRunnerVMAdminPassword string
 
 @secure()
 param dbAdminName string
@@ -135,6 +140,11 @@ resource apiSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' existi
 resource webSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' existing = {
   parent: vnet
   name: 'web'
+}
+
+resource mgmtSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' existing = {
+  parent: vnet
+  name: 'mgmt'
 }
 
 resource bastionSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' existing = {
@@ -1112,5 +1122,78 @@ resource webAppServiceStagingPARMS 'Microsoft.Web/sites/slots/config@2021-03-01'
         value: 'true'
       }
     ]
+  }
+}
+
+//Management and deployment objects
+resource managementVMNIC 'Microsoft.Network/networkInterfaces@2022-05-01' = {
+  name: '${managementVMName}-nic'
+  location: location
+  properties: {
+    ipConfigurations: [
+      {
+        name: 'ipconfig1'
+        properties: {
+          privateIPAllocationMethod: 'Dynamic'
+          subnet: {
+            id: mgmtSubnet.id
+          }
+        }
+      }
+    ]
+  }
+}
+
+resource managementVM 'Microsoft.Compute/virtualMachines@2022-11-01' = {
+  name: managementVMName
+  location: location
+  properties: {
+    hardwareProfile: {
+      vmSize: 'Standard_DS3_v2'
+    }
+    osProfile: {
+      computerName: managementVMName
+      windowsConfiguration: {
+        patchSettings: {
+          assessmentMode: 'AutomaticByPlatform'
+          automaticByPlatformSettings: {
+            rebootSetting: 'Always'
+          }
+          enableHotpatching: false
+          patchMode: 'AutomaticByPlatform'
+        }
+
+      }
+      adminUsername: managementVMAdminName
+      adminPassword: managementVMAdminPassword
+    }
+    storageProfile: {
+      imageReference: {
+        publisher: 'MicrosoftWindowsServer'
+        offer: 'WindowsServer'
+        sku: '2022-datacenter-azure-edition'
+        version: 'latest'
+      }
+      osDisk: {
+        createOption: 'FromImage'
+        managedDisk: {
+          storageAccountType: 'Standard_LRS'
+        }
+        caching: 'ReadOnly'
+        diffDiskSettings: {
+          option: 'Local'
+          placement: 'CacheDisk'
+        }
+        deleteOption: 'Delete'
+      }
+    }
+    networkProfile: {
+      networkInterfaces: [
+        {
+          id: managementVMNIC.id
+        }
+      ]
+    }
+    licenseType: 'Windows_Server'
   }
 }
