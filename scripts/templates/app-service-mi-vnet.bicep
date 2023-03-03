@@ -53,13 +53,14 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
 
 var vnetAddressPrefix = '10.0.0.0/16'
 
-var webAppSubnetAddressPrefix = '10.0.0.0/24'
-var apiAppSubnetAddressPrefix = '10.0.1.0/24'
+var webAppSubnetAddressPrefix = '10.0.1.0/24'
+var apiAppSubnetAddressPrefix = '10.0.2.0/24'
 
-var bastionSubnetAddressPrefix = '10.0.2.0/24'
-var mgmtSubnetAddressPrefix = '10.0.3.0/24'
+var dbSubnetAddressPrefix = '10.0.20.0/24'
 
-var dbSubnetAddressPrefix = '10.0.4.0/24'
+var bastionSubnetAddressPrefix = '10.0.60.0/24'
+var mgmtSubnetAddressPrefix = '10.0.61.0/24'
+var ghRunnerSubnetAddressPrefix = '10.62.4.0/24'
 
 resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
   name: '${apiAppServiceName}-vnet'
@@ -85,17 +86,23 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
         }
       }
       {
+        name: 'AzureBastionSubnet'
+        properties: {
+          addressPrefix: bastionSubnetAddressPrefix
+          privateEndpointNetworkPolicies: 'Disabled'
+          privateLinkServiceNetworkPolicies: 'Disabled'
+        }
+      }
+      {
         name: 'mgmt'
         properties: {
           addressPrefix: mgmtSubnetAddressPrefix
         }
       }
       {
-        name: 'AzureBastionSubnet'
+        name: 'gh-runner'
         properties: {
-          addressPrefix: bastionSubnetAddressPrefix
-          privateEndpointNetworkPolicies: 'Disabled'
-          privateLinkServiceNetworkPolicies: 'Disabled'
+          addressPrefix: ghRunnerSubnetAddressPrefix
         }
       }
       {
@@ -145,15 +152,21 @@ resource webSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' existi
   name: 'web'
 }
 
+resource bastionSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' existing = {
+  parent: vnet
+  name: 'AzureBastionSubnet'
+}
+
 resource mgmtSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' existing = {
   parent: vnet
   name: 'mgmt'
 }
 
-resource bastionSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' existing = {
+resource ghRunnerSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' existing = {
   parent: vnet
-  name: 'AzureBastionSubnet'
+  name: 'gh-runner'
 }
+
 
 resource publicIpAddressForBastion 'Microsoft.Network/publicIPAddresses@2022-01-01' = {
   name: '${bastionName}-ip'
@@ -363,20 +376,6 @@ resource privateLinkDNSZoneAppService 'Microsoft.Network/privateDnsZones/virtual
   }
 }
 
-// resource pvtEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
-//   name: '${privateEndpointPostgresqlServer.name}/default'
-//   properties: {
-//     privateDnsZoneConfigs: [
-//       {
-//         name: 'privatelink-postgres-database-azure-com'
-//         properties: {
-//           privateDnsZoneId: privateDNSZonePostgresqlServer.id
-//         }
-//       }
-//     ]
-//   }
-// }
-
 resource pvtEndpointDnsGroupApiAppService 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
   name: '${privateEndpointApiAppService.name}/default'
   properties: {
@@ -404,22 +403,6 @@ resource pvtEndpointDnsGroupWebAppService 'Microsoft.Network/privateEndpoints/pr
     ]
   }
 }
-
-// https://docs.microsoft.com/en-us/azure/private-link/create-private-endpoint-bicep?tabs=CLI
-
-// resource privateEndpointName_default 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-05-01' = {
-//   name: '${privateEndpoint.name}/default'
-//   properties: {
-//     privateDnsZoneConfigs: [
-//       {
-//         name: 'privatelink-postgres-database-azure-com'
-//         properties: {
-//           privateDnsZoneId: privateLinkDNSZonePostgresqlServer.id
-//         }
-//       }
-//     ]
-//   }
-// }
 
 resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: '${dbServerName}-db-logs'
@@ -1111,10 +1094,11 @@ resource webAppServiceStagingPARMS 'Microsoft.Web/sites/slots/config@2021-03-01'
   }
 }
 
-//Management and deployment objects
+//Management VM
 resource managementVMNIC 'Microsoft.Network/networkInterfaces@2022-05-01' = {
   name: '${managementVMName}-nic'
   location: location
+  tags: tagsArray
   properties: {
     ipConfigurations: [
       {
@@ -1133,6 +1117,7 @@ resource managementVMNIC 'Microsoft.Network/networkInterfaces@2022-05-01' = {
 resource managementVM 'Microsoft.Compute/virtualMachines@2022-11-01' = {
   name: managementVMName
   location: location
+  tags: tagsArray
   properties: {
     hardwareProfile: {
       vmSize: 'Standard_DS3_v2'
@@ -1177,6 +1162,80 @@ resource managementVM 'Microsoft.Compute/virtualMachines@2022-11-01' = {
       networkInterfaces: [
         {
           id: managementVMNIC.id
+        }
+      ]
+    }
+    licenseType: 'Windows_Server'
+  }
+}
+
+resource ghRunnerVMNIC 'Microsoft.Network/networkInterfaces@2022-05-01' = {
+  name: '${ghRunnerVMName}-nic'
+  location: location
+  tags: tagsArray
+  properties: {
+    ipConfigurations: [
+      {
+        name: 'ipconfig1'
+        properties: {
+          privateIPAllocationMethod: 'Dynamic'
+          subnet: {
+            id: ghRunnerSubnet.id
+          }
+        }
+      }
+    ]
+  }
+}
+
+resource ghRunnerVM 'Microsoft.Compute/virtualMachines@2022-11-01' = {
+  name: ghRunnerVMName
+  location: location
+  tags: tagsArray
+  properties: {
+    hardwareProfile: {
+      vmSize: 'Standard_DS3_v2'
+    }
+    osProfile: {
+      computerName: ghRunnerVMName
+      linuxConfiguration: {
+        enableVMAgentPlatformUpdates: true
+        patchSettings: {
+          assessmentMode: 'AutomaticByPlatform'
+          automaticByPlatformSettings: {
+            rebootSetting: 'Always'
+
+          }
+          patchMode: 'AutomaticByPlatform'
+        }
+      }
+      adminUsername: ghRunnerVMAdminName
+      adminPassword: ghRunnerVMAdminPassword
+    }
+    storageProfile: {
+      imageReference: {
+        publisher: 'MicrosoftWindowsServer'
+        offer: 'WindowsServer'
+        sku: '2022-datacenter-azure-edition'
+        version: 'latest'
+      }
+      osDisk: {
+        createOption: 'FromImage'
+        managedDisk: {
+          storageAccountType: 'Standard_LRS'
+        }
+        caching: 'ReadOnly'
+        diffDiskSettings: {
+          option: 'Local'
+          placement: 'CacheDisk'
+        }
+        deleteOption: 'Delete'
+      }
+    }
+    networkProfile: {
+      networkInterfaces: [
+        {
+          id: ghRunnerVMNIC.id
         }
       ]
     }
