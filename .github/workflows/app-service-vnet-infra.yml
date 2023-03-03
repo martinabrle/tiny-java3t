@@ -134,8 +134,8 @@ jobs:
           if [[ -z "$dbAdminPassword" ]]; then
             dbAdminPassword="`openssl rand -hex 25`#@"
           fi
-          echo "Admin password: $dbAdminPassword"
           echo "::add-mask::$dbAdminPassword"
+          echo "Admin password: $dbAdminPassword"
           echo "DB_ADMIN_PASSWORD=${dbAdminPassword}" >> $GITHUB_OUTPUT
           
           dbAppUserName=`echo "${{secrets.AZURE_API_APP_NAME}}" | tr '-' '_'`;
