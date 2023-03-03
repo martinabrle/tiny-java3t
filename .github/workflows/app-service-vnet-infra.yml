@@ -42,7 +42,7 @@ jobs:
     # workspace would be outside of the current subscription
     needs: [cleanup_if_requested]
     runs-on: ubuntu-latest
-    environment: APP-SERVICE
+    environment: APP-SERVICE-VNET
     defaults:
       run:
         working-directory: ./scripts
