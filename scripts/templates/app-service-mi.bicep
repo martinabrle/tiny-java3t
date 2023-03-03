@@ -4,8 +4,11 @@ param appInsightsName string
 
 param keyVaultName string
 param dbServerName string
+
+param dbServerAADAdminGroupObjectId string
+param dbServerAADAdminGroupName string
+
 param dbName string
-param createDB bool = true
 
 @secure()
 param dbAdminName string
@@ -23,8 +26,6 @@ param apiAppServicePort string
 
 param webAppServiceName string
 param webAppServicePort string
-
-param deploymentClientIPAddress string
 
 param apiHealthCheckPath string = '/'
 param webHealthCheckPath string = '/'
@@ -83,21 +84,25 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
   }
 }
 
-resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
+resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
   parent: postgreSQLServer
-  name: dbName
+  name: dbServerAADAdminGroupObjectId
   properties: {
-    charset: 'utf8'
-    collation: 'en_US.utf8'
+    principalType: 'Group'
+    principalName: dbServerAADAdminGroupName
+    tenantId: tenant().tenantId
   }
 }
 
-resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
-  name: 'AllowDeploymentClientIP'
+resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
   parent: postgreSQLServer
+  name: dbName
+  dependsOn: [
+    postgreSQLServerAdmin
+  ]
   properties: {
-    endIpAddress: deploymentClientIPAddress
-    startIpAddress: deploymentClientIPAddress
+    charset: 'utf8'
+    collation: 'en_US.utf8'
   }
 }
 

@@ -7,6 +7,7 @@ param dbServerName string
 
 param dbServerAADAdminGroupObjectId string
 param dbServerAADAdminGroupName string
+
 param dbName string
 
 param bastionName string
