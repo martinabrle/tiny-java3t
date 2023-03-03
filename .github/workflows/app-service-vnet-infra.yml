@@ -191,7 +191,7 @@ jobs:
                                       appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
                                       dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
                                       dbServerAADAdminGroupObjectId=${{steps.vars.outputs.AZURE_DBA_GROUP_ID}} \
-                                      dbServerAADAdminGroupName="${{secrets.AZURE_DBA_GROUP_NAME}}"" \
+                                      dbServerAADAdminGroupName="${{secrets.AZURE_DBA_GROUP_NAME}}" \
                                       dbName=${{secrets.AZURE_DB_NAME}} \
                                       bastionName=${{secrets.AZURE_BASTION_NAME}} \
                                       managementVMName=${{secrets.AZURE_MGMT_VM_NAME}} \
