@@ -253,7 +253,7 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
 
 resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
   parent: postgreSQLServer
-  name: '20de3c04-d6a6-483d-a88e-edf44e6c437d'
+  name: dbServerAADAdminGroupObjectId
   properties: {
     principalType: 'Group'
     principalName: 'All TEST PGSQL Admins' //dbServerAADAdminGroupName
@@ -1188,39 +1188,16 @@ resource ghRunnerVMNIC 'Microsoft.Network/networkInterfaces@2022-05-01' = {
   }
 }
 
-resource ghRunnerVM 'Microsoft.Compute/virtualMachines@2022-11-01' = {
+resource ghRunnerVM 'Microsoft.Compute/virtualMachines@2022-03-01' = {
   name: ghRunnerVMName
   location: location
-  tags: tagsArray
   properties: {
     hardwareProfile: {
-      vmSize: 'Standard_DS3_v2'
-    }
-    osProfile: {
-      computerName: ghRunnerVMName
-      linuxConfiguration: {
-        enableVMAgentPlatformUpdates: true
-        patchSettings: {
-          assessmentMode: 'AutomaticByPlatform'
-          automaticByPlatformSettings: {
-            rebootSetting: 'Always'
-
-          }
-          patchMode: 'AutomaticByPlatform'
-        }
-      }
-      adminUsername: ghRunnerVMAdminName
-      adminPassword: ghRunnerVMAdminPassword
+      vmSize: 'Standard_B12ms'
     }
     storageProfile: {
-      imageReference: {
-        publisher: 'MicrosoftWindowsServer'
-        offer: 'WindowsServer'
-        sku: '2022-datacenter-azure-edition'
-        version: 'latest'
-      }
       osDisk: {
-        createOption: 'FromImage'
+        createOption: 'fromImage'
         managedDisk: {
           storageAccountType: 'Standard_LRS'
         }
@@ -1231,14 +1208,35 @@ resource ghRunnerVM 'Microsoft.Compute/virtualMachines@2022-11-01' = {
         }
         deleteOption: 'Delete'
       }
+      imageReference: {
+        publisher: 'canonical'
+        offer: '0001-com-ubuntu-server-focal'
+        sku: '20_04-lts-gen2'
+        version: 'latest'
+      }
+    }
+    osProfile: {
+      computerName: ghRunnerVMName
+      adminUsername: ghRunnerVMAdminName
+      adminPassword: ghRunnerVMAdminPassword
+      linuxConfiguration: {
+        patchSettings: {
+          patchMode: 'AutomaticByPlatform'
+          automaticByPlatformSettings: {
+            rebootSetting: 'Always'
+          }
+        }
+      }
     }
     networkProfile: {
       networkInterfaces: [
         {
           id: ghRunnerVMNIC.id
+          properties: {
+            deleteOption: 'Delete'
+          }
         }
       ]
     }
-    licenseType: 'Windows_Server'
   }
 }
