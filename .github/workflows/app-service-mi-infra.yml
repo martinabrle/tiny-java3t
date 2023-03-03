@@ -1,4 +1,4 @@
-name: app-service-infra
+name: app-service-mi-infra
 
 on:
   # push:
