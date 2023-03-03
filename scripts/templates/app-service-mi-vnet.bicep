@@ -11,12 +11,15 @@ param dbName string
 
 param bastionName string
 param managementVMName string
+@secure()
 param managementVMAdminName string
+@secure()
 param managementVMAdminPassword string
 param ghRunnerVMName string
+@secure()
 param ghRunnerVMAdminName string
+@secure()
 param ghRunnerVMAdminPassword string
-
 @secure()
 param dbAdminName string
 @secure()
@@ -25,7 +28,9 @@ param dbAdminPassword string
 param dbUserName string
 @secure()
 param dbStagingUserName string
+@secure()
 param appClientId string = ''
+@secure()
 param stagingAppClientId string = ''
 
 param apiAppServiceName string
@@ -33,8 +38,6 @@ param apiAppServicePort string
 
 param webAppServiceName string
 param webAppServicePort string
-
-param deploymentClientIPAddress string
 
 param apiHealthCheckPath string = '/'
 param webHealthCheckPath string = '/'
@@ -257,24 +260,7 @@ resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases
   }
 }
 
-resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
-  name: 'AllowDeploymentClientIP'
-  parent: postgreSQLServer
-  properties: {
-    endIpAddress: deploymentClientIPAddress
-    startIpAddress: deploymentClientIPAddress
-  }
-}
-
-resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
-  name: 'AllowAllWindowsAzureIps'
-  parent: postgreSQLServer
-  properties: {
-    startIpAddress: '0.0.0.0'
-    endIpAddress: '0.0.0.0'
-  }
-}
-
+//TODO: does the VNET integration create a NIC automatically?
 // resource privateEndpointPostgresqlServer 'Microsoft.Network/privateEndpoints@2022-07-01' = {
 //   location: location
 //   name: '${dbServerName}-private-endpoint'
