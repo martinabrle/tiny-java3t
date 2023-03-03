@@ -167,7 +167,6 @@ resource ghRunnerSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' e
   name: 'ghrunner'
 }
 
-
 resource publicIpAddressForBastion 'Microsoft.Network/publicIPAddresses@2022-01-01' = {
   name: '${bastionName}-ip'
   location: location
@@ -256,7 +255,7 @@ resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/admini
   name: dbServerAADAdminGroupObjectId
   properties: {
     principalType: 'Group'
-    principalName:  dbServerAADAdminGroupName
+    principalName: dbServerAADAdminGroupName
     tenantId: tenant().tenantId
   }
 }
@@ -1162,6 +1161,9 @@ resource managementVM 'Microsoft.Compute/virtualMachines@2022-11-01' = {
       networkInterfaces: [
         {
           id: managementVMNIC.id
+          properties: {
+            deleteOption: 'Delete'
+          }
         }
       ]
     }
