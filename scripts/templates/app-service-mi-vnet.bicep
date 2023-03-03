@@ -60,7 +60,7 @@ var dbSubnetAddressPrefix = '10.0.20.0/24'
 
 var bastionSubnetAddressPrefix = '10.0.60.0/24'
 var mgmtSubnetAddressPrefix = '10.0.61.0/24'
-var ghRunnerSubnetAddressPrefix = '10.62.4.0/24'
+var ghRunnerSubnetAddressPrefix = '10.0.62.0/24'
 
 resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
   name: '${apiAppServiceName}-vnet'
@@ -100,7 +100,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
         }
       }
       {
-        name: 'gh-runner'
+        name: 'ghrunner'
         properties: {
           addressPrefix: ghRunnerSubnetAddressPrefix
         }
@@ -164,7 +164,7 @@ resource mgmtSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' exist
 
 resource ghRunnerSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' existing = {
   parent: vnet
-  name: 'gh-runner'
+  name: 'ghrunner'
 }
 
 
