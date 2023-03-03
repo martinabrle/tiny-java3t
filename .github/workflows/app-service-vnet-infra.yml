@@ -104,14 +104,14 @@ jobs:
             echo "Deleted KeyVault exists, purging it and waiting for 10 mins"
             az keyvault purge -l ${{secrets.AZURE_LOCATION}} -n ${{secrets.AZURE_KEY_VAULT_NAME}}
           fi
-      
+          
       - name: Create Azure resource group
         run: |
           az deployment sub create \
            --location ${{secrets.AZURE_LOCATION}} \
            --template-file ./templates/components/rg.bicep \
            --parameters name=${{secrets.AZURE_RESOURCE_GROUP}} location=${{secrets.AZURE_LOCATION}} resourceTags="${{secrets.AZURE_RESOURCE_TAGS}}"
-
+        
       - name: Initialize deployment variables
         id: vars
         run: |
