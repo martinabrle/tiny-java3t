@@ -147,20 +147,19 @@ jobs:
           echo "DB_STAGING_APP_USER_NAME=${dbStagingAppUserName}" >> $GITHUB_OUTPUT
           echo "Staging app user name: $dbStagingAppUserName"         
 
-
           if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
             echo "DBA Group name is not set"
             exit 1
           fi
 
           dbaGroupId=`az ad group show --group "${{secrets.AZURE_DBA_GROUP_NAME}}" --query '[id]' -o tsv`
+          echo "DBA Group Name: '${{secrets.AZURE_DBA_GROUP_NAME}}'"
           echo "DBA Group Id: $dbaGroupId"
           echo "AZURE_DBA_GROUP_ID=${dbaGroupId}" >> $GITHUB_OUTPUT
-          echo "DB_AAD_INTEGRATION=true" >> $GITHUB_OUTPUT
-          echo "APP_SPRING_PROFILE=test-mi" >> $GITHUB_OUTPUT
 
           export appName=`az webapp list -g ${{secrets.AZURE_RESOURCE_GROUP}} --query "[?name=='${{secrets.AZURE_API_APP_NAME}}'].name" -o tsv`
           if [[ -z "$appName" ]]; then
+            echo "First deployment"
             echo "API_HEALTH_CHECK_PATH=" >> $GITHUB_OUTPUT
             echo "WEB_HEALTH_CHECK_PATH=" >> $GITHUB_OUTPUT
             echo "APP_CLIENT_ID=" >> $GITHUB_OUTPUT
