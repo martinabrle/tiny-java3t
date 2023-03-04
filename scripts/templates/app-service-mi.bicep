@@ -89,8 +89,8 @@ resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/admini
   name: '20de3c04-d6a6-483d-a88e-edf44e6c437d'
   properties: {
     principalType:  'Group'
-    principalName: 'All TEST PGSQL Admins'
-    tenantId: '30adb879-45b4-49c3-bf8b-7731fcce5394' //tenant().tenantId
+    principalName: dbServerAADAdminGroupName
+    tenantId: tenant().tenantId
   }
 }
 
