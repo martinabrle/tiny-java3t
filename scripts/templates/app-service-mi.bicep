@@ -86,9 +86,9 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
 
 resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
   parent: postgreSQLServer
-  name: '20de3c04-d6a6-483d-a88e-edf44e6c437d'
+  name: dbServerAADAdminGroupObjectId
   properties: {
-    principalType:  'Group'
+    principalType: 'Group'
     principalName: dbServerAADAdminGroupName
     tenantId: tenant().tenantId
   }
