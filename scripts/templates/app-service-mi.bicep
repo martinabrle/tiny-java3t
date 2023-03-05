@@ -97,6 +97,16 @@ resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/admini
   }
 }
 
+// resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
+//   parent: postgreSQLServer
+//   name: dbServerAADAdminGroupObjectId
+//   properties: {
+//     principalType: 'Group'
+//     principalName: replace(dbServerAADAdminGroupName,'\n','') //'All TEST PGSQL Admins' //dbServerAADAdminGroupName
+//     tenantId: subscription().tenantId
+//   }
+// }
+
 resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
   parent: postgreSQLServer
   name: dbName
