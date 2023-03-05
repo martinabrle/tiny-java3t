@@ -255,6 +255,25 @@ resource kvApplicationInsightsConnectionString 'Microsoft.KeyVault/vaults/secret
   }
 }
 
+resource adminGroupObjId 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
+  name: 'dbServerAADAdminGroupObjectId'
+  properties: {
+    value: dbServerAADAdminGroupObjectId
+    contentType: 'string'
+  }
+}
+
+resource dbServerAADAdminGroupName 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
+  name: 'dbServerAADAdminGroupName'
+  properties: {
+    value: dbServerAADAdminGroupName
+    contentType: 'string'
+  }
+}
+
+
 resource kvAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'APPINSIGHTS-INSTRUMENTATIONKEY'
