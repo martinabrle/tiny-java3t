@@ -63,6 +63,9 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
     name: 'Standard_B2s'
     tier: 'Burstable'
   }
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     backup: {
       backupRetentionDays: 7
@@ -77,7 +80,7 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
     authConfig: {
       activeDirectoryAuth: 'Enabled'
       passwordAuth: 'Enabled'
-      tenantId: subscription().tenantId
+      tenantId: '30adb879-45b4-49c3-bf8b-7731fcce5394'
     }
     highAvailability: {
       mode: 'Disabled'
@@ -93,7 +96,7 @@ resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/admini
   properties: {
     principalType: 'Group'
     principalName: dbServerAADAdminGroupName
-    tenantId: subscription().tenantId
+    tenantId: '30adb879-45b4-49c3-bf8b-7731fcce5394'
   }
 }
 
@@ -616,7 +619,7 @@ resource apiAppServiceSlotConfigNames 'Microsoft.Web/sites/config@2022-03-01' = 
   name: 'slotConfigNames'
   kind: 'string'
   parent: apiAppService
-  dependsOn: [apiAppServicePARMS]
+  dependsOn: [ apiAppServicePARMS ]
   properties: {
     appSettingNames: [
       'SPRING_DATASOURCE_URL', 'SPRING_DATASOURCE_USERNAME', 'SPRING_DATASOURCE_APP_CLIENT_ID', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'APPINSIGHTS_INSTRUMENTATIONKEY', 'SPRING_PROFILES_ACTIVE', 'PORT', 'SPRING_DATASOURCE_SHOW_SQL', 'DEBUG_AUTH_TOKEN'
@@ -735,7 +738,7 @@ resource webAppServiceSlotConfigNames 'Microsoft.Web/sites/config@2021-03-01' = 
   name: 'slotConfigNames'
   kind: 'string'
   parent: webAppService
-  dependsOn: [webAppServicePARMS]
+  dependsOn: [ webAppServicePARMS ]
   properties: {
     appSettingNames: [
       'APPLICATIONINSIGHTS_CONNECTION_STRING', 'APPINSIGHTS_INSTRUMENTATIONKEY', 'API_URI', 'SPRING_PROFILES_ACTIVE', 'PORT', 'DEBUG_AUTH_TOKEN'
