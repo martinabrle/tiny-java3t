@@ -63,9 +63,6 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
     name: 'Standard_B2s'
     tier: 'Burstable'
   }
-  identity: {
-    type: 'SystemAssigned'
-  }
   properties: {
     backup: {
       backupRetentionDays: 7
@@ -92,7 +89,7 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
 
 resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
   parent: postgreSQLServer
-  name: dbServerAADAdminGroupObjectId
+  name: '20de3c04-d6a6-483d-a88e-edf44e6c437d' //dbServerAADAdminGroupObjectId
   properties: {
     principalType: 'Group'
     principalName: dbServerAADAdminGroupName
