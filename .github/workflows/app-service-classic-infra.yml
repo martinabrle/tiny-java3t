@@ -204,6 +204,7 @@ jobs:
                                       apiAppServicePort=${{secrets.AZURE_API_APP_PORT}} \
                                       webAppServiceName=${{secrets.AZURE_WEB_APP_NAME}} \
                                       webAppServicePort=${{secrets.AZURE_WEB_APP_PORT}} \
+                                      deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
                                       apiHealthCheckPath="${{steps.vars.outputs.API_HEALTH_CHECK_PATH}}" \
                                       webHealthCheckPath="${{steps.vars.outputs.WEB_HEALTH_CHECK_PATH}}"
       
