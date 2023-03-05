@@ -13,7 +13,6 @@ on:
         description: Delete all existing resources first
         required: true
 
-
 jobs:
   cleanup_if_requested:
     runs-on: ubuntu-latest

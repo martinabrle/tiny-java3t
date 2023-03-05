@@ -183,7 +183,7 @@ jobs:
           echo "WEB App service name: '${{secrets.AZURE_WEB_APP_NAME}}'"
           echo "WEB App port: '${{secrets.AZURE_WEB_APP_PORT}}'"
           echo "DBA Group Name: '${{secrets.AZURE_DBA_GROUP_NAME}}'"
-          echo "DBA Group Id: '{{steps.vars.outputs.AZURE_DBA_GROUP_ID}}'"
+          echo "DBA Group Id: '${{steps.vars.outputs.AZURE_DBA_GROUP_ID}}'"
           echo "User name: '${{steps.vars.outputs.DB_APP_USER_NAME}}'"
           
           az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi-vnet.bicep \
