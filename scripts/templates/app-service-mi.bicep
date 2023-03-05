@@ -77,6 +77,7 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
     authConfig: {
       activeDirectoryAuth: 'Enabled'
       passwordAuth: 'Enabled'
+      tenantId: '30adb879-45b4-49c3-bf8b-7731fcce5394'
     }
     highAvailability: {
       mode: 'Disabled'
@@ -255,24 +256,23 @@ resource kvApplicationInsightsConnectionString 'Microsoft.KeyVault/vaults/secret
   }
 }
 
-resource kvDbServerAADAdminGroupObjectId 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVault
-  name: 'dbServerAADAdminGroupObjectId'
-  properties: {
-    value: dbServerAADAdminGroupObjectId
-    contentType: 'string'
-  }
-}
+// resource kvDbServerAADAdminGroupObjectId 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+//   parent: keyVault
+//   name: 'dbServerAADAdminGroupObjectId'
+//   properties: {
+//     value: dbServerAADAdminGroupObjectId
+//     contentType: 'string'
+//   }
+// }
 
-resource kvDbServerAADAdminGroupName 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVault
-  name: 'dbServerAADAdminGroupName'
-  properties: {
-    value: dbServerAADAdminGroupName
-    contentType: 'string'
-  }
-}
-
+// resource kvDbServerAADAdminGroupName 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+//   parent: keyVault
+//   name: 'dbServerAADAdminGroupName'
+//   properties: {
+//     value: dbServerAADAdminGroupName
+//     contentType: 'string'
+//   }
+// }
 
 resource kvAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
