@@ -24,6 +24,8 @@ param stagingAppClientId string = ''
 param apiAppServiceName string
 param apiAppServicePort string
 
+param deploymentClientIPAddress string
+
 param webAppServiceName string
 param webAppServicePort string
 
@@ -112,6 +114,15 @@ resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/fire
   properties: {
     startIpAddress: '0.0.0.0'
     endIpAddress: '0.0.0.0'
+  }
+}
+
+resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
+  name: 'AllowDeploymentClientIP'
+  parent: postgreSQLServer
+  properties: {
+    endIpAddress: deploymentClientIPAddress
+    startIpAddress: deploymentClientIPAddress
   }
 }
 

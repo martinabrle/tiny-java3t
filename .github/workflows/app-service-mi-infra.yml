@@ -112,10 +112,15 @@ jobs:
            --location ${{secrets.AZURE_LOCATION}} \
            --template-file ./templates/components/rg.bicep \
            --parameters name=${{secrets.AZURE_RESOURCE_GROUP}} location=${{secrets.AZURE_LOCATION}} resourceTags="${{secrets.AZURE_RESOURCE_TAGS}}"
-
+        
       - name: Initialize deployment variables
         id: vars
         run: |
+          clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
+          echo "DEPLOYMENT_CLIENT_IP=${clientIP}" >> $GITHUB_OUTPUT
+          echo "Client IP: $clientIP"
+          echo "Deployment type: ${{steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT}}"
+          
           dbAdminName=`az postgres flexible-server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
           if [[ -z "$dbAdminName" ]]; then
             echo "This is a new deployment, generating a new admin name"
@@ -174,9 +179,9 @@ jobs:
             stagingAppClientId=`az ad sp list --display-name "${{secrets.AZURE_API_APP_NAME}}/slots/staging" --query "[?displayName=='${{secrets.AZURE_API_APP_NAME}}/slots/staging'].appId" --out tsv`
             echo "STAGING_APP_CLIENT_ID=${stagingAppClientId}" >> $GITHUB_OUTPUT
           fi
-      
-      - name: Deploy Azure resources (AAD Integration)
-        id: deployment_aad_mi
+        
+      - name: Deploy Azure resources
+        id: deployment
         run: |
           echo "Deploying with the following parameters:"
           echo "API App service name: '${{secrets.AZURE_API_APP_NAME}}'"
@@ -186,7 +191,7 @@ jobs:
           echo "DBA Group Name: '${{secrets.AZURE_DBA_GROUP_NAME}}'"
           echo "DBA Group Id: '{{steps.vars.outputs.AZURE_DBA_GROUP_ID}}'"
           echo "User name: '${{steps.vars.outputs.DB_APP_USER_NAME}}'"
-
+          
           az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi.bicep \
                         --parameters location=${{secrets.AZURE_LOCATION}}  \
                                       logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
@@ -207,6 +212,7 @@ jobs:
                                       apiAppServicePort=${{secrets.AZURE_API_APP_PORT}} \
                                       webAppServiceName=${{secrets.AZURE_WEB_APP_NAME}} \
                                       webAppServicePort=${{secrets.AZURE_WEB_APP_PORT}} \
+                                      deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
                                       apiHealthCheckPath="${{steps.vars.outputs.API_HEALTH_CHECK_PATH}}" \
                                       webHealthCheckPath="${{steps.vars.outputs.WEB_HEALTH_CHECK_PATH}}"
       

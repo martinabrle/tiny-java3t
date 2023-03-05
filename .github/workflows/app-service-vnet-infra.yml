@@ -104,7 +104,7 @@ jobs:
             echo "Deleted KeyVault exists, purging it and waiting for 10 mins"
             az keyvault purge -l ${{secrets.AZURE_LOCATION}} -n ${{secrets.AZURE_KEY_VAULT_NAME}}
           fi
-          
+        
       - name: Create Azure resource group
         run: |
           az deployment sub create \
@@ -152,11 +152,13 @@ jobs:
           fi
 
           dbaGroupId=`az ad group show --group "${{secrets.AZURE_DBA_GROUP_NAME}}" --query '[id]' -o tsv`
+          echo "DBA Group Name: '${{secrets.AZURE_DBA_GROUP_NAME}}'"
           echo "DBA Group Id: $dbaGroupId"
           echo "AZURE_DBA_GROUP_ID=${dbaGroupId}" >> $GITHUB_OUTPUT
 
           export appName=`az webapp list -g ${{secrets.AZURE_RESOURCE_GROUP}} --query "[?name=='${{secrets.AZURE_API_APP_NAME}}'].name" -o tsv`
           if [[ -z "$appName" ]]; then
+            echo "First deployment"
             echo "API_HEALTH_CHECK_PATH=" >> $GITHUB_OUTPUT
             echo "WEB_HEALTH_CHECK_PATH=" >> $GITHUB_OUTPUT
             echo "APP_CLIENT_ID=" >> $GITHUB_OUTPUT
@@ -172,14 +174,17 @@ jobs:
             echo "STAGING_APP_CLIENT_ID=${stagingAppClientId}" >> $GITHUB_OUTPUT
           fi
         
-      - name: Deploy Azure resources (AAD Integration + VNET)
-        id: deployment_aad_mi_vnet
+      - name: Deploy Azure resources
+        id: deployment
         run: |
           echo "Deploying with the following parameters:"
           echo "API App service name: '${{secrets.AZURE_API_APP_NAME}}'"
           echo "API App port: '${{secrets.AZURE_API_APP_PORT}}'"
           echo "WEB App service name: '${{secrets.AZURE_WEB_APP_NAME}}'"
           echo "WEB App port: '${{secrets.AZURE_WEB_APP_PORT}}'"
+          echo "DBA Group Name: '${{secrets.AZURE_DBA_GROUP_NAME}}'"
+          echo "DBA Group Id: '{{steps.vars.outputs.AZURE_DBA_GROUP_ID}}'"
+          echo "User name: '${{steps.vars.outputs.DB_APP_USER_NAME}}'"
           
           az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi-vnet.bicep \
                         --parameters location=${{secrets.AZURE_LOCATION}}  \
@@ -223,4 +228,11 @@ jobs:
           #Following is a workaround - I still did not figure out how to retrieve AppId in bicep
           az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${dbAppUserId}"
           az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID-STAGING" --value "${dbStagingAppUserId}"
-        
+      
+      - name: Create AppService staging slot DB user
+        run: |
+          ./create_aad_pgsql_user.sh
+
+      - name: Create AppService default slot DB user
+        run: |
+          ./create_aad_pgsql_user.sh
