@@ -228,10 +228,25 @@ jobs:
           az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${dbAppUserId}"
           az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID-STAGING" --value "${dbStagingAppUserId}"
       
-      - name: Create AppService staging slot DB user
-        run: |
-          ./create_aad_pgsql_user.sh
-
+        
       - name: Create AppService default slot DB user
         run: |
-          ./create_aad_pgsql_user.sh
+          ./create_aad_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
+                                     -d ${{secrets.AZURE_DB_NAME}} \
+                                     -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                     -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                     -n ${{steps.vars.outputs.DB_APP_USER_NAME}} \
+                                     -m ${{steps.vars.outputs.STAGING_APP_CLIENT_ID}}
+        
+      - name: Create AppService staging slot DB user
+        run: |
+          ./create_aad_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
+                                     -d ${{secrets.AZURE_DB_NAME}} \
+                                     -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                     -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                     -n ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
+                                     -m ${{steps.vars.outputs.STAGING_APP_CLIENT_ID}}
+        
+      - name: Remove DB Firewall exception used for Schema sync
+        run: |
+          az postgres flexible-server firewall-rule delete --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes

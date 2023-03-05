@@ -107,7 +107,6 @@ echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${d
 
 echo "User '${dbAdminName}' is running the following user creation script:"
 cat ./create_user.sql
-
 psql "${dbConnectionString}" --file=./create_user.sql
 
 echo ""
