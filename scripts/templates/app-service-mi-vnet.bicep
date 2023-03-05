@@ -257,7 +257,7 @@ resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/admini
   properties: {
     principalType: 'Group'
     principalName: dbServerAADAdminGroupName
-    tenantId: tenant().tenantId
+    tenantId: subscription().tenantId
   }
 }
 
