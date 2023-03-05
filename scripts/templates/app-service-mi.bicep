@@ -77,7 +77,7 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
     authConfig: {
       activeDirectoryAuth: 'Enabled'
       passwordAuth: 'Enabled'
-      tenantId: '30adb879-45b4-49c3-bf8b-7731fcce5394'
+      tenantId: subscription().tenantId
     }
     highAvailability: {
       mode: 'Disabled'
@@ -93,7 +93,7 @@ resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/admini
   properties: {
     principalType: 'Group'
     principalName: dbServerAADAdminGroupName
-    tenantId: tenant().tenantId
+    tenantId: subscription().tenantId
   }
 }
 
