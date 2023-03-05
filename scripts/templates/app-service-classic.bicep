@@ -71,9 +71,9 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
     storage: {
       storageSizeGB: 32
     }
-
     authConfig: {
       passwordAuth: 'Enabled'
+      activeDirectoryAuth: 'Disabled'
     }
     highAvailability: {
       mode: 'Disabled'
@@ -581,7 +581,7 @@ resource apiAppServiceSlotConfigNames 'Microsoft.Web/sites/config@2021-03-01' = 
   name: 'slotConfigNames'
   kind: 'string'
   parent: apiAppService
-  dependsOn: [apiAppServicePARMS]
+  dependsOn: [ apiAppServicePARMS ]
   properties: {
     appSettingNames: [
       'SPRING_DATASOURCE_URL', 'SPRING_DATASOURCE_USERNAME', 'SPRING_DATASOURCE_APP_CLIENT_ID', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'APPINSIGHTS_INSTRUMENTATIONKEY', 'SPRING_PROFILES_ACTIVE', 'PORT', 'SPRING_DATASOURCE_SHOW_SQL', 'DEBUG_AUTH_TOKEN'
@@ -692,7 +692,7 @@ resource webAppServiceSlotConfigNames 'Microsoft.Web/sites/config@2021-03-01' = 
   name: 'slotConfigNames'
   kind: 'string'
   parent: webAppService
-  dependsOn: [webAppServicePARMS]
+  dependsOn: [ webAppServicePARMS ]
   properties: {
     appSettingNames: [
       'APPLICATIONINSIGHTS_CONNECTION_STRING', 'APPINSIGHTS_INSTRUMENTATIONKEY', 'API_URI', 'SPRING_PROFILES_ACTIVE', 'PORT', 'DEBUG_AUTH_TOKEN'
