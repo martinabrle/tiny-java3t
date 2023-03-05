@@ -1,0 +1,2 @@
+{ \"CostCentre\": \"DEV\", \"Department\": \"RESEARCH\", \"WorkloadType\": \"TEST\", \"DeleteNightly\": \"true\", \"ArchitectureType\": \"VNET\" }
+AZURE_RESOURCE_TAGS example
