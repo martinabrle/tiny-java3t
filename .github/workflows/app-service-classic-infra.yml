@@ -208,11 +208,24 @@ jobs:
                                       apiHealthCheckPath="${{steps.vars.outputs.API_HEALTH_CHECK_PATH}}" \
                                       webHealthCheckPath="${{steps.vars.outputs.WEB_HEALTH_CHECK_PATH}}"
       
-    
       - name: Create AppService staging slot DB user
         run: |
-          ./create_pgsql_user.sh
+          ./create_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
+                                 -d ${{secrets.AZURE_DB_NAME}} \
+                                 -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                 -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                 -n ${{steps.vars.outputs.DB_APP_USER_NAME}} \
+                                 -m ${{steps.vars.outputs.DB_APP_USER_PASSWORD}}
 
       - name: Create AppService default slot DB user
         run: |
-          ./create_pgsql_user.sh
+          ./create_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
+                                 -d ${{secrets.AZURE_DB_NAME}} \
+                                 -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                 -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                 -n ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
+                                 -m ${{steps.vars.outputs.DB_STAGING_APP_USER_PASSWORD}}
+
+      - name: Remove DB Firewall exception used for Schema sync
+        run: |
+          az postgres flexible-server firewall-rule delete --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
