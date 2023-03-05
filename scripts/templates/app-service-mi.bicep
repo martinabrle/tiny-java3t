@@ -86,16 +86,6 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
   }
 }
 
-// resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
-//   parent: postgreSQLServer
-//   name: '20de3c04-d6a6-483d-a88e-edf44e6c437d' //dbServerAADAdminGroupObjectId
-//   properties: {
-//     principalType: 'Group'
-//     principalName: 'All TEST PGSQL Admins' //dbServerAADAdminGroupName
-//     tenantId: '30adb879-45b4-49c3-bf8b-7731fcce5394'
-//   }
-// }
-
 resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
   parent: postgreSQLServer
   name: '20de3c04-d6a6-483d-a88e-edf44e6c437d'
@@ -105,16 +95,6 @@ resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/admini
     tenantId: '30adb879-45b4-49c3-bf8b-7731fcce5394'
   }
 }
-
-// resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
-//   parent: postgreSQLServer
-//   name: dbServerAADAdminGroupObjectId
-//   properties: {
-//     principalType: 'Group'
-//     principalName: replace(dbServerAADAdminGroupName,'\n','') //'All TEST PGSQL Admins' //dbServerAADAdminGroupName
-//     tenantId: subscription().tenantId
-//   }
-// }
 
 resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
   parent: postgreSQLServer

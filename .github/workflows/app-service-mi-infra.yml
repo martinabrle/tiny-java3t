@@ -149,7 +149,7 @@ jobs:
 
           dbStagingAppUserName=`echo "${{secrets.AZURE_API_APP_NAME}}-staging" | tr '-' '_'`;
           echo "DB_STAGING_APP_USER_NAME=${dbStagingAppUserName}" >> $GITHUB_OUTPUT
-          echo "Staging app user name: $dbStagingAppUserName"         
+          echo "Staging app user name: $dbStagingAppUserName"
 
           if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
             echo "DBA Group name is not set"

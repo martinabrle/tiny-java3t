@@ -5,7 +5,6 @@ param appInsightsName string
 param keyVaultName string
 param dbServerName string
 param dbName string
-param createDB bool = true
 
 @secure()
 param dbAdminName string
@@ -74,7 +73,6 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
     }
 
     authConfig: {
-      activeDirectoryAuth: 'Enabled'
       passwordAuth: 'Enabled'
     }
     highAvailability: {
