@@ -231,21 +231,21 @@ jobs:
         
       - name: Create AppService default slot DB user
         run: |
+          export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
           ./create_aad_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
                                      -d ${{secrets.AZURE_DB_NAME}} \
-                                     -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
-                                     -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                     -a "${{secrets.AZURE_DBA_GROUP_NAME}}" \
                                      -n ${{steps.vars.outputs.DB_APP_USER_NAME}} \
-                                     -o ${{steps.vars.outputs.APP_CLIENT_ID}}
+                                     -o ${{steps.deployment_aad.outputs.APP_CLIENT_ID}}
         
       - name: Create AppService staging slot DB user
         run: |
+          export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
           ./create_aad_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
                                      -d ${{secrets.AZURE_DB_NAME}} \
-                                     -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
-                                     -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                     -a "${{secrets.AZURE_DBA_GROUP_NAME}}" \
                                      -n ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
-                                     -o ${{steps.vars.outputs.STAGING_APP_CLIENT_ID}}
+                                     -o ${{steps.deployment_aad.outputs.STAGING_APP_CLIENT_ID}}
         
       - name: Remove DB Firewall exception used for Schema sync
         run: |

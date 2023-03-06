@@ -12,7 +12,6 @@ Help()
    echo "s     PGSQL server name"
    echo "d     Database name"
    echo "a     Admin's user name"
-   echo "p     Admin's password"
    echo "n     New user's name"
    echo "o     New user's ObjectId"
    echo
@@ -22,7 +21,6 @@ Help()
 dbServerName=""
 dbName=""
 dbAdminName=""
-dbAdminPassword=""
 dbUserName=""
 dbUserObjectId=""
 while getopts ":h:s:d:a:p:n:o:" OPT; do
@@ -37,11 +35,8 @@ while getopts ":h:s:d:a:p:n:o:" OPT; do
       d) # database name
          dbName=$OPTARG
          ;;
-      a) # Admin's user name
+      a) # Admin's AAD user name
          dbAdminName=$OPTARG
-         ;;
-      p) # Admin's password
-         dbAdminPassword=$OPTARG
          ;;
       n) # New user's name
          dbUserName=$OPTARG
@@ -73,8 +68,8 @@ if [[ -z "${dbAdminName}" ]]; then
   Help
   exit 1
 fi
-if [[ -z "${dbAdminPassword}" ]]; then
-  echo "Error: Database admin's password is empty"
+if [[ -z "${PGPASSWORD}" ]]; then
+  echo "Error: variable PGPASSWORD is empty; it should contain a valid token"
   Help
   exit 1
 fi
@@ -89,7 +84,7 @@ if [[ -z "${dbUserObjectId}" ]]; then
   exit 1
 fi
 
-export PGPASSWORD="${dbAdminPassword}"
+
 dbUserExists=`psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAdminName}"  -tAc "SELECT 1 FROM pg_roles WHERE rolname='${dbUserName}';"`
 
 if [[ $dbUserExists -ne '1' ]]; then
