@@ -89,9 +89,8 @@ if [[ -z "${dbUserObjectId}" ]]; then
   exit 1
 fi
 
-dbConnectionString="host=${dbServerName}.postgres.database.azure.com port=5432 dbname=${dbName} user=${dbAdminName} password=${dbAdminPassword} sslmode=require"
-#echo "${dbConnectionString}"
-dbUserExists=`psql "${dbConnectionString}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='${dbUserName}';"`
+export PGPASSWORD="${dbAdminPassword}"
+dbUserExists=`psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAdminName}"  -tAc "SELECT 1 FROM pg_roles WHERE rolname='${dbUserName}';"`
 
 if [[ $dbUserExists -ne '1' ]]; then
   echo "User '${dbUserName}' does not exist yet, creating the user"
@@ -99,7 +98,7 @@ if [[ $dbUserExists -ne '1' ]]; then
   echo ""
   echo "User '${dbAdminName}' is running security label assignment script:"
   cat ./create_role.sql
-  psql "${dbConnectionString}"  --file=./create_role.sql
+  psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAdminName}" --file=./create_role.sql
 else
   echo "User '${dbUserName}' already exists, skipping the creation"
 fi
@@ -118,8 +117,8 @@ echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${d
 echo ""
 echo "User '${dbAdminName}' is running the following user creation script:"
 cat ./grant_rights.sql
-psql "${dbConnectionString}" --file=./grant_rights.sql
+psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAdminName}" --file=./grant_rights.sql
 
 echo ""
 echo "List of existing users:"
-psql "${dbConnectionString}" -tAc "SELECT * FROM pg_roles;"
+psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAdminName}" -tAc "SELECT * FROM pg_roles;"

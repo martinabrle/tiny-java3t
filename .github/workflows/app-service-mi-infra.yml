@@ -236,7 +236,7 @@ jobs:
                                      -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                      -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                                      -n ${{steps.vars.outputs.DB_APP_USER_NAME}} \
-                                     -m ${{steps.vars.outputs.STAGING_APP_CLIENT_ID}}
+                                     -o ${{steps.vars.outputs.APP_CLIENT_ID}}
         
       - name: Create AppService staging slot DB user
         run: |
@@ -245,7 +245,7 @@ jobs:
                                      -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                      -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                                      -n ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
-                                     -m ${{steps.vars.outputs.STAGING_APP_CLIENT_ID}}
+                                     -o ${{steps.vars.outputs.STAGING_APP_CLIENT_ID}}
         
       - name: Remove DB Firewall exception used for Schema sync
         run: |
