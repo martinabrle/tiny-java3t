@@ -69,12 +69,13 @@ jobs:
           az deployment sub create \
            --location ${{secrets.AZURE_LOCATION}} \
            --template-file ./templates/components/rg.bicep \
+           --name "rgappsvcclassic${RANDOM}" \
            --parameters name=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} location=${{secrets.AZURE_LOCATION}} resourceTags="${{secrets.AZURE_RESOURCE_TAGS}}"
 
       - name: Deploy Log Workspace
         if: steps.logs_rg_exists.outputs.LOGS_RG_EXISTS == 'false'
         run: |
-          az deployment group create --resource-group ${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} --template-file ./templates/components/logs.bicep \
+          az deployment group create --name "rgappsvcclassic${RANDOM}" --resource-group ${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} --template-file ./templates/components/logs.bicep \
                         --parameters location=${{secrets.AZURE_LOCATION}}  \
                                      logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}
 
@@ -109,6 +110,7 @@ jobs:
         run: |
           az deployment sub create \
            --location ${{secrets.AZURE_LOCATION}} \
+           --name "rgappsvcclassic${RANDOM}" \
            --template-file ./templates/components/rg.bicep \
            --parameters name=${{secrets.AZURE_RESOURCE_GROUP}} location=${{secrets.AZURE_LOCATION}} resourceTags="${{secrets.AZURE_RESOURCE_TAGS}}"
       
@@ -186,7 +188,7 @@ jobs:
           echo "WEB App port: '${{secrets.AZURE_WEB_APP_PORT}}'"
           echo "User name: '${{steps.vars.outputs.DB_APP_USER_NAME}}'"
           
-          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-classic.bicep \
+          az deployment group create --name "rgappsvcclassic${RANDOM}" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-classic.bicep \
                         --parameters location=${{secrets.AZURE_LOCATION}}  \
                                       logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
                                       logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} \
