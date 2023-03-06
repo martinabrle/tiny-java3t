@@ -228,11 +228,3 @@ jobs:
           #Following is a workaround - I still did not figure out how to retrieve AppId in bicep
           az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${dbAppUserId}"
           az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID-STAGING" --value "${dbStagingAppUserId}"
-      
-      - name: Create AppService staging slot DB user
-        run: |
-          ./create_aad_pgsql_user.sh
-
-      - name: Create AppService default slot DB user
-        run: |
-          ./create_aad_pgsql_user.sh
