@@ -236,7 +236,7 @@ jobs:
                                      -d ${{secrets.AZURE_DB_NAME}} \
                                      -a "${{secrets.AZURE_DBA_GROUP_NAME}}" \
                                      -n ${{steps.vars.outputs.DB_APP_USER_NAME}} \
-                                     -o ${{steps.deployment_aad.outputs.DB_APP_CLIENT_ID}}
+                                     -o ${{steps.deployment_aad.outputs.DB_APP_USER_ID}}
         
       - name: Create AppService staging slot DB user
         run: |
@@ -245,7 +245,7 @@ jobs:
                                      -d ${{secrets.AZURE_DB_NAME}} \
                                      -a "${{secrets.AZURE_DBA_GROUP_NAME}}" \
                                      -n ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
-                                     -o ${{steps.deployment_aad.outputs.DB_STAGING_APP_CLIENT_ID}}
+                                     -o ${{steps.deployment_aad.outputs.DB_STAGING_APP_USER_ID}}
         
       - name: Remove DB Firewall exception used for Schema sync
         run: |
