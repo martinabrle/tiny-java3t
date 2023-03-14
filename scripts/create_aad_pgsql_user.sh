@@ -52,6 +52,12 @@ while getopts ":h:s:d:a:p:n:o:" OPT; do
    esac
 done
 
+echo "dbServerName: '${dbServerName}'"
+echo "dbName: '${dbName}'"
+echo "dbAdminName: '${dbAdminName}'"
+echo "dbUserName: '${dbUserName}'"
+echo "dbUserObjectId: '${dbUserObjectId}'"
+
 if [[ -z "${dbServerName}" ]]; then
   echo "Error: Database server name is empty"
   Help
