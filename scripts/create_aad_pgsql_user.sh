@@ -96,6 +96,7 @@ dbUserExists=`psql --set=sslmode=require -h ${dbServerName}.postgres.database.az
 if [[ $dbUserExists -ne '1' ]]; then
   echo "User '${dbUserName}' does not exist yet, creating the user"
   echo "CREATE USER ${dbUserName} WITH PASSWORD '${dbUserPassword}';" > ./create_user.sql
+  ls -la
   echo ""
   echo "User '${dbAdminName}' is running security label assignment script:"
   cat ./create_role.sql
@@ -107,6 +108,7 @@ fi
 echo "security label for pgaadauth " > ./security_label.sql
 echo "    on role ${dbUserName} " >> ./security_label.sql
 echo "    is 'aadauth,oid=${dbUserObjectId},type=service'; " >> ./security_label.sql
+ls -la
 echo ""
 echo "User '${dbAdminName}' is running security label assignment script:"
 cat ./security_label.sql
@@ -115,6 +117,7 @@ psql "${dbConnectionString}"  --file=./security_label.sql
 echo "GRANT CONNECT ON DATABASE ${dbName} TO ${dbUserName};"> ./grant_rights.sql
 echo "GRANT USAGE ON SCHEMA public TO ${dbUserName};">> ./grant_rights.sql
 echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${dbUserName};">> ./grant_rights.sql
+ls -la
 echo ""
 echo "User '${dbAdminName}' is running the following user creation script:"
 cat ./grant_rights.sql
