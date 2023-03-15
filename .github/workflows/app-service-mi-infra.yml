@@ -235,6 +235,8 @@ jobs:
           ./create_aad_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
                                      -d ${{secrets.AZURE_DB_NAME}} \
                                      -a "${{secrets.AZURE_DBA_GROUP_NAME}}" \
+                                     -b "${{steps.vars.outputs.DB_ADMIN_NAME}}" \
+                                     -p "${{steps.vars.outputs.DB_ADMIN_PASSWORD}}" \
                                      -n ${{steps.vars.outputs.DB_APP_USER_NAME}} \
                                      -o ${{steps.deployment_aad.outputs.DB_APP_USER_ID}}
         
@@ -244,6 +246,8 @@ jobs:
           ./create_aad_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
                                      -d ${{secrets.AZURE_DB_NAME}} \
                                      -a "${{secrets.AZURE_DBA_GROUP_NAME}}" \
+                                     -b "${{steps.vars.outputs.DB_ADMIN_NAME}}" \
+                                     -p "${{steps.vars.outputs.DB_ADMIN_PASSWORD}}" \
                                      -n ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
                                      -o ${{steps.deployment_aad.outputs.DB_STAGING_APP_USER_ID}}
         
