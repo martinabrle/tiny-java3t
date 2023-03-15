@@ -22,10 +22,12 @@ Help()
 # Get the options
 dbServerName=""
 dbName=""
+dbAADAdminName=""
 dbAdminName=""
+dbAdminPassword=""
 dbUserName=""
 dbUserObjectId=""
-while getopts ":h:s:d:a:p:n:o:" OPT; do
+while getopts ":h:s:d:a:p:n:o:b:" OPT; do
    case $OPT in
       h) # display Help
         Help
