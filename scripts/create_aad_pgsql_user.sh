@@ -93,34 +93,38 @@ fi
 
 dbUserExists=`psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAdminName}"  -tAc "SELECT 1 FROM pg_roles WHERE rolname='${dbUserName}';"`
 
+echo " " > ./create_user.sql
+
 if [[ $dbUserExists -ne '1' ]]; then
   echo "User '${dbUserName}' does not exist yet, creating the user"
-  echo "CREATE USER ${dbUserName} WITH PASSWORD '${dbUserPassword}';" > ./create_user.sql
-  ls -la
-  echo ""
-  echo "User '${dbAdminName}' is running security label assignment script:"
-  cat ./create_role.sql
-  psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAdminName}" --file=./create_role.sql
+  echo "CREATE USER ${dbUserName} WITH PASSWORD '${dbUserPassword}';" >> ./create_user.sql
+  # ls -la
+  # echo ""
+  # echo "User '${dbAdminName}' is running security label assignment script:"
+  # cat ./create_role.sql
+  # psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAdminName}" --file=./create_role.sql
 else
   echo "User '${dbUserName}' already exists, skipping the creation"
 fi
 
-echo "security label for pgaadauth " > ./security_label.sql
-echo "    on role ${dbUserName} " >> ./security_label.sql
-echo "    is 'aadauth,oid=${dbUserObjectId},type=service'; " >> ./security_label.sql
-ls -la
-echo ""
-echo "User '${dbAdminName}' is running security label assignment script:"
-cat ./security_label.sql
-psql "${dbConnectionString}"  --file=./security_label.sql
+echo "security label for pgaadauth " >> ./create_user.sql
+echo "    on role ${dbUserName} " >> ./create_user.sql
+echo "    is 'aadauth,oid=${dbUserObjectId},type=service'; " >> ./create_user.sql
+#ls -la
+#echo ""
+#echo "User '${dbAdminName}' is running security label assignment script:"
+#cat ./security_label.sql
+#psql "${dbConnectionString}"  --file=./security_label.sql
 
-echo "GRANT CONNECT ON DATABASE ${dbName} TO ${dbUserName};"> ./grant_rights.sql
-echo "GRANT USAGE ON SCHEMA public TO ${dbUserName};">> ./grant_rights.sql
-echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${dbUserName};">> ./grant_rights.sql
-ls -la
-echo ""
+echo "GRANT CONNECT ON DATABASE ${dbName} TO ${dbUserName};" >> ./create_user.sql
+echo "GRANT USAGE ON SCHEMA public TO ${dbUserName};" >> ./create_user.sql
+echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${dbUserName};" >> ./create_user.sql
+#ls -la
+#echo ""
+
 echo "User '${dbAdminName}' is running the following user creation script:"
-cat ./grant_rights.sql
+ls -ls
+cat  ./create_user.sql
 psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAdminName}" --file=./grant_rights.sql
 
 echo ""
