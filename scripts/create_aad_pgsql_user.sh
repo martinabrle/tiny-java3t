@@ -97,7 +97,8 @@ echo " " > ./create_user.sql
 
 if [[ $dbUserExists -ne '1' ]]; then
   echo "User '${dbUserName}' does not exist yet, creating the user"
-  echo "CREATE USER ${dbUserName} WITH PASSWORD '${dbUserPassword}';" >> ./create_user.sql
+  #echo "CREATE USER ${dbUserName} WITH PASSWORD '${dbUserPassword}';" >> ./create_user.sql
+  echo "CREATE ROLE ${dbUserName} LOGIN;" >> ./create_user.sql
   echo " " >> ./create_user.sql
   # ls -la
   # echo ""
