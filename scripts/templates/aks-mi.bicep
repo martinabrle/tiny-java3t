@@ -1,8 +1,13 @@
 param logAnalyticsWorkspaceName string
 param logAnalyticsWorkspaceRG string
 param appInsightsName string
+
 param keyVaultName string
 param dbServerName string
+
+param dbServerAADAdminGroupObjectId string
+param dbServerAADAdminGroupName string
+
 param dbName string
 
 @secure()
@@ -10,9 +15,8 @@ param dbAdminName string
 @secure()
 param dbAdminPassword string
 @secure()
-param appClientId string
-@secure()
 param dbUserName string
+param appClientId string = ''
 @secure()
 param dbUserPassword string
 @secure()
@@ -24,6 +28,7 @@ param deploymentClientIPAddress string
 
 param nodeResoureGroup string = resourceGroup().name
 param location string = resourceGroup().location
+
 param tagsArray object = resourceGroup().tags
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
@@ -82,6 +87,20 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
   }
 }
 
+resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
+  parent: postgreSQLServer
+  name: dbServerAADAdminGroupObjectId 
+  dependsOn: [
+    postgreSQLDatabase
+    postgreSQLServerDiagnotsicsLogs
+  ]
+  properties: {
+    principalType: 'Group'
+    principalName: dbServerAADAdminGroupName 
+    tenantId: subscription().tenantId
+  }
+}
+
 resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
   parent: postgreSQLServer
   name: dbName
@@ -106,6 +125,26 @@ resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/fire
   properties: {
     startIpAddress: '0.0.0.0'
     endIpAddress: '0.0.0.0'
+  }
+}
+
+resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: '${dbServerName}-db-logs'
+  scope: postgreSQLServer
+  properties: {
+    logs: [
+      {
+        categoryGroup: 'allLogs'
+        enabled: true
+      }
+    ]
+    metrics: [
+      {
+        category: 'AllMetrics'
+        enabled: true
+      }
+    ]
+    workspaceId: logAnalyticsWorkspace.id
   }
 }
 
