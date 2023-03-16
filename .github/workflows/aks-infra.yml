@@ -1,4 +1,4 @@
-name: app-service-mi-infra
+name: aks-infra
 
 on:
   # push:
