@@ -230,7 +230,7 @@ jobs:
                                  -n ${{steps.vars.outputs.DB_APP_USER_NAME}} \
                                  -m ${{steps.vars.outputs.DB_APP_USER_PASSWORD}}
       
-      - name: Create Managed Identity DB USer
+      - name: Create Managed Identity DB User
         run: |
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
           ./create_aad_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
