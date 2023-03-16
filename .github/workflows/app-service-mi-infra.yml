@@ -251,6 +251,6 @@ jobs:
                                      -n ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
                                      -o ${{steps.deployment_aad.outputs.DB_STAGING_APP_USER_ID}}
         
-      - name: Remove DB Firewall exception used for Schema sync
+      - name: Remove DB Firewall exception used for DB setup
         run: |
           az postgres flexible-server firewall-rule delete --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes

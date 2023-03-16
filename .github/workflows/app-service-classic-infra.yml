@@ -153,12 +153,36 @@ jobs:
           echo "DB_STAGING_APP_USER_NAME=${dbStagingAppUserName}" >> $GITHUB_OUTPUT
           echo "Staging app user name: $dbStagingAppUserName"
 
-          dbAppUserPassword="`openssl rand -hex 25`#@"
+          if [[ ! -z "$kvExists" ]]; then
+            kvSecretExists=`az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "[?name=='SPRING-DATASOURCE-PASSWORD'].name" -o tsv`
+            if [[ ! -z "$kvExists" ]]; then
+              dbAppUserPassword=`az keyvault secret show --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --name "SPRING-DATASOURCE-PASSWORD" --query "[value]" -o tsv`
+            fi
+          fi
+          if [[ -z "$dbAppUserPassword" ]]; then
+            dbAppUserPassword="`openssl rand -hex 25`#@"
+          fi
           echo "::add-mask::$dbAppUserPassword"
-          dbStagingAppUserPassword="`openssl rand -hex 25`#@"
-          echo "::add-mask::$dbStagingAppUserPassword"
           echo "DB_APP_USER_PASSWORD=${dbAppUserPassword}" >> $GITHUB_OUTPUT
+
+          if [[ ! -z "$kvExists" ]]; then
+            kvSecretExists=`az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "[?name=='SPRING-DATASOURCE-PASSWORD-STAGING'].name" -o tsv`
+            if [[ ! -z "$kvExists" ]]; then
+              dbStagingAppUserPassword=`az keyvault secret show --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --name "SPRING-DATASOURCE-PASSWORD-STAGING" --query "[value]" -o tsv`
+            fi
+          fi
+          if [[ -z "$dbStagingAppUserPassword" ]]; then
+            dbStagingAppUserPassword="`openssl rand -hex 25`#@"
+          fi
+          echo "::add-mask::$dbStagingAppUserPassword"
           echo "DB_STAGING_APP_USER_PASSWORD=${dbStagingAppUserPassword}" >> $GITHUB_OUTPUT
+
+          # dbAppUserPassword="`openssl rand -hex 25`#@"
+          # echo "::add-mask::$dbAppUserPassword"
+          # dbStagingAppUserPassword="`openssl rand -hex 25`#@"
+          # echo "::add-mask::$dbStagingAppUserPassword"
+          # echo "DB_APP_USER_PASSWORD=${dbAppUserPassword}" >> $GITHUB_OUTPUT
+          # echo "DB_STAGING_APP_USER_PASSWORD=${dbStagingAppUserPassword}" >> $GITHUB_OUTPUT
 
           export appName=`az webapp list -g ${{secrets.AZURE_RESOURCE_GROUP}} --query "[?name=='${{secrets.AZURE_API_APP_NAME}}'].name" -o tsv`
           if [[ -z "$appName" ]]; then
@@ -228,6 +252,6 @@ jobs:
                                  -n ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
                                  -m ${{steps.vars.outputs.DB_STAGING_APP_USER_PASSWORD}}
         
-      - name: Remove DB Firewall exception used for Schema sync
+      - name: Remove DB Firewall exception used for DB setup
         run: |
           az postgres flexible-server firewall-rule delete --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
