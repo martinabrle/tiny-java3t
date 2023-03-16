@@ -1,0 +1,244 @@
+name: app-service-mi-infra
+
+on:
+  # push:
+  #  branches:
+  #    - main
+  #  paths:
+  #    - 'scripts/**'     
+  workflow_dispatch:
+    inputs:
+      run_cleanup:
+        type: boolean
+        description: Delete all existing resources first
+        required: true
+
+jobs:
+  cleanup_if_requested:
+    runs-on: ubuntu-latest
+    environment: AKS
+    steps:
+      - name: Azure login
+        if: github.event.inputs.run_cleanup == 'true'
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.AZURE_CREDENTIALS}}
+
+      - name: Set default Azure subscription
+        if: github.event.inputs.run_cleanup == 'true'
+        run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
+
+      - name: Remove the resource group
+        if: github.event.inputs.run_cleanup == 'true'
+        run: |
+          RG_EXISTS=$(az group exists --name ${{secrets.AZURE_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}})
+          if [[ "$RG_EXISTS" == "true" ]]; then
+             echo "Deleting the Todo App app resource group"
+             az group delete --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}} --yes
+          fi
+
+  deploy_log_analytics_if_needed:
+    # Having this as a separte Job, as there are many situations where Log Analytics
+    # workspace would be outside of the current subscription
+    needs: [cleanup_if_requested]
+    runs-on: ubuntu-latest
+    environment: AKS
+    defaults:
+      run:
+        working-directory: ./scripts
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.AZURE_CREDENTIALS}}
+
+      - name: Set default Azure subscription
+        run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
+
+      - name: Check the resource group exists
+        id: logs_rg_exists
+        run: |
+          LOGS_RG_EXISTS=$(az group exists --name ${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}})
+          echo "LOGS_RG_EXISTS=${LOGS_RG_EXISTS}" >> $GITHUB_OUTPUT
+
+      - name: Create Logs Workspace Azure resource group
+        if: steps.logs_rg_exists.outputs.LOGS_RG_EXISTS == 'false'
+        run: |
+          az deployment sub create \
+           --location ${{secrets.AZURE_LOCATION}} \
+           --template-file ./templates/components/rg.bicep \
+           --parameters name=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} location=${{secrets.AZURE_LOCATION}} resourceTags="${{secrets.AZURE_RESOURCE_TAGS}}"
+
+      - name: Deploy Log Workspace
+        if: steps.logs_rg_exists.outputs.LOGS_RG_EXISTS == 'false'
+        run: |
+          az deployment group create --resource-group ${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} --template-file ./templates/components/logs.bicep \
+                        --parameters location=${{secrets.AZURE_LOCATION}}  \
+                                     logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}
+
+  deploy_infra:
+    needs: [deploy_log_analytics_if_needed]
+    runs-on: ubuntu-latest
+    environment: AKS
+    defaults:
+      run:
+        working-directory: ./scripts
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.AZURE_CREDENTIALS}}
+      
+      - name: Set default Azure subscription
+        run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
+      
+      - name: Purge deleted KV if found
+        run: |
+          kvDeletedQuery="[?name == '${{secrets.AZURE_KEY_VAULT_NAME}}'].id"
+          kvDeletedExists=`az keyvault list-deleted --query "$kvDeletedQuery" -o tsv`
+          if [[ ! -z "$kvDeletedExists" ]]; then
+            echo "Deleted KeyVault exists, purging it and waiting for 10 mins"
+            az keyvault purge -l ${{secrets.AZURE_LOCATION}} -n ${{secrets.AZURE_KEY_VAULT_NAME}}
+          fi
+        
+      - name: Create Azure resource group
+        run: |
+          az deployment sub create \
+           --location ${{secrets.AZURE_LOCATION}} \
+           --template-file ./templates/components/rg.bicep \
+           --parameters name=${{secrets.AZURE_RESOURCE_GROUP}} location=${{secrets.AZURE_LOCATION}} resourceTags="${{secrets.AZURE_RESOURCE_TAGS}}"
+        
+      - name: Initialize deployment variables
+        id: vars
+        run: |
+          clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
+          echo "DEPLOYMENT_CLIENT_IP=${clientIP}" >> $GITHUB_OUTPUT
+          echo "Client IP: $clientIP"
+          echo "Deployment type: ${{steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT}}"
+
+          appClientId=`az ad sp list --display-name "${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}" --query "[?displayName=='${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}'].appId" --out tsv`
+          echo "APP_CLIENT_ID=${appClientId}" >> $GITHUB_OUTPUT
+          echo "AppClientId: $appClientId"
+
+          dbAdminName=`az postgres flexible-server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
+          if [[ -z "$dbAdminName" ]]; then
+            echo "This is a new deployment, generating a new admin name"
+            dbAdminName="a`openssl rand -hex 5`"
+          fi
+          echo "Admin name: $dbAdminName"
+          echo "DB_ADMIN_NAME=${dbAdminName}" >> $GITHUB_OUTPUT
+          
+          dbAdminPassword=""
+          kvExists=`az keyvault list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[?name=='${{secrets.AZURE_KEY_VAULT_NAME}}'].name" -o tsv`
+          if [[ ! -z "$kvExists" ]]; then
+            kvSecretExists=`az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "[?name=='DB-ADMIN-PASSWORD'].name" -o tsv`
+            if [[ ! -z "$kvExists" ]]; then
+              dbAdminPassword=`az keyvault secret show --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --name "DB-ADMIN-PASSWORD" --query "[value]" -o tsv`
+            fi
+          fi
+          if [[ -z "$dbAdminPassword" ]]; then
+            dbAdminPassword="`openssl rand -hex 25`#@"
+          fi
+          echo "::add-mask::$dbAdminPassword"
+          echo "Admin password: $dbAdminPassword"
+          echo "DB_ADMIN_PASSWORD=${dbAdminPassword}" >> $GITHUB_OUTPUT
+          
+          dbAppUserName=`echo "${{secrets.AZURE_API_APP_NAME}}" | tr '-' '_'`;
+          echo "DB_APP_USER_NAME=${dbAppUserName}" >> $GITHUB_OUTPUT
+          echo "App user name: $dbAppUserName"
+
+          if [[ ! -z "$kvExists" ]]; then
+            kvSecretExists=`az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "[?name=='SPRING-DATASOURCE-PASSWORD'].name" -o tsv`
+            if [[ ! -z "$kvExists" ]]; then
+              dbAppUserPassword=`az keyvault secret show --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --name "SPRING-DATASOURCE-PASSWORD" --query "[value]" -o tsv`
+            fi
+          fi
+          if [[ -z "$dbAppUserPassword" ]]; then
+            dbAppUserPassword="`openssl rand -hex 25`#@"
+          fi
+          echo "::add-mask::$dbAppUserPassword"
+          echo "DB_APP_USER_PASSWORD=${dbAppUserPassword}" >> $GITHUB_OUTPUT
+
+          dbAppUserNameExternal=`echo "${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}" | tr '-' '_'`;
+          echo "DB_APP_USER_NAME_EXTERNAL=${dbAppUserNameExternal}" >> $GITHUB_OUTPUT
+          echo "External app user name: $dbAppUserNameExternal"
+
+          dbaGroupId=`az ad group show --group "${{secrets.AZURE_DBA_GROUP_NAME}}" --query '[id]' -o tsv`
+          echo "DBA Group Name: '${{secrets.AZURE_DBA_GROUP_NAME}}'"
+          echo "DBA Group Id: $dbaGroupId"
+          echo "AZURE_DBA_GROUP_ID=${dbaGroupId}" >> $GITHUB_OUTPUT
+
+          aksAdminGroupId=`az ad group show --group "${{secrets.AZURE_AKS_ADMIN_GROUP_NAME}}" --query '[id]' -o tsv`
+          echo "AKS Admin Group Id: $aksAdminGroupId"
+          echo "AZURE_AKS_ADMIN_GROUP_ID=${aksAdminGroupId}" >> $GITHUB_OUTPUT
+        
+      - name: Deploy Azure resources
+        id: deployment
+        run: |
+          echo "Deploying with the following parameters:"
+          echo "API App service name: '${{secrets.AZURE_API_APP_NAME}}'"
+          echo "API App port: '${{secrets.AZURE_API_APP_PORT}}'"
+          echo "WEB App service name: '${{secrets.AZURE_WEB_APP_NAME}}'"
+          echo "WEB App port: '${{secrets.AZURE_WEB_APP_PORT}}'"
+          echo "DBA Group Name: '${{secrets.AZURE_DBA_GROUP_NAME}}'"
+          echo "DBA Group Id: '${{steps.vars.outputs.AZURE_DBA_GROUP_ID}}'"
+          echo "User name: '${{steps.vars.outputs.DB_APP_USER_NAME}}'"
+          
+          az deployment group create \
+              --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} \
+              --template-file ./templates/aks-mi.bicep \
+              --parameters location=${{secrets.AZURE_LOCATION}}  \
+                           logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
+                           logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}}  \
+                           keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
+                           appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
+                           dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
+                           dbName=${{secrets.AZURE_DB_NAME}} \
+                           dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                           appClientId="${{steps.vars.outputs.APP_CLIENT_ID}}" \
+                           dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                           dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \
+                           dbUserPassword=${{steps.vars.outputs.DB_APP_USER_PASSWORD}} \
+                           containerRegistryName=${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} \
+                           aksClusterName=${{secrets.AZURE_AKS_NAME}} \
+                           aksAdminGroupObjectId=${{steps.vars.outputs.AZURE_AKS_ADMIN_GROUP_ID}} \
+                           apiUserManagedIdentityName=${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}} \
+                           deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
+                           nodeResoureGroup=${{secrets.AZURE_AKS_NODE_RESOURCE_GROUP}}
+      
+      - name: Init AAD ClientId
+        id: deployment_aad
+        run: |
+          dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}" --query "[?displayName=='${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}'].appId" --out tsv`
+          echo "DB_APP_USER_ID=${dbAppUserId}" >> $GITHUB_OUTPUT
+          echo "App Client Id: ${dbAppUserId}"
+          #Following is a workaround - I still did not figure out how to retrieve AppId in bicep
+          az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${dbAppUserId}"
+      
+      - name: Create Managed Identity DB USer
+        run: |
+          export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
+          ./create_aad_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
+                                     -d ${{secrets.AZURE_DB_NAME}} \
+                                     -a "${{secrets.AZURE_DBA_GROUP_NAME}}" \
+                                     -b "${{steps.vars.outputs.DB_ADMIN_NAME}}" \
+                                     -p "${{steps.vars.outputs.DB_ADMIN_PASSWORD}}" \
+                                     -n ${{steps.vars.outputs.DB_APP_USER_NAME_EXTERNAL}} \
+                                     -o ${{steps.deployment_aad.outputs.DB_APP_USER_ID}}
+        
+      - name: Create classic DB User
+        run: |
+          ./create_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
+                                 -d ${{secrets.AZURE_DB_NAME}} \
+                                 -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                 -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                 -n ${{steps.vars.outputs.DB_APP_USER_NAME}} \
+                                 -m ${{steps.vars.outputs.DB_APP_USER_PASSWORD}}
+        
+      - name: Remove DB Firewall exception used for DB setup
+        run: |
+          az postgres flexible-server firewall-rule delete --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
