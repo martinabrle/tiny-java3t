@@ -135,7 +135,7 @@ echo "    is 'aadauth,oid=${dbUserObjectId},type=service'; " >> ./create_user.sq
 echo " " >> ./create_user.sql
 
 cat ./create_user.sql
-psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAdminName}" --file=./create_user.sql
+psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}" --file=./create_user.sql
 
 psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}" -tAc "SELECT * FROM pg_roles;"
 
