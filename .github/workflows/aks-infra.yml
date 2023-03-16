@@ -218,6 +218,15 @@ jobs:
           echo "App Client Id: ${dbAppUserId}"
           #Following is a workaround - I still did not figure out how to retrieve AppId in bicep
           az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${dbAppUserId}"
+        
+      - name: Create classic DB User
+        run: |
+          ./create_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
+                                 -d ${{secrets.AZURE_DB_NAME}} \
+                                 -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                 -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                 -n ${{steps.vars.outputs.DB_APP_USER_NAME}} \
+                                 -m ${{steps.vars.outputs.DB_APP_USER_PASSWORD}}
       
       - name: Create Managed Identity DB USer
         run: |
@@ -229,15 +238,6 @@ jobs:
                                      -p "${{steps.vars.outputs.DB_ADMIN_PASSWORD}}" \
                                      -n ${{steps.vars.outputs.DB_APP_USER_NAME_EXTERNAL}} \
                                      -o ${{steps.deployment_aad.outputs.DB_APP_USER_ID}}
-        
-      - name: Create classic DB User
-        run: |
-          ./create_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
-                                 -d ${{secrets.AZURE_DB_NAME}} \
-                                 -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
-                                 -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
-                                 -n ${{steps.vars.outputs.DB_APP_USER_NAME}} \
-                                 -m ${{steps.vars.outputs.DB_APP_USER_PASSWORD}}
         
       - name: Remove DB Firewall exception used for DB setup
         run: |
