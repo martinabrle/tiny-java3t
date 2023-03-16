@@ -111,20 +111,14 @@ if [[ -z "${dbUserObjectId}" ]]; then
 fi
 
 
-dbUserExists=`psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}"  -tAc "SELECT 1 FROM pg_roles WHERE rolname='${dbUserName}';"`
+dbUserExists=`psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}"  -tAc "SELECT 1 FROM pg_roles WHERE rolname='${dbUserName}';" -v ON_ERROR_STOP=1`
 
 echo " " > ./create_user.sql
 
 if [[ $dbUserExists -ne '1' ]]; then
   echo "User '${dbUserName}' does not exist yet, creating the user"
-  #echo "CREATE USER ${dbUserName} WITH PASSWORD '${dbUserPassword}';" >> ./create_user.sql
   echo "CREATE ROLE ${dbUserName} LOGIN;" >> ./create_user.sql
   echo " " >> ./create_user.sql
-  # ls -la
-  # echo ""
-  # echo "User '${dbAdminName}' is running security label assignment script:"
-  # cat ./create_role.sql
-  # psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAdminName}" --file=./create_role.sql
 else
   echo "User '${dbUserName}' already exists, skipping the creation"
 fi
@@ -135,15 +129,9 @@ echo "    is 'aadauth,oid=${dbUserObjectId},type=service'; " >> ./create_user.sq
 echo " " >> ./create_user.sql
 
 cat ./create_user.sql
-psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}" --file=./create_user.sql
+psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}" --file=./create_user.sql -v ON_ERROR_STOP=1
 
-psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}" -tAc "SELECT * FROM pg_roles;"
-
-#ls -la
-#echo ""
-#echo "User '${dbAdminName}' is running security label assignment script:"
-#cat ./security_label.sql
-#psql "${dbConnectionString}"  --file=./security_label.sql
+psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}" -tAc "SELECT * FROM pg_roles;" -v ON_ERROR_STOP=1
 
 echo "GRANT CONNECT ON DATABASE ${dbName} TO ${dbUserName};" > ./assign_privileges.sql
 echo "GRANT USAGE ON SCHEMA public TO ${dbUserName};" >> ./assign_privileges.sql
@@ -153,9 +141,8 @@ echo " " >> ./assign_privileges.sql
 echo "User '${dbAdminName}' is assigning privileges using this script:"
 cat  ./assign_privileges.sql
 dbConnectionString="host=${dbServerName}.postgres.database.azure.com port=5432 dbname=${dbName} user=${dbAdminName} password=${dbAdminPassword} sslmode=require"
-#psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAdminName}" --file=./assign_privileges.sql
-psql "${dbConnectionString}" --file=./assign_privileges.sql
+psql "${dbConnectionString}" --file=./assign_privileges.sql -v ON_ERROR_STOP=1
 
 echo ""
 echo "List of existing users:"
-psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}" -tAc "SELECT * FROM pg_roles;"
+psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}" -tAc "SELECT * FROM pg_roles;" -v ON_ERROR_STOP=1

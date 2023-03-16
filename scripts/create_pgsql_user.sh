@@ -90,8 +90,7 @@ if [[ -z "${dbUserPassword}" ]]; then
 fi
 
 dbConnectionString="host=${dbServerName}.postgres.database.azure.com port=5432 dbname=${dbName} user=${dbAdminName} password=${dbAdminPassword} sslmode=require"
-#echo "${dbConnectionString}"
-dbUserExists=`psql "${dbConnectionString}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='${dbUserName}';"`
+dbUserExists=`psql "${dbConnectionString}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='${dbUserName}';" -v ON_ERROR_STOP=1`
 
 if [[ $dbUserExists -ne '1' ]]; then
   echo "User '${dbUserName}' does not exist yet, creating the user"
@@ -107,8 +106,8 @@ echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${d
 
 echo "User '${dbAdminName}' is running the following user creation script:"
 cat ./create_user.sql
-psql "${dbConnectionString}" --file=./create_user.sql
+psql "${dbConnectionString}" --file=./create_user.sql -v ON_ERROR_STOP=1
 
 echo ""
 echo "List of existing users:"
-psql "${dbConnectionString}" -tAc "SELECT * FROM pg_roles;"
+psql "${dbConnectionString}" -tAc "SELECT * FROM pg_roles;" -v ON_ERROR_STOP=1
