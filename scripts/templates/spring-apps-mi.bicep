@@ -4,18 +4,22 @@ param appInsightsName string
 
 param keyVaultName string
 param dbServerName string
+
+param dbServerAADAdminGroupObjectId string
+param dbServerAADAdminGroupName string
+
 param dbName string
-param createDB bool = true
 
 @secure()
 param dbAdminName string
 @secure()
 param dbAdminPassword string
-
 @secure()
 param dbUserName string
-
-param deploymentClientIPAddress string
+param apiAppClientId string = ''
+param webAppClientId string = ''
+@secure()
+param dbUserPassword string
 
 param springAppsServiceName string
 
@@ -24,6 +28,8 @@ param apiAppPort string
 
 param webAppName string
 param webAppPort string
+
+param deploymentClientIPAddress string
 
 param location string = resourceGroup().location
 
@@ -44,8 +50,99 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
     WorkspaceResourceId: logAnalyticsWorkspace.id
   }
 }
+resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01' = {
+  name: dbServerName
+  location: location
+  tags: tagsArray
+  sku: {
+    name: 'Standard_B2s'
+    tier: 'Burstable'
+  }
+  properties: {
+    backup: {
+      backupRetentionDays: 7
+      geoRedundantBackup: 'Disabled'
+    }
+    createMode: 'Default'
+    version: '14'
+    storage: {
+      storageSizeGB: 32
+    }
 
-resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
+    authConfig: {
+      activeDirectoryAuth: 'Enabled'
+      passwordAuth: 'Enabled'
+    }
+    highAvailability: {
+      mode: 'Disabled'
+    }
+    administratorLogin: dbAdminName
+    administratorLoginPassword: dbAdminPassword
+  }
+}
+
+resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
+  parent: postgreSQLServer
+  name: dbServerAADAdminGroupObjectId
+  dependsOn: [
+    postgreSQLDatabase
+    postgreSQLServerDiagnotsicsLogs
+  ]
+  properties: {
+    principalType: 'Group'
+    principalName: dbServerAADAdminGroupName
+    tenantId: subscription().tenantId
+  }
+}
+
+resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
+  parent: postgreSQLServer
+  name: dbName
+  properties: {
+    charset: 'utf8'
+    collation: 'en_US.utf8'
+  }
+}
+
+resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
+  name: 'AllowDeploymentClientIP'
+  parent: postgreSQLServer
+  properties: {
+    endIpAddress: deploymentClientIPAddress
+    startIpAddress: deploymentClientIPAddress
+  }
+}
+
+resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
+  name: 'AllowAllWindowsAzureIps'
+  parent: postgreSQLServer
+  properties: {
+    startIpAddress: '0.0.0.0'
+    endIpAddress: '0.0.0.0'
+  }
+}
+
+resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: '${dbServerName}-db-logs'
+  scope: postgreSQLServer
+  properties: {
+    logs: [
+      {
+        categoryGroup: 'allLogs'
+        enabled: true
+      }
+    ]
+    metrics: [
+      {
+        category: 'AllMetrics'
+        enabled: true
+      }
+    ]
+    workspaceId: logAnalyticsWorkspace.id
+  }
+}
+
+resource keyVault 'Microsoft.KeyVault/vaults@2022-11-01' = {
   name: keyVaultName
   dependsOn: [
     appInsights
@@ -64,16 +161,25 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
   }
 }
 
-resource kvSecretApiAppClientId 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+resource kvSecretApiAppClientId 'Microsoft.KeyVault/vaults/secrets@2022-11-01' = {
   parent: keyVault
   name: 'API-APP-CLIENT-ID'
   properties: {
-    value: springAppsApiApp.identity.principalId
+    value: apiAppClientId
     contentType: 'string'
   }
 }
 
-resource kvSecretSpringDsApiUserName 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+resource kvSecretWebAppClientId 'Microsoft.KeyVault/vaults/secrets@2022-11-01' = {
+  parent: keyVault
+  name: 'WEB-APP-CLIENT-ID'
+  properties: {
+    value: webAppClientId
+    contentType: 'string'
+  }
+}
+
+resource kvSecretSpringDsApiUserName 'Microsoft.KeyVault/vaults/secrets@2022-11-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-USERNAME'
   properties: {
@@ -82,7 +188,16 @@ resource kvSecretSpringDsApiUserName 'Microsoft.KeyVault/vaults/secrets@2022-07-
   }
 }
 
-resource kvSecretSpringDsURL 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+resource kvSecretSpringDsApiUserPassword 'Microsoft.KeyVault/vaults/secrets@2022-11-01' = {
+  parent: keyVault
+  name: 'SPRING-DATASOURCE-PASSWORD'
+  properties: {
+    value: dbUserPassword
+    contentType: 'string'
+  }
+}
+
+resource kvSecretSpringDsURL 'Microsoft.KeyVault/vaults/secrets@2022-11-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-URL'
   properties: {
@@ -91,20 +206,11 @@ resource kvSecretSpringDsURL 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   }
 }
 
-resource kvSecretWebAppClientId 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVault
-  name: 'WEB-APP-CLIENT-ID'
-  properties: {
-    value: springAppsApiApp.identity.principalId
-    contentType: 'string'
-  }
-}
-
-resource kvSecretWebApiURI 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+resource kvSecretWebApiURI 'Microsoft.KeyVault/vaults/secrets@2022-11-01' = {
   parent: keyVault
   name: 'API-URI'
   properties: {
-    value: endsWith(springAppsApiApp.properties.url,'/') ? '${springAppsApiApp.properties.url}api/todos/' :  '${springAppsApiApp.properties.url}/api/todos/'
+    value: endsWith(springAppsApiApp.properties.url, '/') ? '${springAppsApiApp.properties.url}api/todos/' : '${springAppsApiApp.properties.url}/api/todos/'
     contentType: 'string'
   }
 }
@@ -113,8 +219,8 @@ resource kvDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-pre
   name: '${keyVaultName}-kv-logs'
   scope: keyVault
   dependsOn: [
-    springAppsApiConfig
-    springAppsWebConfig
+    springAppsApiAppDeployment
+    springAppsWebAppDeployment
   ]
   properties: {
     logs: [
@@ -137,86 +243,18 @@ resource kvDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-pre
   }
 }
 
-resource postgreSQLServer 'Microsoft.DBforPostgreSQL/servers@2017-12-01' = {
-  name: dbServerName
+resource springApps 'Microsoft.AppPlatform/Spring@2023-01-01-preview' = {
+  name: springAppsServiceName
   location: location
   tags: tagsArray
   sku: {
-    name: 'B_Gen5_1'
-    tier: 'Basic'
-    family: 'Gen5'
     capacity: 1
+    name: 'S0'
+    tier: 'Standard'
   }
   properties: {
-    storageProfile: {
-      storageMB: 5120
-      backupRetentionDays: 7
-      geoRedundantBackup: 'Disabled'
-      storageAutogrow: 'Disabled'
-    }
-    createMode: 'Default'
-    version: '11'
-    sslEnforcement: 'Enabled'
-    minimalTlsVersion: 'TLSEnforcementDisabled'
-    infrastructureEncryption: 'Disabled'
-    publicNetworkAccess: 'Enabled'
-    administratorLogin: dbAdminName
-    administratorLoginPassword: dbAdminPassword
+    zoneRedundant: false
   }
-}
-
-resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/servers/databases@2017-12-01' = if (createDB) {
-  parent: postgreSQLServer
-  name: dbName
-  properties: {
-    charset: 'utf8'
-    collation: 'en_US.utf8'
-  }
-}
-
-resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
-  name: 'allowClientIP'
-  parent: postgreSQLServer
-  properties: {
-    endIpAddress: deploymentClientIPAddress
-    startIpAddress: deploymentClientIPAddress
-  }
-}
-resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
-  name: 'allowAllIps'
-  parent: postgreSQLServer
-  properties: {
-    startIpAddress: '0.0.0.0'
-    endIpAddress: '255.255.255.255'
-  }
-}
-
-resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: '${dbServerName}-db-logs'
-  scope: postgreSQLServer
-  properties: {
-    logs: [
-      {
-        categoryGroup: 'allLogs'
-        enabled: true
-      }
-      // {
-      //   categoryGroup: 'audit'
-      //   enabled: true
-      // }
-    ]
-    metrics: [
-      {
-        category: 'AllMetrics'
-        enabled: true
-      }
-    ]
-    workspaceId: logAnalyticsWorkspace.id
-  }
-}
-
-resource springApps 'Microsoft.AppPlatform/Spring@2022-11-01-preview' existing = {
-  name: springAppsServiceName
 }
 
 resource springAppsDiagnosticsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
@@ -243,57 +281,130 @@ resource springAppsDiagnosticsLogs 'Microsoft.Insights/diagnosticSettings@2021-0
   }
 }
 
-resource springAppsApiApp 'Microsoft.AppPlatform/Spring/apps@2022-11-01-preview' existing = {
+resource springAppsApiApp 'Microsoft.AppPlatform/Spring/apps@2023-01-01-preview' = {
   name: apiAppName
+  location: location
   parent: springApps
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    httpsOnly: false
+    public: true
+    temporaryDisk: {
+      sizeInGB: 5
+      mountPath: '/tmp'
+    }
+    persistentDisk: {
+      sizeInGB: 0
+      mountPath: '/persistent'
+    }
+    enableEndToEndTLS: false
+  }
 }
 
-resource springAppsWebApp 'Microsoft.AppPlatform/Spring/apps@2022-11-01-preview' existing = {
+resource springAppsWebApp 'Microsoft.AppPlatform/Spring/apps@2023-01-01-preview' = {
   name: webAppName
+  location: location
   parent: springApps
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    httpsOnly: false
+    public: true
+    temporaryDisk: {
+      sizeInGB: 5
+      mountPath: '/tmp'
+    }
+    persistentDisk: {
+      sizeInGB: 0
+      mountPath: '/persistent'
+    }
+    enableEndToEndTLS: false
+  }
 }
 
-module springAppsApiConfig 'spring-apps-mi-api-service.bicep' = {
-  name: 'deployment-spring-apps-mi-api-service'
+resource springAppsWebAppDeployment 'Microsoft.AppPlatform/Spring/apps/deployments@2023-01-01-preview' = {
+  name: 'default'
+  parent: springAppsWebApp
+  sku: {
+    name: 'S0'
+    tier: 'Standard'
+    capacity: 1
+  }
+  properties: {
+    deploymentSettings: {
+      resourceRequests: {
+        cpu: '1'
+        memory: '1Gi'
+      }
+      environmentVariables: {
+        PORT: webAppPort
+        APP_CLIENT_ID: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretWebAppClientId.name})'
+        API_URI: 'http://${springAppsApiApp.properties.fqdn}/'
+        APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.properties.ConnectionString
+        APPINSIGHTS_INSTRUMENTATIONKEY: appInsights.properties.InstrumentationKey
+      }
+    }
+    // source: any({
+    //   type: 'Jar'
+    //   relativePath: '<default>'
+    //   runtimeVersion: 'Java_11'
+    //   version: 'Java_11'
+    // })
+    source: {
+      type: 'Jar'
+      runtimeVersion: 'Java_11'
+      version: 'Java_11'
+    }
+    active: true
+  }
+}
+
+resource springAppsApiAppDeployment 'Microsoft.AppPlatform/Spring/apps/deployments@2023-01-01-preview' = {
+  name: 'default'
+  parent: springAppsApiApp
   dependsOn: [
-    springAppsApiApp
     rbacKVSecretApiSpringDsURL
     rbacKVSecretApiSpringDsUserName
     rbacKVSecretApiAppClientId
   ]
-  params: {
-    apiAppClientId: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretApiAppClientId.name})'
-    appInsightsConnectionString: appInsights.properties.ConnectionString
-    appInsightsInstrumentationKey: appInsights.properties.InstrumentationKey
-    apiAppName: apiAppName
-    apiAppPort: apiAppPort
-    springAppsServiceName: springAppsServiceName
-    springDatasourceShowSql: 'true'
-    springDatasourceUrl: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDsURL.name})'
-    springDatasourceUserName: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDsApiUserName.name})'
-    location: location
-    tagsArray: tagsArray
+  sku: {
+    name: 'S0'
+    tier: 'Standard'
+    capacity: 1
   }
-}
+  properties: {
+    deploymentSettings: {
+      resourceRequests: {
+        cpu: '1'
+        memory: '1Gi'
+      }
+      environmentVariables: {
+        PORT: apiAppPort
+        APP_CLIENT_ID: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretApiAppClientId.name})'
+        APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.properties.ConnectionString
+        APPINSIGHTS_INSTRUMENTATIONKEY: appInsights.properties.InstrumentationKey
+        SPRING_DATASOURCE_URL: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDsURL.name})'
+        SPRING_DATASOURCE_USERNAME: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDsApiUserName.name})'
+        SPRING_PROFILES_ACTIVE: 'test-mi'
+        SPRING_DATASOURCE_SHOW_SQL: 'true'
+      }
 
-module springAppsWebConfig 'spring-apps-mi-web-service.bicep' = {
-  name: 'deployment-spring-apps-mi-web-service'
-  dependsOn: [
-    springAppsWebApp
-    springAppsApiConfig
-    rbacKVSecretWebAppClientId
-    rbacKVSecretWebApiURI
-  ]
-  params: {
-    webAppClientId: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretWebAppClientId.name})'
-    apiURI: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretWebApiURI.name})'
-    appInsightsConnectionString: appInsights.properties.ConnectionString
-    appInsightsInstrumentationKey: appInsights.properties.InstrumentationKey
-    webAppName: webAppName
-    webAppPort: webAppPort
-    springAppsServiceName: springAppsServiceName
-    location: location
-    tagsArray: tagsArray
+    }
+    // source: any({
+    //   type: 'Jar'
+    //   relativePath: '<default>'
+    //   runtimeVersion: 'Java_11'
+    //   version: 'Java_11'
+    // })
+    source: {
+      type: 'Jar'
+      runtimeVersion: 'Java_11'
+      version: 'Java_11'
+    }
+    active: true
   }
 }
 
@@ -311,6 +422,17 @@ module rbacKVSecretApiSpringDsUserName './components/role-assignment-kv-secret.b
     roleAssignmentNameGuid: guid(springAppsApiApp.id, kvSecretSpringDsApiUserName.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
     kvSecretName: kvSecretSpringDsApiUserName.name
+  }
+}
+
+module rbacKVSecretApiSpringDsUserPassword './components/role-assignment-kv-secret.bicep' = {
+  name: 'rbac-kv-secret-api-spring-ds-user-password'
+  params: {
+    roleDefinitionId: keyVaultSecretsUser.id
+    principalId: springAppsApiApp.identity.principalId
+    roleAssignmentNameGuid: guid(springAppsApiApp.id, kvSecretSpringDsApiUserPassword.id, keyVaultSecretsUser.id)
+    kvName: keyVault.name
+    kvSecretName: kvSecretSpringDsApiUserPassword.name
   }
 }
 
