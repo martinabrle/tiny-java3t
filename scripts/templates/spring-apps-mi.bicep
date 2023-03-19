@@ -191,7 +191,7 @@ resource kvSecretSpringDsApiUserNameExt 'Microsoft.KeyVault/vaults/secrets@2022-
   parent: keyVault
   name: 'SPRING-DATASOURCE-USERNAME-EXTERNAL'
   properties: {
-    value: dbUserName
+    value: dbUserNameExternal
     contentType: 'string'
   }
 }
@@ -355,12 +355,6 @@ resource springAppsWebAppDeployment 'Microsoft.AppPlatform/Spring/apps/deploymen
         APPINSIGHTS_INSTRUMENTATIONKEY: appInsights.properties.InstrumentationKey
       }
     }
-    // source: any({
-    //   type: 'Jar'
-    //   relativePath: '<default>'
-    //   runtimeVersion: 'Java_11'
-    //   version: 'Java_11'
-    // })
     source: {
       type: 'Jar'
       runtimeVersion: 'Java_11'
@@ -402,12 +396,6 @@ resource springAppsApiAppDeployment 'Microsoft.AppPlatform/Spring/apps/deploymen
       }
 
     }
-    // source: any({
-    //   type: 'Jar'
-    //   relativePath: '<default>'
-    //   runtimeVersion: 'Java_11'
-    //   version: 'Java_11'
-    // })
     source: {
       type: 'Jar'
       relativePath: '<default>'
