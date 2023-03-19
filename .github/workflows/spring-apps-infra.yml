@@ -159,7 +159,7 @@ jobs:
           echo "::add-mask::$dbAppUserPassword"
           echo "DB_APP_USER_PASSWORD=${dbAppUserPassword}" >> $GITHUB_OUTPUT
 
-          dbAppUserNameExternal="${dbAppUserName}-identity";
+          dbAppUserNameExternal="${dbAppUserName}_identity";
           echo "DB_APP_USER_NAME_EXTERNAL=${dbAppUserNameExternal}" >> $GITHUB_OUTPUT
           echo "External app user name: $dbAppUserNameExternal"
 
