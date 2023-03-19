@@ -410,6 +410,7 @@ resource springAppsApiAppDeployment 'Microsoft.AppPlatform/Spring/apps/deploymen
     // })
     source: {
       type: 'Jar'
+      relativePath: '<default>'
       runtimeVersion: 'Java_11'
       version: 'Java_11'
     }
