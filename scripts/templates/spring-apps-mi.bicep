@@ -365,6 +365,7 @@ resource springAppsWebAppDeployment 'Microsoft.AppPlatform/Spring/apps/deploymen
       type: 'Jar'
       runtimeVersion: 'Java_11'
       version: 'Java_11'
+      relativePath: '<default>'
     }
     active: true
   }
