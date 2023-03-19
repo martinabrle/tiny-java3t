@@ -10,16 +10,15 @@ param dbServerAADAdminGroupName string
 
 param dbName string
 
-@secure()
 param dbAdminName string
 @secure()
 param dbAdminPassword string
-@secure()
 param dbUserName string
-param apiAppClientId string = ''
-param webAppClientId string = ''
 @secure()
 param dbUserPassword string
+param dbUserNameExternal string
+param apiAppClientId string = ''
+param webAppClientId string = ''
 
 param springAppsServiceName string
 
@@ -163,7 +162,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-11-01' = {
 
 resource kvSecretApiAppClientId 'Microsoft.KeyVault/vaults/secrets@2022-11-01' = {
   parent: keyVault
-  name: 'API-APP-CLIENT-ID'
+  name: 'SPRING-DATASOURCE-APP-CLIENT-ID'
   properties: {
     value: apiAppClientId
     contentType: 'string'
@@ -182,6 +181,15 @@ resource kvSecretWebAppClientId 'Microsoft.KeyVault/vaults/secrets@2022-11-01' =
 resource kvSecretSpringDsApiUserName 'Microsoft.KeyVault/vaults/secrets@2022-11-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-USERNAME'
+  properties: {
+    value: dbUserName
+    contentType: 'string'
+  }
+}
+
+resource kvSecretSpringDsApiUserNameExt 'Microsoft.KeyVault/vaults/secrets@2022-11-01' = {
+  parent: keyVault
+  name: 'SPRING-DATASOURCE-USERNAME-EXTERNAL'
   properties: {
     value: dbUserName
     contentType: 'string'
@@ -422,6 +430,17 @@ module rbacKVSecretApiSpringDsUserName './components/role-assignment-kv-secret.b
     roleAssignmentNameGuid: guid(springAppsApiApp.id, kvSecretSpringDsApiUserName.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
     kvSecretName: kvSecretSpringDsApiUserName.name
+  }
+}
+
+module rbacKVSecretApiSpringDsUserNameExt './components/role-assignment-kv-secret.bicep' = {
+  name: 'rbac-kv-secret-api-spring-ds-user-name-ext'
+  params: {
+    roleDefinitionId: keyVaultSecretsUser.id
+    principalId: springAppsApiApp.identity.principalId
+    roleAssignmentNameGuid: guid(springAppsApiApp.id, kvSecretSpringDsApiUserNameExt.id, keyVaultSecretsUser.id)
+    kvName: keyVault.name
+    kvSecretName: kvSecretSpringDsApiUserNameExt.name
   }
 }
 

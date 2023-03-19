@@ -147,9 +147,21 @@ jobs:
           echo "DB_APP_USER_NAME=${dbAppUserName}" >> $GITHUB_OUTPUT
           echo "App user name: $dbAppUserName"
 
-          dbStagingAppUserName=`echo "${{secrets.AZURE_API_APP_NAME}}-staging" | tr '-' '_'`;
-          echo "DB_STAGING_APP_USER_NAME=${dbStagingAppUserName}" >> $GITHUB_OUTPUT
-          echo "Staging app user name: $dbStagingAppUserName"
+          if [[ ! -z "$kvExists" ]]; then
+            kvSecretExists=`az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "[?name=='SPRING-DATASOURCE-PASSWORD'].name" -o tsv`
+            if [[ ! -z "$kvExists" ]]; then
+              dbAppUserPassword=`az keyvault secret show --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --name "SPRING-DATASOURCE-PASSWORD" --query "[value]" -o tsv`
+            fi
+          fi
+          if [[ -z "$dbAppUserPassword" ]]; then
+            dbAppUserPassword="`openssl rand -hex 25`#@"
+          fi
+          echo "::add-mask::$dbAppUserPassword"
+          echo "DB_APP_USER_PASSWORD=${dbAppUserPassword}" >> $GITHUB_OUTPUT
+
+          dbAppUserNameExternal="${dbAppUserName}-identity";
+          echo "DB_APP_USER_NAME_EXTERNAL=${dbAppUserNameExternal}" >> $GITHUB_OUTPUT
+          echo "External app user name: $dbAppUserNameExternal"
 
           if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
             echo "DBA Group name is not set"
@@ -161,21 +173,27 @@ jobs:
           echo "DBA Group Id: $dbaGroupId"
           echo "AZURE_DBA_GROUP_ID=${dbaGroupId}" >> $GITHUB_OUTPUT
 
-          appClientId=`az ad sp list --display-name "${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_API_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_API_APP_NAME}}'].appId" --out tsv`
-          if [[ -z "$appClientId" ]]; then
-            echo "First deployment"
+          apiAppClientId=`az ad sp list --display-name "${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_API_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_API_APP_NAME}}'].appId" --out tsv`
+          if [[ -z "$apiAppClientId" ]]; then
+            echo "First API deployment"
             echo "API_HEALTH_CHECK_PATH=" >> $GITHUB_OUTPUT
             echo "WEB_HEALTH_CHECK_PATH=" >> $GITHUB_OUTPUT
-            echo "APP_CLIENT_ID=" >> $GITHUB_OUTPUT
-            echo "STAGING_APP_CLIENT_ID=" >> $GITHUB_OUTPUT
+            echo "API_APP_CLIENT_ID=" >> $GITHUB_OUTPUT
           else
             healthCheckPath="" #`az webapp show -g ${{secrets.AZURE_RESOURCE_GROUP}} -n "${{secrets.AZURE_API_APP_NAME}}" --query "siteConfig.healthCheckPath" -o tsv`
             echo "API_HEALTH_CHECK_PATH=${healthCheckPath}" >> $GITHUB_OUTPUT
+            echo "API_APP_CLIENT_ID=${apiAppClientId}" >> $GITHUB_OUTPUT
+          fi
+
+          webAppClientId=`az ad sp list --display-name "${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_WEB_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_WEB_APP_NAME}}'].appId" --out tsv`
+          if [[ -z "$webAppClientId" ]]; then
+            echo "First WEB deployment"
+            echo "WEB_HEALTH_CHECK_PATH=" >> $GITHUB_OUTPUT
+            echo "WEB_APP_CLIENT_ID=" >> $GITHUB_OUTPUT
+          else
             healthCheckPath="" #`az webapp show -g ${{secrets.AZURE_RESOURCE_GROUP}} -n "${{secrets.AZURE_WEB_APP_NAME}}" --query "siteConfig.healthCheckPath" -o tsv`
             echo "WEB_HEALTH_CHECK_PATH=${healthCheckPath}" >> $GITHUB_OUTPUT
-            echo "APP_CLIENT_ID=${appClientId}" >> $GITHUB_OUTPUT
-            stagingAppClientId=`az ad sp list --display-name "${{secrets.AZURE_API_APP_NAME}}/slots/staging" --query "[?displayName=='${{secrets.AZURE_API_APP_NAME}}/slots/staging'].appId" --out tsv`
-            echo "STAGING_APP_CLIENT_ID=${stagingAppClientId}" >> $GITHUB_OUTPUT
+            echo "WEB_APP_CLIENT_ID=${webAppClientId}" >> $GITHUB_OUTPUT
           fi
         
       - name: Deploy Azure resources
@@ -190,7 +208,7 @@ jobs:
           echo "DBA Group Id: '${{steps.vars.outputs.AZURE_DBA_GROUP_ID}}'"
           echo "User name: '${{steps.vars.outputs.DB_APP_USER_NAME}}'"
           
-          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi.bicep \
+          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/spring-apps-mi.bicep \
                         --parameters location=${{secrets.AZURE_LOCATION}}  \
                                       logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
                                       logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} \
@@ -202,31 +220,40 @@ jobs:
                                       dbName=${{secrets.AZURE_DB_NAME}} \
                                       dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                       dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                      dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \
                                       dbUserPassword=${{steps.vars.outputs.DB_APP_USER_PASSWORD}} \
                                       dbUserNameExternal=${{steps.vars.outputs.DB_APP_USER_NAME_EXTERNAL}} \
                                       apiAppClientId="${{steps.vars.outputs.API_APP_CLIENT_ID}}" \
                                       webAppClientId="${{steps.vars.outputs.WEB_APP_CLIENT_ID}}" \
-                                      apiAppServiceName=${{secrets.AZURE_API_APP_NAME}} \
-                                      apiAppServicePort=${{secrets.AZURE_API_APP_PORT}} \
-                                      webAppServiceName=${{secrets.AZURE_WEB_APP_NAME}} \
-                                      webAppServicePort=${{secrets.AZURE_WEB_APP_PORT}} \
+                                      springAppsServiceName=${{secrets.AZURE_SPRING_SERVICE_NAME}} \
+                                      apiAppName=${{secrets.AZURE_API_APP_NAME}} \
+                                      apiAppPort=${{secrets.AZURE_API_APP_PORT}} \
+                                      webAppName=${{secrets.AZURE_WEB_APP_NAME}} \
+                                      webAppPort=${{secrets.AZURE_WEB_APP_PORT}} \
                                       deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
-      
+
       - name: Init AAD ClientId
         id: deployment_aad
         run: |
-          dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_API_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_API_APP_NAME}}'].appId" --out tsv`
-          echo "DB_APP_USER_ID=${dbAppUserId}" >> $GITHUB_OUTPUT
+          apiAppClientId=`az ad sp list --display-name "${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_API_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_API_APP_NAME}}'].appId" --out tsv`
+          echo "API_APP_CLIENT_ID=${apiAppClientId}" >> $GITHUB_OUTPUT
+          
+          webAppClientId=`az ad sp list --display-name "${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_WEB_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_WEB_APP_NAME}}'].appId" --out tsv`
+          echo "WEB_APP_CLIENT_ID=${webAppClientId}" >> $GITHUB_OUTPUT
 
-          dbStagingAppUserId=`az ad sp list --display-name "${{secrets.AZURE_API_APP_NAME}}/slots/staging" --query "[?displayName=='${{secrets.AZURE_API_APP_NAME}}/slots/staging'].appId" --out tsv`
-          echo "DB_STAGING_APP_USER_ID=${dbStagingAppUserId}" >> $GITHUB_OUTPUT
-
-          #Following is a workaround - I still did not figure out how to retrieve AppId in bicep
-          az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${dbAppUserId}"
-          az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID-STAGING" --value "${dbStagingAppUserId}"
+          az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${apiAppClientId}"
+          az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "WEB-APP-CLIENT-ID" --value "${webAppClientId}"
       
-        
-      - name: Create AppService default slot DB user
+      - name: Create SpringApps API default slot DB user
+        run: |
+          ./create_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
+                                 -d ${{secrets.AZURE_DB_NAME}} \
+                                 -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                 -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                 -n ${{steps.vars.outputs.DB_APP_USER_NAME}} \ TODO
+                                 -m ${{steps.vars.outputs.DB_APP_USER_PASSWORD}}    TODO    
+      
+      - name: Create SpringApps API default slot DB user
         run: |
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
           ./create_aad_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
@@ -235,18 +262,9 @@ jobs:
                                      -b "${{steps.vars.outputs.DB_ADMIN_NAME}}" \
                                      -p "${{steps.vars.outputs.DB_ADMIN_PASSWORD}}" \
                                      -n ${{steps.vars.outputs.DB_APP_USER_NAME}} \
-                                     -o ${{steps.deployment_aad.outputs.DB_APP_USER_ID}}
+                                     -o ${{steps.deployment_aad.outputs.API_APP_CLIENT_ID}}
         
-      - name: Create AppService staging slot DB user
-        run: |
-          export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
-          ./create_aad_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
-                                     -d ${{secrets.AZURE_DB_NAME}} \
-                                     -a "${{secrets.AZURE_DBA_GROUP_NAME}}" \
-                                     -b "${{steps.vars.outputs.DB_ADMIN_NAME}}" \
-                                     -p "${{steps.vars.outputs.DB_ADMIN_PASSWORD}}" \
-                                     -n ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
-                                     -o ${{steps.deployment_aad.outputs.DB_STAGING_APP_USER_ID}}
+
         
       - name: Remove DB Firewall exception used for DB setup
         run: |
