@@ -244,16 +244,16 @@ jobs:
           az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${apiAppClientId}"
           az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "WEB-APP-CLIENT-ID" --value "${webAppClientId}"
       
-      - name: Create SpringApps API default slot DB user
+      - name: Create SpringApps API classic DB user
         run: |
           ./create_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
                                  -d ${{secrets.AZURE_DB_NAME}} \
                                  -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                  -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
-                                 -n ${{steps.vars.outputs.DB_APP_USER_NAME}} \ TODO
-                                 -m ${{steps.vars.outputs.DB_APP_USER_PASSWORD}}    TODO    
+                                 -n ${{steps.vars.outputs.DB_APP_USER_NAME}} \
+                                 -m ${{steps.vars.outputs.DB_APP_USER_PASSWORD}}    
       
-      - name: Create SpringApps API default slot DB user
+      - name: Create SpringApps API AAD DB user
         run: |
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
           ./create_aad_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
@@ -261,10 +261,8 @@ jobs:
                                      -a "${{secrets.AZURE_DBA_GROUP_NAME}}" \
                                      -b "${{steps.vars.outputs.DB_ADMIN_NAME}}" \
                                      -p "${{steps.vars.outputs.DB_ADMIN_PASSWORD}}" \
-                                     -n ${{steps.vars.outputs.DB_APP_USER_NAME}} \
+                                     -n ${{steps.vars.outputs.DB_APP_USER_NAME_EXTERNAL}} \
                                      -o ${{steps.deployment_aad.outputs.API_APP_CLIENT_ID}}
-        
-
         
       - name: Remove DB Firewall exception used for DB setup
         run: |
