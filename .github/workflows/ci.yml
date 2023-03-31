@@ -30,6 +30,7 @@ jobs:
     
     - name: Semver for API
       uses: PaulHatch/semantic-version@v5.0.3
+      id: api_version
       with:
         # The prefix to use to identify tags
         tag_prefix: "v"
@@ -60,6 +61,7 @@ jobs:
         # enable_prerelease_mode: false
     - name: Semver for WEB
       uses: PaulHatch/semantic-version@v5.0.3
+      id: web_version
       with:
         tag_prefix: "v"
         major_pattern: "(MAJOR)"
@@ -72,3 +74,6 @@ jobs:
         bump_each_commit: true
         search_commit_body: true
       
+    - name: Test
+      run: |
+         echo "${{join(steps.api_version.outputs.*, '..')}}"
