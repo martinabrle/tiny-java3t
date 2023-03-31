@@ -1,11 +1,11 @@
 name: spring-apps-infra
-
+# test
 on:
-  # push:
-  #  branches:
-  #    - main
-  #  paths:
-  #    - 'scripts/**'     
+  push:
+   branches:
+     - main
+   paths:
+     - 'scripts/**'     
   workflow_dispatch:
     inputs:
       run_cleanup:

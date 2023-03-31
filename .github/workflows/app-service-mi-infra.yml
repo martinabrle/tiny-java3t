@@ -1,11 +1,11 @@
 name: app-service-mi-infra
 
 on:
-  # push:
-  #  branches:
-  #    - main
-  #  paths:
-  #    - 'scripts/**'     
+  push:
+   branches:
+     - main
+   paths:
+     - 'scripts/**'     
   workflow_dispatch:
     inputs:
       run_cleanup:
