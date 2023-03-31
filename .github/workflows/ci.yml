@@ -76,14 +76,14 @@ jobs:
       
     - name: Set API Version
       run: |
-         echo "Version: ${{steps.api_version.outputs.version}}" |
-         echo "VersionTag: ${{steps.api_version.outputs.version_tag}}" |
-         echo "IsChanged: ${{steps.api_version.outputs.changed}}" |
-         echo "IsTagged: ${{steps.api_version.outputs.is_tagged }}"
+         echo "Version: ${{steps.api_version.outputs.version}}"
+         echo "VersionTag: ${{steps.api_version.outputs.version_tag}}"
+         echo "IsChanged: ${{steps.api_version.outputs.changed}}"
+         echo "IsTagged: ${{steps.api_version.outputs.is_tagged}}"
 
     - name: Set WEB Version
       run: |
-         echo "Version: ${{steps.web_version.outputs.version}}" |
-         echo "VersionTag: ${{steps.web_version.outputs.version_tag}}" |
-         echo "IsChanged: ${{steps.web_version.outputs.changed}}" |
-         echo "IsTagged: ${{steps.web_version.outputs.is_tagged }}"
+         echo "Version: ${{steps.web_version.outputs.version}}"
+         echo "VersionTag: ${{steps.web_version.outputs.version_tag}}"
+         echo "IsChanged: ${{steps.web_version.outputs.changed}}"
+         echo "IsTagged: ${{steps.web_version.outputs.is_tagged}}"
