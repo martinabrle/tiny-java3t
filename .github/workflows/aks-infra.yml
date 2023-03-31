@@ -5,7 +5,7 @@ on:
   #  branches:
   #    - main
   #  paths:
-  #    - 'scripts/**'     
+  #    - 'scripts/**'
   workflow_dispatch:
     inputs:
       run_cleanup:
