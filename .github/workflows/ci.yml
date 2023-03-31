@@ -5,7 +5,8 @@ on:
    branches:
      - main
    paths:
-     - 'scripts/**'
+     - 'api/**'
+     - 'web/**'
 jobs:
   build:
     runs-on: ubuntu-latest
