@@ -10,27 +10,24 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  api_version:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
-
+    outputs:
+      VERSION: ${{ steps.api_version.outputs.VERSION }}
+      VERSION_TAG: ${{ steps.api_version.outputs.VERSION_TAG }}
+      IS_CHANGED: ${{ steps.api_version.outputs.IS_CHANGED }}
+      IS_TAGGED: ${{ steps.api_version.outputs.IS_TAGGED }}
+    
     steps:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - name: Set up JDK 11
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-        server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
-        settings-path: ${{ github.workspace }} # location for the settings.xml file
     
     - name: Semver for API
       uses: PaulHatch/semantic-version@v5.0.3
-      id: api_version
+      id: semver_api_version
       with:
         # The prefix to use to identify tags
         tag_prefix: "v"
@@ -43,8 +40,8 @@ jobs:
         minor_pattern: "(MINOR)"
         # A string which indicates the flags used by the `minor_pattern` regular expression. Supported flags: idgs
         minor_regexp_flags: ""
-        # A string to determine the format of the version output
-        version_format: "${major}.${minor}.${patch}-prerelease${increment}"
+        # A string to determine the format of the version output - ${major}.${minor}.${patch}-prerelease${increment}
+        version_format: "${major}.${minor}.${patch}"
         # Optional path to check for changes. If any changes are detected in the path the
         # 'changed' output will true. Enter multiple paths separated by spaces.
         change_path: "todoapi"
@@ -59,31 +56,135 @@ jobs:
         # Prevents pre-v1.0.0 version from automatically incrementing the major version.
         # If enabled, when the major version is 0, major releases will be treated as minor and minor as patch. Note that the version_type output is unchanged.
         # enable_prerelease_mode: false
+    
+    - name: Set API Version
+      id: api_version
+      run: |
+         echo "Version: ${{steps.semver_api_version.outputs.version}}"
+         echo "VersionTag: ${{steps.semver_api_version.outputs.version_tag}}"
+         echo "IsChanged: ${{steps.semver_api_version.outputs.changed}}"
+         echo "IsTagged: ${{steps.semver_api_version.outputs.is_tagged}}"
+         
+         echo "VERSION=${{steps.semver_api_version.outputs.version}}" >> $GITHUB_OUTPUT
+         echo "VERSION_TAG=${{steps.semver_api_version.outputs.version_tag}}" >> $GITHUB_OUTPUT
+         echo "IS_CHANGED=${{steps.semver_api_version.outputs.changed}}" >> $GITHUB_OUTPUT
+         echo "IS_TAGGED=${{steps.semver_api_version.outputs.is_tagged}}" >> $GITHUB_OUTPUT
+
+  web_version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      VERSION: ${{ steps.web_version.outputs.VERSION }}
+      VERSION_TAG: ${{ steps.web_version.outputs.VERSION_TAG }}
+      IS_CHANGED: ${{ steps.web_version.outputs.IS_CHANGED }}
+      IS_TAGGED: ${{ steps.web_version.outputs.IS_TAGGED }}
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    
     - name: Semver for WEB
       uses: PaulHatch/semantic-version@v5.0.3
-      id: web_version
+      id: semver_web_version
       with:
         tag_prefix: "v"
         major_pattern: "(MAJOR)"
         major_regexp_flags: ""
         minor_pattern: "(MINOR)"
         minor_regexp_flags: ""
-        version_format: "${major}.${minor}.${patch}-prerelease${increment}"
+        version_format: "${major}.${minor}.${patch}"
         change_path: "todoweb"
         namespace: web
         bump_each_commit: true
         search_commit_body: true
       
-    - name: Set API Version
-      run: |
-         echo "Version: ${{steps.api_version.outputs.version}}"
-         echo "VersionTag: ${{steps.api_version.outputs.version_tag}}"
-         echo "IsChanged: ${{steps.api_version.outputs.changed}}"
-         echo "IsTagged: ${{steps.api_version.outputs.is_tagged}}"
-
     - name: Set WEB Version
+      id: web_version
       run: |
-         echo "Version: ${{steps.web_version.outputs.version}}"
-         echo "VersionTag: ${{steps.web_version.outputs.version_tag}}"
-         echo "IsChanged: ${{steps.web_version.outputs.changed}}"
-         echo "IsTagged: ${{steps.web_version.outputs.is_tagged}}"
+         echo "Version: ${{steps.semver_web_version.outputs.version}}"
+         echo "VersionTag: ${{steps.semver_web_version.outputs.version_tag}}"
+         echo "IsChanged: ${{steps.semver_web_version.outputs.changed}}"
+         echo "IsTagged: ${{steps.semver_web_version.outputs.is_tagged}}"
+
+         echo "VERSION=${{steps.semver_web_version.outputs.version}}" >> $GITHUB_OUTPUT
+         echo "VERSION_TAG=${{steps.semver_web_version.outputs.version_tag}}" >> $GITHUB_OUTPUT
+         echo "IS_CHANGED=${{steps.semver_web_version.outputs.changed}}" >> $GITHUB_OUTPUT
+         echo "IS_TAGGED=${{steps.semver_web_version.outputs.is_tagged}}" >> $GITHUB_OUTPUT
+      
+  build_api:
+    needs: [api_version]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./todoapi    
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ needs.api_version.outputs.VERSION }}
+      VERSION_TAG: ${{ needs.api_version.outputs.VERSION_TAG }}
+      IS_CHANGED: ${{ needs.api_version.outputs.IS_CHANGED }}
+      IS_TAGGED: ${{ needs.api_version.outputs.IS_TAGGED }}
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.AZURE_CREDENTIALS}}
+
+      - name: Set default Azure subscription
+        run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'microsoft'
+          
+      - name: Set the release version
+        run: |
+          java ../scripts/JavaUtils.java -update_pom_version ./pom.xml.bak ${{env.VERSION}} ./pom.xml
+
+      - name: Build the .jar
+        run: |
+          ./mvnw clean package -DskipTests
+      
+      - name: Give JAR a versioned name
+        id: version
+        run: |
+          cd ./target
+          files=(todoapi*.jar)
+          mv "$files" "./todoapi-${{env.VERSION}}.jar"
+          ls -la
+          cd ..
+          
+      - name: 'Upload build artifact'
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.version.outputs.RELEASE_NAME }}
+          path: ./todoapi/target/todoapi-${{env.VERSION}}.jar
+          if-no-files-found: error
+          retention-days: 1
+  
+  release_app:
+    needs: [build_api]
+    runs-on: ubuntu-latest
+    environment: APP-SERVICE
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Download build artefacts
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{needs.build_app.outputs.RELEASE_NAME}}
+      - name: Check downloaded files
+        run: |
+          pwd
+          ls -la
+          ls -la ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
+      
+  
