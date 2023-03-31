@@ -5,8 +5,8 @@ on:
    branches:
      - main
    paths:
-     - 'api/**'
-     - 'web/**'
+     - 'todoapi/**'
+     - 'todoweb/**'
 jobs:
   build:
     runs-on: ubuntu-latest
