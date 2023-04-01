@@ -157,7 +157,7 @@ jobs:
         run: |
           cd ./target
           ls -la
-          if [[ ! -f "./todoapi-${{env.VERSION}}.jar" ]]; then
+          if [[ ! -f "./todoapi-${{env.VERSION}}.jar.1" ]]; then
             RED=$(tput setaf 1)
             echo "${RED}File ./todoapi-${{env.VERSION}}.jar does not exists. Check the build script.${RED}"
             exit 1
