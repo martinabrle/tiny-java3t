@@ -126,6 +126,7 @@ jobs:
       VERSION_TAG: ${{ needs.api_version.outputs.VERSION_TAG }}
       IS_CHANGED: ${{ needs.api_version.outputs.IS_CHANGED }}
       IS_TAGGED: ${{ needs.api_version.outputs.IS_TAGGED }}
+
     steps:
       - uses: actions/checkout@v3
       
@@ -177,16 +178,22 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      VERSION: ${{ needs.api_version.outputs.VERSION }}
+      VERSION_TAG: ${{ needs.api_version.outputs.VERSION_TAG }}
+      IS_CHANGED: ${{ needs.api_version.outputs.IS_CHANGED }}
+      IS_TAGGED: ${{ needs.api_version.outputs.IS_TAGGED }}
     
     steps:
       - name: Download build artefacts
         uses: actions/download-artifact@v2
         with:
           name: ${{needs.build_app.outputs.RELEASE_NAME}}
+      
       - name: Check downloaded files
         run: |
           pwd
           ls -la
-          ls -la ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
+          ls -la ./todoapi/target/todoapi-${{env.VERSION}}/
       
   
