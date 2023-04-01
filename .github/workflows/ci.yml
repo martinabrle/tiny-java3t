@@ -194,6 +194,6 @@ jobs:
         run: |
           pwd
           ls -la
-          ls -la ./todoapi/target/todoapi-${{env.VERSION}}/
+          ls -la ./todoapi-${{env.VERSION}}/
       
   
