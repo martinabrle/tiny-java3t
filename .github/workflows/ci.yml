@@ -145,6 +145,7 @@ jobs:
           
       - name: Set the release version
         run: |
+          pwd
           java ../scripts/JavaUtils.java -update_pom_version ./pom.xml.bak ${{env.VERSION}} ./pom.xml
 
       - name: Build the .jar
