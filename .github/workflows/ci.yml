@@ -162,8 +162,6 @@ jobs:
             echo "${RED}File ./todoapi-${{env.VERSION}}.jar does not exists. Check the build script.${RED}"
             exit 1
           fi
-          files=(todoapi*.jar)
-          mv "$files" "./todoapi-${{env.VERSION}}.jar"
           cd ..
           
       - name: 'Upload build artifact'
