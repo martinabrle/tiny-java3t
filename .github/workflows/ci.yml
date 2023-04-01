@@ -113,7 +113,7 @@ jobs:
          echo "IS_CHANGED=${{steps.semver_web_version.outputs.changed}}" >> $GITHUB_OUTPUT
          echo "IS_TAGGED=${{steps.semver_web_version.outputs.is_tagged}}" >> $GITHUB_OUTPUT
       
-  build_api:
+  api_build:
     needs: [api_version]
     runs-on: ubuntu-latest
     defaults:
@@ -126,7 +126,7 @@ jobs:
       VERSION_TAG: ${{ needs.api_version.outputs.VERSION_TAG }}
       IS_CHANGED: ${{ needs.api_version.outputs.IS_CHANGED }}
       IS_TAGGED: ${{ needs.api_version.outputs.IS_TAGGED }}
-
+    
     steps:
       - uses: actions/checkout@v3
       
@@ -173,7 +173,7 @@ jobs:
           retention-days: 1
   
   release_app:
-    needs: [build_api]
+    needs: [api_build, api_version]
     runs-on: ubuntu-latest
     permissions:
       contents: read
