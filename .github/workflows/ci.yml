@@ -153,19 +153,23 @@ jobs:
         run: |
           ./mvnw clean package -DskipTests
       
-      - name: Give JAR a versioned name
-        id: version
+      - name: Check JAR file name
         run: |
           cd ./target
+          ls -la
+          if [[ ! -f "./todoapi-${{env.VERSION}}.jar" ]]; then
+            RED=$(tput setaf 1)
+            echo "${RED}File ./todoapi-${{env.VERSION}}.jar does not exists. Check the build script.${RED}"
+            exit 1
+          fi
           files=(todoapi*.jar)
           mv "$files" "./todoapi-${{env.VERSION}}.jar"
-          ls -la
           cd ..
           
       - name: 'Upload build artifact'
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ steps.version.outputs.RELEASE_NAME }}
+          name: todoapi-${{env.VERSION}}
           path: ./todoapi/target/todoapi-${{env.VERSION}}.jar
           if-no-files-found: error
           retention-days: 1
@@ -173,7 +177,6 @@ jobs:
   release_app:
     needs: [build_api]
     runs-on: ubuntu-latest
-    environment: APP-SERVICE
     permissions:
       contents: read
       packages: write
