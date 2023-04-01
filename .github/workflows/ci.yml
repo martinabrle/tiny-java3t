@@ -142,10 +142,11 @@ jobs:
         with:
           java-version: '11'
           distribution: 'microsoft'
-          
+      
       - name: Set the release version
         run: |
-          pwd
+          mv ./pom.xml ./pom.xml.bak
+          ls -la
           java ../scripts/JavaUtils.java -update_pom_version ./pom.xml.bak ${{env.VERSION}} ./pom.xml
 
       - name: Build the .jar
