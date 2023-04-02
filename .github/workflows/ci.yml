@@ -195,7 +195,6 @@ jobs:
           pwd
           ls -la
           ls -la ./todoapi-${{env.VERSION}}/
-            - name: Create Release
       
       - name: Create release
         uses: ncipollo/release-action@v1.12.0
