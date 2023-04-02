@@ -185,6 +185,10 @@ jobs:
       IS_TAGGED: ${{ needs.api_version.outputs.IS_TAGGED }}
     
     steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
       - name: Download build artefacts
         uses: actions/download-artifact@v2
         with:
