@@ -196,6 +196,13 @@ jobs:
           ls -la
           ls -la ./todoapi-${{env.VERSION}}/
       
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Set a version tag
+        run: git tag ${{needs.build_app.outputs.VERSION_TAG}}
+      
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
