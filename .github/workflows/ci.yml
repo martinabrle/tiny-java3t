@@ -209,5 +209,6 @@ jobs:
           name: ${{needs.build_app.outputs.VERSION_TAG}}
           body: Auto-release version ${{needs.build_app.outputs.VERSION_TAG}}
           token: ${{ github.token }}
+          tag: ${{needs.build_app.outputs.VERSION_TAG}}
           artifacts: "./todoapi-${{env.VERSION}}/*"
   
