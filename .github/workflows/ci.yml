@@ -200,6 +200,13 @@ jobs:
           ls -la
           ls -la ./todoapi-${{env.VERSION}}/
       
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{needs.build_app.outputs.VERSION_TAG}}
+          tag_name: ${{needs.build_app.outputs.VERSION_TAG}}
+          files: ./todoapi-${{env.VERSION}}/*"
+      
       - name: Create release
         uses: ncipollo/release-action@v1.12.0
         with:
