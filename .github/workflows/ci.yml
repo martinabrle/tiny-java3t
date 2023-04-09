@@ -200,25 +200,28 @@ jobs:
         with:
           fetch-depth: 0
       
-      - name: Set a version tag
-        run: git tag ${{needs.build_app.outputs.VERSION_TAG}}
+      - name: test release
+        run: gh release create ${{needs.build_app.outputs.VERSION_TAG}} ./todoapi-${{env.VERSION}}/*#Release_${{needs.build_app.outputs.VERSION_TAG}}" --notes "Auto release ${{needs.build_app.outputs.VERSION_TAG}}"
       
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          name: ${{needs.build_app.outputs.VERSION_TAG}}
-          tag_name: ${{needs.build_app.outputs.VERSION_TAG}}
-          files: ./todoapi-${{env.VERSION}}/*"
+      #- name: Set a version tag
+      #  run: git tag ${{needs.build_app.outputs.VERSION_TAG}}
       
-      - name: Create release
-        uses: ncipollo/release-action@v1.12.0
-        with:
-          allowUpdates: true
-          draft: false
-          makeLatest: true
-          name: ${{needs.build_app.outputs.VERSION_TAG}}
-          body: Auto-release version ${{needs.build_app.outputs.VERSION_TAG}}
-          token: ${{ github.token }}
-          tag: ${{needs.build_app.outputs.VERSION_TAG}}
-          artifacts: "./todoapi-${{env.VERSION}}/*"
+      #- name: Release
+      #  uses: softprops/action-gh-release@v1
+      #  with:
+      #    name: ${{needs.build_app.outputs.VERSION_TAG}}
+      #    tag_name: ${{needs.build_app.outputs.VERSION_TAG}}
+      #    files: ./todoapi-${{env.VERSION}}/*"
+      
+      #- name: Create release
+      #  uses: ncipollo/release-action@v1.12.0
+      #  with:
+      #    allowUpdates: true
+      #    draft: false
+      #    makeLatest: true
+      #    name: ${{needs.build_app.outputs.VERSION_TAG}}
+      #    body: Auto-release version ${{needs.build_app.outputs.VERSION_TAG}}
+      #    token: ${{ github.token }}
+      #    tag: ${{needs.build_app.outputs.VERSION_TAG}}
+      #    artifacts: "./todoapi-${{env.VERSION}}/*"
   
