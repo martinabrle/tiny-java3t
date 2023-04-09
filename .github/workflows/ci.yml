@@ -183,7 +183,7 @@ jobs:
       VERSION_TAG: ${{ needs.api_version.outputs.VERSION_TAG }}
       IS_CHANGED: ${{ needs.api_version.outputs.IS_CHANGED }}
       IS_TAGGED: ${{ needs.api_version.outputs.IS_TAGGED }}
-    
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Download build artifacts
         uses: actions/download-artifact@v2
