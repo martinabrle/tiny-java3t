@@ -201,7 +201,7 @@ jobs:
           fetch-depth: 0
       
       - name: test release
-        run: gh release create ${{env.VERSION_TAG}} './todoapi-${{env.VERSION}}/*#Release_${{env.VERSION_TAG}}' --notes "Auto release ${{env.VERSION_TAG}}"
+        run: gh release create ${{env.VERSION_TAG}} ./todoapi-${{env.VERSION}}/* --notes "Auto release ${{env.VERSION_TAG}}"
       
       #- name: Set a version tag
       #  run: git tag ${{needs.build_app.outputs.VERSION_TAG}}
