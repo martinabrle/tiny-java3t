@@ -184,7 +184,12 @@ jobs:
       IS_CHANGED: ${{ needs.api_version.outputs.IS_CHANGED }}
       IS_TAGGED: ${{ needs.api_version.outputs.IS_TAGGED }}
       GH_TOKEN: ${{ github.token }}
+    
     steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
       - name: Download build artifacts
         uses: actions/download-artifact@v2
         with:
@@ -195,14 +200,10 @@ jobs:
           pwd
           ls -la
           ls -la ./todoapi-${{env.VERSION}}/
-      
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      
+        
       - name: test release
         run: |
-          ls -la ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar
+          #ls -la ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar
           gh release create ${{env.VERSION_TAG}} ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar --notes "Auto release ${{env.VERSION_TAG}}"
       
       #- name: Set a version tag
