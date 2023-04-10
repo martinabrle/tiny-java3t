@@ -153,9 +153,9 @@ jobs:
   test_only:
     needs: [api_version, validation]
     runs-on: ubuntu-latest
-    if: ${{ always() && contains(needs.api_version.*.IS_CHANGED, 'true') }}
     steps:
       - name: Test
+        if: needs.api_version.outputs.IS_CHANGED == 'true'
         run: echo "${{ toJSON(needs) }}"
 
   api_build:
