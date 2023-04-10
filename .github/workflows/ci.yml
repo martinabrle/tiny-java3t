@@ -124,6 +124,13 @@ jobs:
     outputs:
       IS_CHANGED: ${{ steps.code_changed.outputs.IS_CODE_CHANGED }}
     steps:
+      - name: Print Info
+        run: |
+          echo "needs.api_version.outputs.IS_TAGGED: ${{ needs.api_version.outputs.IS_TAGGED }}"
+          echo "needs.api_version.outputs.IS_CHANGED: ${{ needs.api_version.outputs.IS_CHANGED }}"
+          echo "needs.web_version.outputs.IS_TAGGED: ${{ needs.web_version.outputs.IS_TAGGED }}"
+          echo "needs.web_version.outputs.IS_CHANGED: ${{ needs.web_version.outputs.IS_CHANGED }}"
+
       - name: Validate this has been already versioned
         id: code_changed
         run: |
