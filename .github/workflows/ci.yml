@@ -146,7 +146,7 @@ jobs:
   api_build:
     needs: [api_version, validation]
     runs-on: ubuntu-latest
-    if: ${{ needs.api_version.outputs.IS_CHANGED }}
+    if: needs.api_version.outputs.IS_CHANGED == true
     defaults:
       run:
         working-directory: ./todoapi    
@@ -206,7 +206,7 @@ jobs:
   api_release:
     needs: [api_build, api_version]
     runs-on: ubuntu-latest
-    if: ${{ needs.api_version.outputs.IS_CHANGED }}
+    if: needs.api_version.outputs.IS_CHANGED == true
     permissions:
       contents: read
       packages: write
@@ -232,7 +232,7 @@ jobs:
           ls -la
           ls -la ./todoapi-${{env.VERSION}}/
         
-      - name: test release (requires extra permissions)
+      - name: Release API
         env:
           GH_TOKEN: ${{secrets.GH_TOKEN}}
         run: |
