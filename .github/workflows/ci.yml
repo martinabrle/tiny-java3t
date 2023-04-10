@@ -149,7 +149,15 @@ jobs:
             echo "API is already tagged. Can not overwrite an existing release."
             exit 1
           fi
-        
+  
+  test_only:
+    needs: [api_version, validation]
+    runs-on: ubuntu-latest
+    #if: always() && contains(needs.*.IS_CHANGED, 'true')
+    steps:
+      - name: Test
+        run: echo "${{ toJSON(needs) }}"
+
   api_build:
     needs: [api_version, validation]
     runs-on: ubuntu-latest
