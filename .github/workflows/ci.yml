@@ -215,6 +215,7 @@ jobs:
       VERSION_TAG: ${{ needs.api_version.outputs.VERSION_TAG }}
       IS_CHANGED: ${{ needs.api_version.outputs.IS_CHANGED }}
       IS_TAGGED: ${{ needs.api_version.outputs.IS_TAGGED }}
+      RELEASE_NAME: ${{needs.api_build.outputs.RELEASE_NAME}}
     
     steps:
       - uses: actions/checkout@v3
@@ -224,7 +225,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v2
         with:
-          name: ${{needs.api_build.outputs.RELEASE_NAME}}
+          name: ${{env.RELEASE_NAME}}
       
       - name: Check downloaded files
         run: |
@@ -311,6 +312,7 @@ jobs:
       VERSION_TAG: ${{ needs.web_version.outputs.VERSION_TAG }}
       IS_CHANGED: ${{ needs.web_version.outputs.IS_CHANGED }}
       IS_TAGGED: ${{ needs.web_version.outputs.IS_TAGGED }}
+      RELEASE_NAME: ${{ needs.web_version.outputs.RELEASE_NAME }}
     
     steps:
       - uses: actions/checkout@v3
@@ -320,7 +322,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v2
         with:
-          name: ${{needs.web_build.outputs.RELEASE_NAME}}
+          name: ${{env.RELEASE_NAME}}
       
       - name: Check downloaded files
         run: |
