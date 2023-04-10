@@ -153,7 +153,7 @@ jobs:
   api_build:
     needs: [api_version, validation]
     runs-on: ubuntu-latest
-    if: contains(needs.*.IS_CHANGED, 'true')
+    if: always() && contains(needs.*.IS_CHANGED, 'true')
     defaults:
       run:
         working-directory: ./todoapi    
@@ -213,7 +213,7 @@ jobs:
   api_release:
     needs: [api_version, api_build]
     runs-on: ubuntu-latest
-    if: contains(needs.*.IS_CHANGED, 'true')
+    if: always() && contains(needs.*.IS_CHANGED, 'true')
     permissions:
       contents: read
       packages: write
@@ -250,7 +250,7 @@ jobs:
   web_build:
     needs: [web_version, validation]
     runs-on: ubuntu-latest
-    if: contains(needs.*.IS_CHANGED, 'true')
+    if: always() && contains(needs.*.IS_CHANGED, 'true')
     defaults:
       run:
         working-directory: ./todoweb    
@@ -310,7 +310,7 @@ jobs:
   web_release:
     needs: [web_version, web_build]
     runs-on: ubuntu-latest
-    if: contains(needs.*.IS_CHANGED, 'true')
+    if: always() && contains(needs.*.IS_CHANGED, 'true')
     permissions:
       contents: read
       packages: write
