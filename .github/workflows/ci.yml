@@ -316,7 +316,7 @@ jobs:
           retention-days: 1
   
   web_release:
-    needs: [web_version, web_build]
+    needs: [web_version, web_build,]
     runs-on: ubuntu-latest
     if: ${{contains(needs.web_version.outputs.IS_CHANGED, true)}}
     permissions:
