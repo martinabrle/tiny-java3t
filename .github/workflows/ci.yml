@@ -208,14 +208,14 @@ jobs:
       
       - name: Set a version tag
         run: |
-          git tag ${{needs.build_app.outputs.VERSION_TAG}} -m "Auto-release ran for ${{needs.build_app.outputs.VERSION_TAG}}"
-          git push origin ${{needs.build_app.outputs.VERSION_TAG}}
+          git tag ${{env.VERSION_TAG}} -m "Auto-release ran for ${{env.VERSION_TAG}}"
+          git push origin ${{env.VERSION_TAG}}
       
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          name: ${{needs.build_app.outputs.VERSION_TAG}}
-          tag_name: ${{needs.build_app.outputs.VERSION_TAG}}
+          name: ${{env.VERSION_TAG}}
+          tag_name: ${{env.VERSION_TAG}}
           files: ./todoapi-${{env.VERSION}}/*"
       
       #- name: Create release
