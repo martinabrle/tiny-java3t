@@ -201,20 +201,20 @@ jobs:
           ls -la
           ls -la ./todoapi-${{env.VERSION}}/
         
-      - name: test release
-        run: |
+      #- name: test release (requires extra permissions)
+      #  run: |
           #ls -la ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar
-          gh release create ${{env.VERSION_TAG}} ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar --notes "Auto release ${{env.VERSION_TAG}}"
+      #    gh release create ${{env.VERSION_TAG}} ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar --notes "Auto release ${{env.VERSION_TAG}}"
       
-      #- name: Set a version tag
-      #  run: git tag ${{needs.build_app.outputs.VERSION_TAG}}
+      - name: Set a version tag
+        run: git tag ${{needs.build_app.outputs.VERSION_TAG}}
       
-      #- name: Release
-      #  uses: softprops/action-gh-release@v1
-      #  with:
-      #    name: ${{needs.build_app.outputs.VERSION_TAG}}
-      #    tag_name: ${{needs.build_app.outputs.VERSION_TAG}}
-      #    files: ./todoapi-${{env.VERSION}}/*"
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{needs.build_app.outputs.VERSION_TAG}}
+          tag_name: ${{needs.build_app.outputs.VERSION_TAG}}
+          files: ./todoapi-${{env.VERSION}}/*"
       
       #- name: Create release
       #  uses: ncipollo/release-action@v1.12.0
