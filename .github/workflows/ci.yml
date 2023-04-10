@@ -150,13 +150,13 @@ jobs:
             exit 1
           fi
   
-  # test_only:
-  #   needs: [api_version, validation]
-  #   if: ${{needs.api_version.outputs.IS_CHANGED}} == 'true'
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Test
-  #       run: echo "${{ toJSON(needs) }}"
+  test_only:
+    needs: [api_version, validation]
+    if: ${{needs.api_version.outputs.IS_CHANGED}}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test
+        run: echo "${{ toJSON(needs) }}"
 
   api_build:
     needs: [api_version, validation]
