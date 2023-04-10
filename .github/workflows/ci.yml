@@ -146,6 +146,7 @@ jobs:
   api_build:
     needs: [api_version, validation]
     runs-on: ubuntu-latest
+    if: ${{ needs.api_version.outputs.IS_CHANGED }}
     defaults:
       run:
         working-directory: ./todoapi    
