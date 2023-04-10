@@ -207,7 +207,9 @@ jobs:
       #    gh release create ${{env.VERSION_TAG}} ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar --notes "Auto release ${{env.VERSION_TAG}}"
       
       - name: Set a version tag
-        run: git tag ${{needs.build_app.outputs.VERSION_TAG}}
+        run: |
+          git tag ${{needs.build_app.outputs.VERSION_TAG}} -m "Auto-release ran for ${{needs.build_app.outputs.VERSION_TAG}}"
+          git push origin ${{needs.build_app.outputs.VERSION_TAG}}
       
       - name: Release
         uses: softprops/action-gh-release@v1
