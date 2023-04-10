@@ -160,7 +160,7 @@ jobs:
 
   api_build:
     needs: [api_version, validation]
-    if: ${{needs.api_version.outputs.IS_CHANGED}} == 'true'
+    if: ${{contains(needs.api_version.outputs.IS_CHANGED, true)}}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -221,7 +221,7 @@ jobs:
   api_release:
     needs: [api_version, api_build]
     runs-on: ubuntu-latest
-    if: ${{needs.api_version.outputs.IS_CHANGED}} == 'true'
+    if: ${{contains(needs.api_version.outputs.IS_CHANGED, true)}}
     permissions:
       contents: read
       packages: write
@@ -258,7 +258,7 @@ jobs:
   web_build:
     needs: [web_version, validation]
     runs-on: ubuntu-latest
-    if: ${{needs.web_version.outputs.IS_CHANGED}} == 'true'
+    if: ${{contains(needs.web_version.outputs.IS_CHANGED, true)}}
     defaults:
       run:
         working-directory: ./todoweb    
@@ -318,7 +318,7 @@ jobs:
   web_release:
     needs: [web_version, web_build]
     runs-on: ubuntu-latest
-    if: ${{needs.web_version.outputs.IS_CHANGED}} == 'true'
+    if: ${{contains(needs.web_version.outputs.IS_CHANGED, true)}}
     permissions:
       contents: read
       packages: write
