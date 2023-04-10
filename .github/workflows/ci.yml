@@ -155,7 +155,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Test
-        if: needs.api_version.outputs.IS_CHANGED == 'true'
+        if: ${{needs.api_version.outputs.IS_CHANGED}} == 'true'
         run: echo "${{ toJSON(needs) }}"
 
   api_build:
