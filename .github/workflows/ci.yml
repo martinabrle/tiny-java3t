@@ -112,9 +112,39 @@ jobs:
          echo "VERSION_TAG=${{steps.semver_web_version.outputs.version_tag}}" >> $GITHUB_OUTPUT
          echo "IS_CHANGED=${{steps.semver_web_version.outputs.changed}}" >> $GITHUB_OUTPUT
          echo "IS_TAGGED=${{steps.semver_web_version.outputs.is_tagged}}" >> $GITHUB_OUTPUT
-      
+  
+  validation:
+    needs: [api_version, web_version]
+    runs-on: ubuntu-latest
+    env:
+      API_IS_TAGGED: ${{ needs.api_version.outputs.IS_TAGGED }}
+      API_IS_CHANGED: ${{ needs.api_version.outputs.IS_CHANGED }}
+      WEB_IS_TAGGED: ${{ needs.web_version.outputs.IS_TAGGED }}
+      WEB_IS_CHANGED: ${{ needs.web_version.outputs.IS_CHANGED }}
+    outputs:
+      IS_CHANGED: ${{ steps.code_changed.outputs.IS_CODE_CHANGED }}
+    steps:
+      - name: Validate this has been already versioned
+        id: code_changed
+        run: |
+          if [[ "${{env.API_IS_CHANGED}}" != "true" || "${{env.WEB_IS_CHANGED}}" != "true" ]]; then
+            echo "Code base has not changed, there is no need to create a new release."
+            echo "IS_CODE_CHANGED=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          echo "IS_CODE_CHANGED=true" >> $GITHUB_OUTPUT
+          
+          if [[ ! -z "${{env.API_IS_TAGGED}}" ]]; then
+            echo "API is already tagged. Can not overwrite an existing release"
+            exit 1
+          fi
+          if [[ ! -z "${{env.API_IS_TAGGED}}" ]]; then
+            echo "API is already tagged. Can not overwrite an existing release."
+            exit 1
+          fi
+        
   api_build:
-    needs: [api_version]
+    needs: [api_version, validation]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -205,31 +235,6 @@ jobs:
           GH_TOKEN: ${{secrets.GH_TOKEN}}
         run: |
           ls -la ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar
-          #export GH_TOKEN=${{secrets.GH_TOKEN}}
           gh release create ${{env.VERSION_TAG}} ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar --notes "Auto release ${{env.VERSION_TAG}}"
-      
-      
-      #- name: Set a version tag
-      #  run: |
-      #    git tag ${{env.VERSION_TAG}} -m "Auto-release ran for ${{env.VERSION_TAG}}"
-      #    git push origin ${{env.VERSION_TAG}}
-      
-      #- name: Release
-      #  uses: softprops/action-gh-release@v1
-      #  with:
-      #    name: ${{env.VERSION_TAG}}
-      #    tag_name: ${{env.VERSION_TAG}}
-      #    files: ./todoapi-${{env.VERSION}}/*"
-      
-      #- name: Create release
-      #  uses: ncipollo/release-action@v1.12.0
-      #  with:
-      #    allowUpdates: true
-      #    draft: false
-      #    makeLatest: true
-      #    name: ${{needs.build_app.outputs.VERSION_TAG}}
-      #    body: Auto-release version ${{needs.build_app.outputs.VERSION_TAG}}
-      #    token: ${{ github.token }}
-      #    tag: ${{needs.build_app.outputs.VERSION_TAG}}
-      #    artifacts: "./todoapi-${{env.VERSION}}/*"
+
   
