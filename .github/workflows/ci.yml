@@ -127,7 +127,7 @@ jobs:
       - name: Validate this has been already versioned
         id: code_changed
         run: |
-          if [[ "${{env.API_IS_CHANGED}}" != "true" || "${{env.WEB_IS_CHANGED}}" != "true" ]]; then
+          if [[ "${{env.API_IS_CHANGED}}" != "true" && "${{env.WEB_IS_CHANGED}}" != "true" ]]; then
             echo "Code base has not changed, there is no need to create a new release."
             echo "IS_CODE_CHANGED=false" >> $GITHUB_OUTPUT
             exit 1
