@@ -183,7 +183,6 @@ jobs:
       VERSION_TAG: ${{ needs.api_version.outputs.VERSION_TAG }}
       IS_CHANGED: ${{ needs.api_version.outputs.IS_CHANGED }}
       IS_TAGGED: ${{ needs.api_version.outputs.IS_TAGGED }}
-      GH_TOKEN: ${{ github.token }}
     
     steps:
       - uses: actions/checkout@v3
@@ -201,22 +200,24 @@ jobs:
           ls -la
           ls -la ./todoapi-${{env.VERSION}}/
         
-      #- name: test release (requires extra permissions)
-      #  run: |
-          #ls -la ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar
-      #    gh release create ${{env.VERSION_TAG}} ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar --notes "Auto release ${{env.VERSION_TAG}}"
-      
-      - name: Set a version tag
+      - name: test release (requires extra permissions)
         run: |
-          git tag ${{env.VERSION_TAG}} -m "Auto-release ran for ${{env.VERSION_TAG}}"
-          git push origin ${{env.VERSION_TAG}}
+          #ls -la ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar
+          export GH_TOKEN=${{secrets.GH_TOKEN}}
+          gh release create ${{env.VERSION_TAG}} ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar --notes "Auto release ${{env.VERSION_TAG}}"
       
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          name: ${{env.VERSION_TAG}}
-          tag_name: ${{env.VERSION_TAG}}
-          files: ./todoapi-${{env.VERSION}}/*"
+      
+      #- name: Set a version tag
+      #  run: |
+      #    git tag ${{env.VERSION_TAG}} -m "Auto-release ran for ${{env.VERSION_TAG}}"
+      #    git push origin ${{env.VERSION_TAG}}
+      
+      #- name: Release
+      #  uses: softprops/action-gh-release@v1
+      #  with:
+      #    name: ${{env.VERSION_TAG}}
+      #    tag_name: ${{env.VERSION_TAG}}
+      #    files: ./todoapi-${{env.VERSION}}/*"
       
       #- name: Create release
       #  uses: ncipollo/release-action@v1.12.0
