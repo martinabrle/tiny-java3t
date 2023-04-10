@@ -202,9 +202,10 @@ jobs:
           if-no-files-found: error
           retention-days: 1
   
-  release_app:
+  api_release:
     needs: [api_build, api_version]
     runs-on: ubuntu-latest
+    if: ${{ needs.api_version.outputs.IS_CHANGED }}
     permissions:
       contents: read
       packages: write
