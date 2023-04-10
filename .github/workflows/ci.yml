@@ -201,9 +201,11 @@ jobs:
           ls -la ./todoapi-${{env.VERSION}}/
         
       - name: test release (requires extra permissions)
+        env:
+          GH_TOKEN: ${{secrets.GH_TOKEN}}
         run: |
-          #ls -la ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar
-          export GH_TOKEN=${{secrets.GH_TOKEN}}
+          ls -la ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar
+          #export GH_TOKEN=${{secrets.GH_TOKEN}}
           gh release create ${{env.VERSION_TAG}} ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar --notes "Auto release ${{env.VERSION_TAG}}"
       
       
