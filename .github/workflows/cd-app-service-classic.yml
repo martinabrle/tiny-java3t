@@ -1,0 +1,26 @@
+name: cd-app-service-classic
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:     
+
+jobs:  
+  build_app:
+    runs-on: ubuntu-latest
+    environment: APP-SERVICE-CLASSIC
+    # defaults:
+    #   run:
+    #     working-directory: ./todoapi
+    # outputs:
+    #   RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
+    #   RELEASE_NAME: ${{ steps.version.outputs.RELEASE_NAME }}
+    #   RELEASE_FILE_NAME: ${{ steps.version.outputs.RELEASE_FILE_NAME }}
+      
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Test
+        run: |
+          releaseVersion="${GITHUB_REF#refs/*/}"
+          echo "Running a release: ${releaseVersion}"
