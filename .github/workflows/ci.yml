@@ -348,8 +348,7 @@ jobs:
       - name: Release WEB
         env:
           GH_TOKEN: ${{secrets.GH_TOKEN}}
-        with:
-          token: ${{secrets.GH_TOKEN}}
+          GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
         run: |
           ls -la ./todoweb-${{env.VERSION}}/todoweb-${{env.VERSION}}.jar
           gh release create ${{env.VERSION_TAG}} ./todoweb-${{env.VERSION}}/todoweb-${{env.VERSION}}.jar --notes "Auto release ${{env.VERSION_TAG}}"

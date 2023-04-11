@@ -2,7 +2,7 @@ name: cd-app-service-classic
 
 on:
   release:
-    types: [created]
+    types: [released]
   workflow_dispatch:     
 
 jobs:  
