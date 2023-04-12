@@ -7,7 +7,7 @@ on:
     inputs:
       version:
         required: true
-        description: Full version tag (e.g.) "v1.0.5-web")
+        description: Full version tag (e.g. "v1.0.5-web")
 
 jobs:  
   build_app:
@@ -39,9 +39,9 @@ jobs:
           echo "Release version to deploy: ${releaseVersion}"
           
           releaseType=""
-          if [[ releaseVersion == *web ]]; then
+          if [[ $releaseVersion == *web ]]; then
             releaseType="web"
-          elif [[ releaseVersion == *api ]]; then
+          elif [[ $releaseVersion == *api ]]; then
             releaseType="api"
           else
             echo "Unknown release artefact type"
