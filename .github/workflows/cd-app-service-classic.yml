@@ -4,9 +4,10 @@ on:
   release:
     types: [published]
   workflow_dispatch:
-    version:
-      required: true
-      description: Input a full version tag, for example "v1.0.5-web"     
+    inputs:
+      version:
+        required: true
+        description: Input a full version tag, for example "v1.0.5-web"     
 
 jobs:  
   build_app:
