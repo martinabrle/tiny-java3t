@@ -7,7 +7,7 @@ on:
     inputs:
       version:
         required: true
-        description: Input a full version tag, for example "v1.0.5-web"     
+        description: Full version tag (e.g.) "v1.0.5-web")
 
 jobs:  
   build_app:
