@@ -12,19 +12,13 @@ on:
 jobs:  
   build_app:
     runs-on: ubuntu-latest
-    environment: APP-SERVICE-CLASSIC
-    # defaults:
-    #   run:
-    #     working-directory: ./todoapi
-    # outputs:
-    #   RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
-    #   RELEASE_NAME: ${{ steps.version.outputs.RELEASE_NAME }}
-    #   RELEASE_FILE_NAME: ${{ steps.version.outputs.RELEASE_FILE_NAME }}
+    outputs:
+      RELEASE_VERSION: ${{ steps.init.outputs.RELEASE_VERSION }}
+      RELEASE_TYPE: ${{ steps.init.outputs.RELEASE_TYPE }}
       
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Test
+      - name: Init
+        id: init
         run: |
           releaseVersion=""
           if [[ "${{github.event_name}}" == "release" ]]; then
@@ -39,16 +33,77 @@ jobs:
           echo "Release version to deploy: ${releaseVersion}"
           
           releaseType=""
-          if [[ $releaseVersion == *web ]]; then
+          if [[ $releaseVersion == "*web" ]]; then
             releaseType="web"
-          elif [[ $releaseVersion == *api ]]; then
+          elif [[ $releaseVersion == "*api" ]]; then
             releaseType="api"
           else
             echo "Unknown release artefact type"
             exit 1
           fi
           echo "Release artifact type to deploy: ${releaseType}"
-      
+
+          echo "RELEASE_TYPE=${releaseType}" >> $GITHUB_OUTPUT
+          echo "RELEASE_VERSION=${releaseVersion}" >> $GITHUB_OUTPUT
+
+  init_app_service_classic:
+    runs-on: ubuntu-latest
+    environment: APP-SERVICE-CLASSIC
+    outputs:
+      ENVIRONMENT_DEPLOYED: ${{ steps.init.outputs.ENVIRONMENT_DEPLOYED }}    
+    steps:
+      - name: Check environment exists
+        id: init
+        run: |
+          RG_EXISTS=$(az group exists --name ${{secrets.AZURE_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}})
+          if [[ "$RG_EXISTS" == "true" ]]; then
+            echo "ENVIRONMENT_DEPLOYED=true" >> $GITHUB_OUTPUT
+          else
+            echo "ENVIRONMENT_DEPLOYED=false" >> $GITHUB_OUTPUT
+          fi
+
+  init_app_service_mi:
+    runs-on: ubuntu-latest
+    environment: APP-SERVICE-MI
+    outputs:
+      ENVIRONMENT_DEPLOYED: ${{ steps.init.outputs.ENVIRONMENT_DEPLOYED }}    
+    steps:
+      - name: Check environment exists
+        id: init
+        run: |
+          RG_EXISTS=$(az group exists --name ${{secrets.AZURE_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}})
+          if [[ "$RG_EXISTS" == "true" ]]; then
+            echo "ENVIRONMENT_DEPLOYED=true" >> $GITHUB_OUTPUT
+          else
+            echo "ENVIRONMENT_DEPLOYED=false" >> $GITHUB_OUTPUT
+          fi
+
+  init_app_service_vnet:
+    runs-on: ubuntu-latest
+    environment: APP-SERVICE-VNET
+    outputs:
+      ENVIRONMENT_DEPLOYED: ${{ steps.init.outputs.ENVIRONMENT_DEPLOYED }}    
+    steps:
+      - name: Check environment exists
+        id: init
+        run: |
+          RG_EXISTS=$(az group exists --name ${{secrets.AZURE_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}})
+          if [[ "$RG_EXISTS" == "true" ]]; then
+            echo "ENVIRONMENT_DEPLOYED=true" >> $GITHUB_OUTPUT
+          else
+            echo "ENVIRONMENT_DEPLOYED=false" >> $GITHUB_OUTPUT
+          fi  
+  
+  deploy_app_service_mi:
+    needs: [init_app_service_classic]
+    runs-on: ubuntu-latest
+    if: ${{contains(needs.init_app_service_classic.outputs.ENVIRONMENT_DEPLOYED, true)}}
+    environment: APP-SERVICE-MI
+    
+    steps:
+      - name: Test
+        run: |
+          echo "Running"
       # - name: Download build artefacts
       #   uses: actions/download-artifact@v2
       #   with:
