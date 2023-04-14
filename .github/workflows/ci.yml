@@ -297,7 +297,7 @@ jobs:
         run: |
           ./mvnw clean package -DskipTests
       
-      - name: Check JAR file name
+      - name: Build ZIP including scripts directory
         run: |
           ls -la ./target
           if [[ ! -f "./target/todoweb-${{env.VERSION}}.jar" ]]; then
@@ -307,6 +307,7 @@ jobs:
           mkdir ./todoweb-${{env.VERSION}}
           mv "./target/todoweb-${{env.VERSION}}.jar" ./todoweb-${{env.VERSION}}
           cp -R ../scripts ./todoweb-${{env.VERSION}}
+          rm -rf ./todoweb-${{env.VERSION}}/templates
           zip -r todoweb-${{env.VERSION}}.zip ./todoweb-${{env.VERSION}}
           ls -la
           
@@ -333,10 +334,6 @@ jobs:
       RELEASE_NAME: ${{ needs.web_version.outputs.RELEASE_NAME }}
     
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      
       - name: Download build artifacts
         uses: actions/download-artifact@v2
         with:
@@ -353,5 +350,6 @@ jobs:
           GH_TOKEN: ${{secrets.GH_TOKEN}}
           GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
         run: |
+          ls -la
           ls -la ./todoweb-${{env.VERSION}}/todoweb-${{env.VERSION}}.jar
           gh release create ${{env.VERSION_TAG}} ./todoweb-${{env.VERSION}}/todoweb-${{env.VERSION}}.jar --notes "Auto release ${{env.VERSION_TAG}}"
