@@ -200,21 +200,25 @@ jobs:
         run: |
           ./mvnw clean package -DskipTests
       
-      - name: Check JAR file name
+      - name: Build ZIP including scripts directory
         run: |
-          cd ./target
-          ls -la
-          if [[ ! -f "./todoapi-${{env.VERSION}}.jar" ]]; then
-            echo "File ./todoapi-${{env.VERSION}}.jar does not exists. Check the build script."
+          ls -la ./target
+          if [[ ! -f "./target/todoapi-${{env.VERSION}}.jar" ]]; then
+            echo "File ./target/todoapi-${{env.VERSION}}.jar does not exists. Check the build script."
             exit 1
           fi
-          cd ..
+          mkdir ./todoapi-${{env.VERSION}}
+          mv "./target/todoapi-${{env.VERSION}}.jar" ./todoapi-${{env.VERSION}}
+          cp -R ../scripts ./todoapi-${{env.VERSION}}
+          rm -rf ./todoapi-${{env.VERSION}}/templates
+          zip -r todoapi-${{env.VERSION}}.zip ./todoapi-${{env.VERSION}}
+          ls -la
           
       - name: 'Upload build artifact'
         uses: actions/upload-artifact@v2
         with:
           name: todoapi-${{env.VERSION}}
-          path: ./todoapi/target/todoapi-${{env.VERSION}}.jar
+          path: ./todoapi/todoapi-${{env.VERSION}}.zip
           if-no-files-found: error
           retention-days: 1
   
@@ -233,10 +237,6 @@ jobs:
       RELEASE_NAME: ${{needs.api_build.outputs.RELEASE_NAME}}
     
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      
       - name: Download build artifacts
         uses: actions/download-artifact@v2
         with:
@@ -247,13 +247,13 @@ jobs:
           pwd
           ls -la
           ls -la ./todoapi-${{env.VERSION}}/
-        
+      
       - name: Release API
         env:
           GH_TOKEN: ${{secrets.GH_TOKEN}}
         run: |
-          ls -la ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar
-          gh release create ${{env.VERSION_TAG}} ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.jar --notes "Auto release ${{env.VERSION_TAG}}"
+          ls -la ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.zip
+          gh release create ${{env.VERSION_TAG}} ./todoapi-${{env.VERSION}}/todoapi-${{env.VERSION}}.zip --notes "Auto release ${{env.VERSION_TAG}}"
 
   web_build:
     needs: [web_version, validation]
@@ -344,12 +344,12 @@ jobs:
           pwd
           ls -la
           ls -la ./todoweb-${{env.VERSION}}/
-        
+
       - name: Release WEB
         env:
           GH_TOKEN: ${{secrets.GH_TOKEN}}
           GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
         run: |
           ls -la
-          ls -la ./todoweb-${{env.VERSION}}/todoweb-${{env.VERSION}}.jar
-          gh release create ${{env.VERSION_TAG}} ./todoweb-${{env.VERSION}}/todoweb-${{env.VERSION}}.jar --notes "Auto release ${{env.VERSION_TAG}}"
+          ls -la ./todoweb-${{env.VERSION}}/todoweb-${{env.VERSION}}.zip
+          gh release create ${{env.VERSION_TAG}} ./todoweb-${{env.VERSION}}/todoweb-${{env.VERSION}}.zip --notes "Auto release ${{env.VERSION_TAG}}"
