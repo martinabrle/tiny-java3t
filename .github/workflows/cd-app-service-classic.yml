@@ -10,7 +10,7 @@ on:
         description: Full version tag (e.g. "v1.0.5-web")
 
 jobs:  
-  build_app:
+  init:
     runs-on: ubuntu-latest
     outputs:
       RELEASE_VERSION: ${{ steps.init.outputs.RELEASE_VERSION }}
@@ -33,9 +33,9 @@ jobs:
           echo "Release version to deploy: ${releaseVersion}"
           
           releaseType=""
-          if [[ $releaseVersion == "*web" ]]; then
+          if [[ $releaseVersion == *web ]]; then
             releaseType="web"
-          elif [[ $releaseVersion == "*api" ]]; then
+          elif [[ $releaseVersion == *api ]]; then
             releaseType="api"
           else
             echo "Unknown release artefact type"
@@ -52,6 +52,14 @@ jobs:
     outputs:
       ENVIRONMENT_DEPLOYED: ${{ steps.init.outputs.ENVIRONMENT_DEPLOYED }}    
     steps:
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.AZURE_CREDENTIALS}}
+      
+      - name: Set default Azure subscription
+        run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
+      
       - name: Check environment exists
         id: init
         run: |
@@ -68,6 +76,14 @@ jobs:
     outputs:
       ENVIRONMENT_DEPLOYED: ${{ steps.init.outputs.ENVIRONMENT_DEPLOYED }}    
     steps:
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.AZURE_CREDENTIALS}}
+      
+      - name: Set default Azure subscription
+        run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
+      
       - name: Check environment exists
         id: init
         run: |
@@ -84,6 +100,14 @@ jobs:
     outputs:
       ENVIRONMENT_DEPLOYED: ${{ steps.init.outputs.ENVIRONMENT_DEPLOYED }}    
     steps:
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.AZURE_CREDENTIALS}}
+      
+      - name: Set default Azure subscription
+        run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
+      
       - name: Check environment exists
         id: init
         run: |
@@ -95,12 +119,20 @@ jobs:
           fi  
   
   deploy_app_service_mi:
-    needs: [init_app_service_classic]
+    needs: [init, init_app_service_classic]
     runs-on: ubuntu-latest
     if: ${{contains(needs.init_app_service_classic.outputs.ENVIRONMENT_DEPLOYED, true)}}
     environment: APP-SERVICE-MI
     
     steps:
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.AZURE_CREDENTIALS}}
+      
+      - name: Set default Azure subscription
+        run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
+      
       - name: Test
         run: |
           echo "Running"
