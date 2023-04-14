@@ -299,19 +299,22 @@ jobs:
       
       - name: Check JAR file name
         run: |
-          cd ./target
-          ls -la
-          if [[ ! -f "./todoweb-${{env.VERSION}}.jar" ]]; then
-            echo "File ./todoweb-${{env.VERSION}}.jar does not exists. Check the build script."
+          ls -la ./target
+          if [[ ! -f "./target/todoweb-${{env.VERSION}}.jar" ]]; then
+            echo "File ./target/todoweb-${{env.VERSION}}.jar does not exists. Check the build script."
             exit 1
           fi
-          cd ..
+          mkdir ./todoweb-${{env.VERSION}}
+          mv "./target/todoweb-${{env.VERSION}}.jar" ./todoweb-${{env.VERSION}}
+          cp -R ../scripts ./todoweb-${{env.VERSION}}
+          zip -r todoweb-${{env.VERSION}}.zip ./todoweb-${{env.VERSION}}
+          ls -la
           
       - name: 'Upload build artifact'
         uses: actions/upload-artifact@v2
         with:
           name: todoweb-${{env.VERSION}}
-          path: ./todoweb/target/todoweb-${{env.VERSION}}.jar
+          path: ./todoweb/todoweb-${{env.VERSION}}.zip
           if-no-files-found: error
           retention-days: 1
   
