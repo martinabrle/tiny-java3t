@@ -210,7 +210,7 @@ jobs:
           mkdir ./todoapi-${{env.VERSION}}
           mv "./target/todoapi-${{env.VERSION}}.jar" ./todoapi-${{env.VERSION}}
           cp -R ../scripts ./todoapi-${{env.VERSION}}
-          rm -rf ./todoapi-${{env.VERSION}}/templates
+          rm -rf ./todoapi-${{env.VERSION}}/scripts/templates
           zip -r todoapi-${{env.VERSION}}.zip ./todoapi-${{env.VERSION}}
           ls -la
           
@@ -238,7 +238,7 @@ jobs:
     
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Download build artifacts
         uses: actions/download-artifact@v2
         with:
@@ -309,7 +309,7 @@ jobs:
           mkdir ./todoweb-${{env.VERSION}}
           mv "./target/todoweb-${{env.VERSION}}.jar" ./todoweb-${{env.VERSION}}
           cp -R ../scripts ./todoweb-${{env.VERSION}}
-          rm -rf ./todoweb-${{env.VERSION}}/templates
+          rm -rf ./todoweb-${{env.VERSION}}/scripts/templates
           zip -r todoweb-${{env.VERSION}}.zip ./todoweb-${{env.VERSION}}
           ls -la
           

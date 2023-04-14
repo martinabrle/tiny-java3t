@@ -58,15 +58,24 @@ jobs:
         with:
           tag: ${{needs.init.outputs.RELEASE_VERSION}}
           fileName: "*"
-          tarBall: true
 
       - name: Check downloaded files
         run: |
           pwd
           ls -la
       
-      - name: Unpack source code
-        run: tar -xf *.tar.gz
+      - name: Unzip archive
+        run: |
+          archiveFiles=(*.zip)
+          archiveFile=$archiveFiles[0]
+          if [[ -z "${archiveFile}" ]]; then
+            echo "Unable to find the release archive file"
+            exit 1
+          fi
+          echo "Unzipping the release archive file: ${archiveFile}"
+          unzip $archiveFile
+          releaseDirectory=${archiveFile%%.zip}
+          mv ./$releaseDirectory ./release
 
       - name: Check unpacked files
         run: |
@@ -149,7 +158,7 @@ jobs:
       - name: Synchronize DB Schema (NON AAD version)
         run: |
           dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
-          psql "${dbConnectionString}" --file=./scripts/db.sql
+          psql "${dbConnectionString}" --file=../release/scripts/db.sql
 
       - name: Start the STAGING slot
         run: |
