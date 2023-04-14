@@ -64,7 +64,15 @@ jobs:
         run: |
           pwd
           ls -la
+      
+      - name: Unpack source code
+        run: tar -xf *.tar.gz
 
+      - name: Check unpacked files
+        run: |
+          pwd
+          ls -la
+      
       - name: Azure login
         uses: azure/login@v1
         with:
