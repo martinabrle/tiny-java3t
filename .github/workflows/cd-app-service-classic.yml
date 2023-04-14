@@ -47,12 +47,12 @@ jobs:
     environment: APP-SERVICE-CLASSIC
 
     steps:
-      - uses: actions/checkout@v3
+      # - uses: actions/checkout@v3
 
-      - name: Check downloaded files
-        run: |
-          pwd
-          ls -la
+      # - name: Check downloaded files
+      #   run: |
+      #     pwd
+      #     ls -la
       
       - uses: robinraju/release-downloader@v1.7
         with:
@@ -135,12 +135,12 @@ jobs:
 
       - name: Remove DB Firewall exception used for Schema sync
         run: |
-          az postgres flexible-server firewall-rule add --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
+          az postgres flexible-server firewall-rule create --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
       
       - name: Synchronize DB Schema (NON AAD version)
         run: |
           dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
-          psql "${dbConnectionString}" --file=./db.sql
+          psql "${dbConnectionString}" --file=./scripts/db.sql
 
       - name: Start the STAGING slot
         run: |
