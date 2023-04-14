@@ -56,8 +56,9 @@ jobs:
       
       - uses: robinraju/release-downloader@v1.7
         with:
-          latest: true
+          tag: ${{needs.init.outputs.RELEASE_VERSION}}
           fileName: "*"
+          tarBall: true
 
       - name: Check downloaded files
         run: |
