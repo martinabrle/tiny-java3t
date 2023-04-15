@@ -471,8 +471,8 @@ module rbacKVDbUserPasswordStaging './components/role-assignment-kv-secret.bicep
   name: 'deployment-rbac-kv-db-user-password-stg'
   params: {
     roleDefinitionId: keyVaultSecretsUser.id
-    principalId: apiAppService.identity.principalId
-    roleAssignmentNameGuid: guid(apiAppService.id, kvDbUserPasswordStaging.id, keyVaultSecretsUser.id)
+    principalId: apiAppServiceStaging.identity.principalId
+    roleAssignmentNameGuid: guid(apiAppServiceStaging.id, kvDbUserPasswordStaging.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
     kvSecretName: kvDbUserPasswordStaging.name
   }
