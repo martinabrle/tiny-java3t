@@ -136,9 +136,9 @@ jobs:
           echo "::add-mask::$dbAdminPassword"
           echo "DB_ADMIN_PASSWORD=${dbAdminPassword}" >> $GITHUB_OUTPUT
 
-      - name: Remove DB Firewall exception used for Schema sync
+      - name: Add DB Firewall exception used for Schema sync
         run: |
-          az postgres flexible-server firewall-rule create --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
+          az postgres flexible-server firewall-rule create --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}}
       
       - name: Synchronize DB Schema (NON AAD version)
         run: |
