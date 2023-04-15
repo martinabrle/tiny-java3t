@@ -15,7 +15,7 @@ Help()
 }
 
 # Get the options
-maxShutdownDelaySec=120
+maxShutdownDelaySec=80
 maxStartUpDelaySec=500
 url=""
 
