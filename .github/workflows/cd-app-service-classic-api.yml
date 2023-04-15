@@ -133,7 +133,7 @@ jobs:
         run: |
           az postgres flexible-server firewall-rule create --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --start-ip-address ${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
       
-      - name: Synchronize DB Schema (NON AAD version)
+      - name: Synchronize DB Schema
         run: |
           dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
           psql "${dbConnectionString}" --file=./${{env.RELEASE_DIR_NAME}}/scripts/db.sql
@@ -147,7 +147,7 @@ jobs:
 
       - name: Wait for STAGING AppService to restart and warm-up
         run: |
-          ./${{env.RELEASE_DIR_NAME}}/scripts/warm_up.sh -u https://${{secrets.AZURE_API_APP_NAME}}-staging.azurewebsites.net/actuator/health/readiness
+          ./${{env.RELEASE_DIR_NAME}}/scripts/warm_up_wait.sh -u https://${{secrets.AZURE_API_APP_NAME}}-staging.azurewebsites.net/actuator/health/readiness
 
       - name: Remove PROD AppService Liveness probe
         run: |
@@ -161,7 +161,7 @@ jobs:
 
       - name: Wait for PROD AppService to restart and warm-up after the swap
         run: |
-          ./${{env.RELEASE_DIR_NAME}}/scripts/warm_up.sh -u https://${{secrets.AZURE_API_APP_NAME}}.azurewebsites.net/actuator/health/readiness
+          ./${{env.RELEASE_DIR_NAME}}/scripts/warm_up_wait.sh -u https://${{secrets.AZURE_API_APP_NAME}}.azurewebsites.net/actuator/health/readiness
 
       - name: Set PRODUCTION AppService Liveness probe
         run: |
