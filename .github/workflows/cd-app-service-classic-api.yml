@@ -70,11 +70,6 @@ jobs:
     steps:
       # - uses: actions/checkout@v3
 
-      # - name: Check downloaded files
-      #   run: |
-      #     pwd
-      #     ls -la
-      
       - uses: robinraju/release-downloader@v1.7
         with:
           tag: ${{env.RELEASE_VERSION}}
@@ -132,13 +127,13 @@ jobs:
           if [[ -z "$dbAdminPassword" ]]; then
             echo "Unable to retrieve a DB admin password"
           fi
-          echo "Admin password: $dbAdminPassword"
           echo "::add-mask::$dbAdminPassword"
+          echo "Admin password: $dbAdminPassword"
           echo "DB_ADMIN_PASSWORD=${dbAdminPassword}" >> $GITHUB_OUTPUT
 
       - name: Add DB Firewall exception used for Schema sync
         run: |
-          az postgres flexible-server firewall-rule create --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}}
+          az postgres flexible-server firewall-rule create --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --start-ip-address ${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
       
       - name: Synchronize DB Schema (NON AAD version)
         run: |
@@ -185,85 +180,7 @@ jobs:
       - name: Remove DB Firewall exception used for Schema sync
         run: |
           az postgres flexible-server firewall-rule delete --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
-      
-      # - name: Download build artefacts
-      #   uses: actions/download-artifact@v2
-      #   with:
-      #     name: ${{needs.build_app.outputs.RELEASE_NAME}}
-      
-      # - name: Check downloaded files
-      #   run: |
-      #     pwd
-      #     ls -la
-      #     ls -la ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
-      
-      # - name: Azure login
-      #   uses: azure/login@v1
-      #   with:
-      #     creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      # - name: Set default Azure subscription
-      #   run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      
-      # - name: Start the STAGING slot
-      #   run: |
-      #     az webapp start -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_API_APP_NAME}} --slot staging
-
-      # # Sometimes it helps to use the following - as azure/webapps-deploy@v2 output may be a bit confusing at times
-      # - name: Deploy to STAGING AppService
-      #   run: az webapp deploy -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_API_APP_NAME}} --slot staging --type jar --src-path ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
-      
-      # - name: Process input variables
-      #   id: input_vars
-      #   run: |
-      #     echo "Processing PUSH event: ${{github.event_name}}"
-      #     if [[ $(az group exists --name "${{secrets.AZURE_RESOURCE_GROUP}}") = false ]]; then
-      #       echo "Nothing deployed yet, should not happen here, choosing MANAGED_IDENTITIES"
-      #       echo "DEPLOYMENT_ENVIRONMENT=MANAGED_IDENTITIES" >> $GITHUB_OUTPUT
-      #     else
-      #       vnetList=`az network vnet list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[]" -o tsv`
-      #       if [[ -z "$vnetList" ]]; then
-      #         appClientIdExists=$(az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "contains([].id, 'https://${{secrets.AZURE_KEY_VAULT_NAME}}.vault.azure.net/secrets/SPRING-DATASOURCE-APP-CLIENT-ID')")
-      #         if [ $appClientIdExists == true ]; then
-      #           echo "App client ID exists, setting MANAGED_IDENTITIES"
-      #           echo "DEPLOYMENT_ENVIRONMENT=MANAGED_IDENTITIES" >> $GITHUB_OUTPUT
-      #         else
-      #           echo "App client ID does not exist, setting CLASSIC"
-      #           echo "DEPLOYMENT_ENVIRONMENT=CLASSIC" >> $GITHUB_OUTPUT
-      #         fi
-      #       else
-      #         echo "VNET Deployed, setting VNET"
-      #         echo "DEPLOYMENT_ENVIRONMENT=VNET" >> $GITHUB_OUTPUT
-      #       fi
-      #     fi
-      
-      # - name: Wait for STAGING AppService warm-up
-      #   run: |
-      #     ###################################################
-      #     #TODO:set firewall exception for the staging slot
-      #     ###################################################
-      #     currentDateTime=`date`
-      #     echo "Starting the warm-up wait: ${currentDateTime}"
-      #     sleep 240 #First wait for 4 mins, sometimes it may take time for the deployment process to start
-      #     noOfAttempts=0
-      #     until $(curl --silent --output /dev/null --head --fail https://${{secrets.AZURE_API_APP_NAME}}-staging.azurewebsites.net/actuator/health/readiness); do
-      #       if [[ ${noOfAttempts} -eq 60 ]];then
-      #         echo "Web site failed to come online within 10 mins"
-      #         exit 1
-      #       fi
-      #       noOfAttempts=$(($noOfAttempts+1))
-      #       sleep 10
-      #     done
-      #     currentDateTime=`date`
-      #     echo "Finnished the warm-up wait: ${currentDateTime}"
-      #     echo "Service warmed up after ${noOfAttempts} attempts"
-
-      # # - name: Deploy to AppService
-      # #   uses: azure/webapps-deploy@v2
-      # #   with: 
-      # #     app-name: ${{secrets.AZURE_API_APP_NAME}}
-      # #     package: ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
-
+ 
       # - name: Run STAGING integration test(s)
       #   run: |
       #     status_code=$(curl --write-out "%{http_code}\n" --silent --output /dev/null "https://${{secrets.AZURE_API_APP_NAME}}-staging.azurewebsites.net/api/todos/")
