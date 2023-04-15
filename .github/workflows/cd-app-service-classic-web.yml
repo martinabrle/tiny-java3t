@@ -119,7 +119,7 @@ jobs:
 
       - name: Swap STAGING and PRODUCTION
         run:  |
-          az webapp deployment slot swap -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_WEB_APP_NAME}} --slot ${{secrets.AZURE_WEB_APP_NAME}}-staging
+          az webapp deployment slot swap -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_API_APP_NAME}} --slot staging --target-slot Production
           sleep 180
 
       - name: Wait for PROD AppService to restart and warm-up after the swap
