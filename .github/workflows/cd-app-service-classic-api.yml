@@ -65,7 +65,7 @@ jobs:
       RELEASE_VERSION_NUMBER: ${{ needs.init.outputs.RELEASE_VERSION_NUMBER }}
       RELEASE_DIR_NAME: ${{ needs.init.outputs.RELEASE_DIR_NAME }}
       RELEASE_ARCHIVE_NAME: ${{ needs.init.outputs.RELEASE_ARCHIVE_NAME }}
-      RELEASE_FILE_NAME: ${{ needs.init.outputs.RELEASE_ARCHIVE_NAME }}
+      RELEASE_FILE_NAME: ${{ needs.init.outputs.RELEASE_FILE_NAME }}
 
     steps:
       # - uses: actions/checkout@v3
