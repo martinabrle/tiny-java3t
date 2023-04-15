@@ -83,7 +83,7 @@ jobs:
         run: |
           pwd
           ls -la
-          if [[ -f "${{env.RELEASE_ARCHIVE_NAME}}" ]]; then
+          if [[ ! -f "${{env.RELEASE_ARCHIVE_NAME}}" ]]; then
             echo "'${{env.RELEASE_ARCHIVE_NAME}}' does not exist."
             exit 1
           fi
@@ -92,7 +92,7 @@ jobs:
         run: |
           echo "Unzipping the release archive file: ${{env.RELEASE_ARCHIVE_NAME}}"
           unzip ${{env.RELEASE_ARCHIVE_NAME}}
-          if [[ -f "${{env.RELEASE_DIR_NAME}}/${{env.RELEASE_FILE_NAME}}" ]]; then
+          if [[ ! -f "${{env.RELEASE_DIR_NAME}}/${{env.RELEASE_FILE_NAME}}" ]]; then
             echo "'${{env.RELEASE_DIR_NAME}}/${{env.RELEASE_FILE_NAME}}' does not exist."
             exit 1
           fi
