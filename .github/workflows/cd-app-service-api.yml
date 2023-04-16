@@ -96,7 +96,7 @@ jobs:
         run: echo "${{steps.init.outputs.ENVIRONMENT_DEPLOYED}}"
       
       - uses: robinraju/release-downloader@v1.7
-        if: steps.init.outputs.ENVIRONMENT_DEPLOYED == true
+        if: steps.init.outputs.ENVIRONMENT_DEPLOYED
         with:
           tag: ${{env.RELEASE_VERSION}}
           fileName: "${{env.RELEASE_ARCHIVE_NAME}}"
