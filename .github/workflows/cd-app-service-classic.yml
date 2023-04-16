@@ -1,6 +1,8 @@
-name: cd-app-service-classic-api
+name: cd-app-service-api
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       version:
@@ -40,6 +42,9 @@ jobs:
           if [[ $releaseVersion == *-api ]]; then
             releaseType="api"
             releaseVersionNumber=${releaseVersionNumber%-api}
+          elif [[ $releaseVersion == *-web ]]; then
+            releaseType="web"
+            releaseVersionNumber=${releaseVersionNumber%-web}
           else
             echo "Unknown release artefact type"
             exit 1
@@ -55,10 +60,11 @@ jobs:
           echo "RELEASE_ARCHIVE_NAME=todo${releaseType}-${releaseVersionNumber}.zip" >> $GITHUB_OUTPUT
           echo "RELEASE_FILE_NAME=todo${releaseType}-${releaseVersionNumber}.jar" >> $GITHUB_OUTPUT
 
-  deploy:
+  deploy_api_app_svc_classic:
     needs: [init]
     runs-on: ubuntu-latest
     environment: APP-SERVICE-CLASSIC
+    if: ${{contains(needs.init.outputs.RELEASE_TYPE, "api")}}
     env:
       RELEASE_TYPE: ${{ needs.init.outputs.RELEASE_TYPE }}
       RELEASE_VERSION: ${{ needs.init.outputs.RELEASE_VERSION }}
@@ -68,12 +74,24 @@ jobs:
       RELEASE_FILE_NAME: ${{ needs.init.outputs.RELEASE_FILE_NAME }}
 
     steps:
+      - name: init
+        id: Init
+        run: |
+          RG_EXISTS=$(az group exists --name ${{secrets.AZURE_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}})
+          if [[ "$RG_EXISTS" == "true" ]]; then
+            echo "ENVIRONMENT_DEPLOYED=true" >> $GITHUB_OUTPUT
+          else
+            echo "ENVIRONMENT_DEPLOYED=false" >> $GITHUB_OUTPUT
+          fi
+      
       - uses: robinraju/release-downloader@v1.7
+        if: steps.init.ENVIRONMENT_DEPLOYED == true
         with:
           tag: ${{env.RELEASE_VERSION}}
           fileName: "${{env.RELEASE_ARCHIVE_NAME}}"
 
       - name: Check downloaded files
+        if: steps.init.ENVIRONMENT_DEPLOYED == true
         run: |
           pwd
           ls -la
@@ -83,6 +101,7 @@ jobs:
           fi
       
       - name: Unzip archive
+        if: steps.init.ENVIRONMENT_DEPLOYED == true
         run: |
           echo "Unzipping the release archive file: ${{env.RELEASE_ARCHIVE_NAME}}"
           unzip ${{env.RELEASE_ARCHIVE_NAME}}
@@ -92,14 +111,17 @@ jobs:
           fi
       
       - name: Azure login
+        if: steps.init.ENVIRONMENT_DEPLOYED == true
         uses: azure/login@v1
         with:
           creds: ${{secrets.AZURE_CREDENTIALS}}
       
       - name: Set default Azure subscription
+        if: steps.init.ENVIRONMENT_DEPLOYED == true
         run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
       
       - name: Initialize deployment variables
+        if: steps.init.ENVIRONMENT_DEPLOYED == true
         id: vars
         run: |
           clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
@@ -130,15 +152,18 @@ jobs:
           echo "DB_ADMIN_PASSWORD=${dbAdminPassword}" >> $GITHUB_OUTPUT
       
       - name: Add DB Firewall exception used for Schema sync
+        if: steps.init.ENVIRONMENT_DEPLOYED == true
         run: |
           az postgres flexible-server firewall-rule create --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --start-ip-address ${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
       
       - name: Synchronize DB Schema
+        if: steps.init.ENVIRONMENT_DEPLOYED == true
         run: |
           dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
           psql "${dbConnectionString}" --file=./${{env.RELEASE_DIR_NAME}}/scripts/db.sql
 
       - name: Start the STAGING slot
+        if: steps.init.ENVIRONMENT_DEPLOYED == true
         run: |
           az webapp start -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_API_APP_NAME}} --slot staging
 
@@ -148,24 +173,29 @@ jobs:
           az webapp deploy -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_API_APP_NAME}} --slot staging --type jar --src-path ./${{env.RELEASE_DIR_NAME}}/${{env.RELEASE_FILE_NAME}}
 
       - name: Wait for STAGING AppService to restart and warm-up
+        if: steps.init.ENVIRONMENT_DEPLOYED == true
         run: |
           ./${{env.RELEASE_DIR_NAME}}/scripts/warm_up_wait.sh -u https://${{secrets.AZURE_API_APP_NAME}}-staging.azurewebsites.net/actuator/health/readiness
 
       - name: Remove PROD AppService Liveness probe
+        if: steps.init.ENVIRONMENT_DEPLOYED == true
         run: |
           az webapp config set -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_API_APP_NAME}} --generic-configurations '{"healthCheckPath": ""}'
           sleep 180
 
       - name: Swap STAGING and PRODUCTION
+        if: steps.init.ENVIRONMENT_DEPLOYED == true
         run:  |
           az webapp deployment slot swap -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_API_APP_NAME}} --slot staging --target-slot production
           sleep 180
 
       - name: Wait for PROD AppService to restart and warm-up after the swap
+        if: steps.init.ENVIRONMENT_DEPLOYED == true
         run: |
           ./${{env.RELEASE_DIR_NAME}}/scripts/warm_up_wait.sh -u https://${{secrets.AZURE_API_APP_NAME}}.azurewebsites.net/actuator/health/readiness
 
       - name: Set PRODUCTION AppService Liveness probe
+        if: steps.init.ENVIRONMENT_DEPLOYED == true
         run: |
           currentDateTime=`date`
           echo "Starting the probe set-up: ${currentDateTime}"
@@ -174,10 +204,12 @@ jobs:
           echo "Finnished the probe set-up: ${currentDateTime}"
       
       - name: Stop the STAGING slot
+        if: steps.init.ENVIRONMENT_DEPLOYED == true
         run: |
           az webapp stop -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_API_APP_NAME}} --slot staging
 
       - name: Remove DB Firewall exception used for Schema sync
+        if: steps.init.ENVIRONMENT_DEPLOYED == true
         run: |
           az postgres flexible-server firewall-rule delete --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
  
