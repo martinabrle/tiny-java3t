@@ -64,7 +64,7 @@ jobs:
     needs: [init]
     runs-on: ubuntu-latest
     environment: APP-SERVICE-CLASSIC
-    if: ${{ needs.init.outputs.RELEASE_TYPE == "api" }}
+    #if: ${{contains(needs.init.outputs.RELEASE_TYPE, 'api')}}
     env:
       RELEASE_TYPE: ${{ needs.init.outputs.RELEASE_TYPE }}
       RELEASE_VERSION: ${{ needs.init.outputs.RELEASE_VERSION }}
