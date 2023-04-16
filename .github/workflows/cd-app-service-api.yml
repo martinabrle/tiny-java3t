@@ -92,6 +92,9 @@ jobs:
             echo "ENVIRONMENT_DEPLOYED=false" >> $GITHUB_OUTPUT
           fi
       
+      - name: Display environment status
+        run: echo "${{steps.init.ENVIRONMENT_DEPLOYED}}"
+      
       - uses: robinraju/release-downloader@v1.7
         if: steps.init.ENVIRONMENT_DEPLOYED == true
         with:
@@ -166,6 +169,7 @@ jobs:
           az webapp start -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_API_APP_NAME}} --slot staging
 
       - name: Deploy to STAGING AppService
+        if: steps.init.ENVIRONMENT_DEPLOYED == true
         run: |
           ls -la ./${{env.RELEASE_DIR_NAME}}/${{env.RELEASE_FILE_NAME}}
           az webapp deploy -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_API_APP_NAME}} --slot staging --type jar --src-path ./${{env.RELEASE_DIR_NAME}}/${{env.RELEASE_FILE_NAME}}
@@ -210,4 +214,4 @@ jobs:
         if: steps.init.ENVIRONMENT_DEPLOYED == true
         run: |
           az postgres flexible-server firewall-rule delete --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
- 
+
