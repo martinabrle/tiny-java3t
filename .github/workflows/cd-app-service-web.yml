@@ -1,4 +1,4 @@
-name: cd-app-service-classic-web
+name: cd-app-service-web
 
 on:
   workflow_dispatch:
