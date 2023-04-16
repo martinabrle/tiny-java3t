@@ -1,3 +1,5 @@
+huhu.txt
+
 name: cd-app-service-api
 
 on:
@@ -151,7 +153,15 @@ jobs:
           echo "::add-mask::$dbAdminPassword"
           echo "Admin password: $dbAdminPassword"
           echo "DB_ADMIN_PASSWORD=${dbAdminPassword}" >> $GITHUB_OUTPUT
-      
+          
+          dbAppUserName=`echo "${{secrets.AZURE_API_APP_NAME}}" | tr '-' '_'`;
+          echo "DB_APP_USER_NAME=${dbAppUserName}" >> $GITHUB_OUTPUT
+          echo "App user name: $dbAppUserName"
+          
+          dbStagingAppUserName=`echo "${{secrets.AZURE_API_APP_NAME}}-staging" | tr '-' '_'`;
+          echo "DB_STAGING_APP_USER_NAME=${dbStagingAppUserName}" >> $GITHUB_OUTPUT
+          echo "Staging app user name: $dbStagingAppUserName"
+
       - name: Add DB Firewall exception used for Schema sync
         if: ${{ steps.init.outputs.ENVIRONMENT_DEPLOYED == 'true' }}
         run: |
@@ -162,7 +172,23 @@ jobs:
         run: |
           dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
           psql "${dbConnectionString}" --file=./${{env.RELEASE_DIR_NAME}}/scripts/db.sql
-
+      
+      - name: Grant AppService default slot DB user rights
+        run: |
+          ./grant_app_user_rights.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
+                                     -d ${{secrets.AZURE_DB_NAME}} \
+                                     -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                     -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                     -n ${{steps.vars.outputs.DB_APP_USER_NAME}}
+      
+      - name: Grant AppService staging slot DB user rights
+        run: |
+          ./grant_app_user_rights.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
+                                     -d ${{secrets.AZURE_DB_NAME}} \
+                                     -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                     -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                     -n ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}}
+      
       - name: Start the STAGING slot
         if: ${{ steps.init.outputs.ENVIRONMENT_DEPLOYED == 'true' }}
         run: |
