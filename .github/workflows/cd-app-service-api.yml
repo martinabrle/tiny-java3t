@@ -214,4 +214,3 @@ jobs:
         if: steps.init.outputs.ENVIRONMENT_DEPLOYED
         run: |
           az postgres flexible-server firewall-rule delete --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
-
