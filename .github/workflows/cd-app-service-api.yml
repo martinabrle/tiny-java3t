@@ -26,8 +26,8 @@ jobs:
           releaseVersion=""
           if [[ "${{github.event_name}}" == "workflow_dispatch" ]]; then
             releaseVersion="${{inputs.version}}" 
-          elseif [[ "${{github.event.release.tag_name}}" == "release" ]]; then
-            releaseVersion="${{inputs.version}}" 
+          elseif [[ "${{github.event_name}}" == "release" ]]; then
+            releaseVersion="${{github.event.release.tag_name}}" 
           else
             echo "Unknown trigger: '${{github.event_name}}'"
             exit 1
