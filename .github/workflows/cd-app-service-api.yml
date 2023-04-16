@@ -74,6 +74,14 @@ jobs:
       RELEASE_FILE_NAME: ${{ needs.init.outputs.RELEASE_FILE_NAME }}
 
     steps:
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.AZURE_CREDENTIALS}}
+      
+      - name: Set default Azure subscription
+        run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
+
       - name: init
         id: Init
         run: |
@@ -109,16 +117,6 @@ jobs:
             echo "'${{env.RELEASE_DIR_NAME}}/${{env.RELEASE_FILE_NAME}}' does not exist."
             exit 1
           fi
-      
-      - name: Azure login
-        if: steps.init.ENVIRONMENT_DEPLOYED == true
-        uses: azure/login@v1
-        with:
-          creds: ${{secrets.AZURE_CREDENTIALS}}
-      
-      - name: Set default Azure subscription
-        if: steps.init.ENVIRONMENT_DEPLOYED == true
-        run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
       
       - name: Initialize deployment variables
         if: steps.init.ENVIRONMENT_DEPLOYED == true
