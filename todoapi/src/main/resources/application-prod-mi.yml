@@ -1,7 +1,7 @@
 spring:
   datasource:
     username: ${SPRING_DATASOURCE_USERNAME}
-    jdbc-url: ${SPRING_DATASOURCE_URL}?sslmode=verify-full&sslrootcert=BaltimoreCyberTrustRoot.crt.pem
+    jdbc-url: ${SPRING_DATASOURCE_URL}?sslmode=verify-full&sslrootcert=DigiCertGlobalRootCA.crt.pem
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     show-sql: ${SPRING_DATASOURCE_SHOW_SQL}
