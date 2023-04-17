@@ -14,6 +14,8 @@ import org.w3c.dom.Document;
 import app.demo.todoweb.TodoApplication;
 
 public class Utils {
+    public static final AppLogger LOGGER = new AppLogger(Utils.class);
+
     private static DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm a z");
     private static String GIT_COMMIT_ID = "";
 
@@ -54,6 +56,8 @@ public class Utils {
       String artifactId = mainPackage.getImplementationTitle();
   
       try {
+        LOGGER.info("Retrieving from: " + "META-INF/maven/" + groupId + "/" + artifactId + "/pom.xml");
+
         InputStream inputStream = new Utils().getClass().getClassLoader()
             .getResourceAsStream("META-INF/maven/" + groupId + "/" + artifactId + "/pom.xml");
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
