@@ -14,7 +14,7 @@ import app.demo.todoapi.TodoApplication;
 
 public class Utils {
   public static final AppLogger LOGGER = new AppLogger(Utils.class);
-  
+
   private static DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm a z");
   private static String GIT_COMMIT_ID = "";
 
@@ -49,15 +49,22 @@ public class Utils {
     }
 
     Package mainPackage = TodoApplication.class.getPackage();
-    //String version = mainPackage.getImplementationVersion();
+    // String version = mainPackage.getImplementationVersion();
     String groupId = mainPackage.getName();
     String artifactId = mainPackage.getImplementationTitle();
+    if (groupId.endsWith("." + artifactId)) {
+      groupId = groupId.substring(0, groupId.lastIndexOf("." + artifactId));
+    }
 
     try {
-      LOGGER.info("Retrieving from: " + "META-INF/maven/" + groupId + "/" + artifactId + "/pom.xml");
+      // LOGGER.info("Retrieving from: " + "META-INF/maven/" + groupId + "/" +
+      // artifactId + "/pom.xml");
 
+      // InputStream inputStream = new Utils().getClass().getClassLoader()
+      // .getResourceAsStream("META-INF/maven/app.demo/todoapi/pom.xml");
       InputStream inputStream = new Utils().getClass().getClassLoader()
-          .getResourceAsStream("META-INF/maven/" + groupId + "/" + artifactId + "/pom.xml");
+          .getResourceAsStream("META-INF/maven/" + groupId + "/" + artifactId +
+              "/pom.xml");
       DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
       DocumentBuilder documentBuilder = dbf.newDocumentBuilder();
       Document doc = documentBuilder.parse(inputStream);
