@@ -175,19 +175,19 @@ jobs:
       
       - name: Grant AppService default slot DB user rights
         run: |
-          ./grant_app_user_rights.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
-                                     -d ${{secrets.AZURE_DB_NAME}} \
-                                     -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
-                                     -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
-                                     -n ${{steps.vars.outputs.DB_APP_USER_NAME}}
+          ./${{env.RELEASE_DIR_NAME}}/scripts/grant_app_user_rights.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
+                                                                       -d ${{secrets.AZURE_DB_NAME}} \
+                                                                       -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                                                       -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                                                       -n ${{steps.vars.outputs.DB_APP_USER_NAME}}
       
       - name: Grant AppService staging slot DB user rights
         run: |
-          ./grant_app_user_rights.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
-                                     -d ${{secrets.AZURE_DB_NAME}} \
-                                     -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
-                                     -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
-                                     -n ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}}
+          ./${{env.RELEASE_DIR_NAME}}/scripts/grant_app_user_rights.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
+                                                                       -d ${{secrets.AZURE_DB_NAME}} \
+                                                                       -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                                                       -p ${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                                                       -n ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}}
       
       - name: Start the STAGING slot
         if: ${{ steps.init.outputs.ENVIRONMENT_DEPLOYED == 'true' }}
