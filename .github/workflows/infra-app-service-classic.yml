@@ -1,4 +1,4 @@
-name: app-service-classic-infra
+name: infra-app-service-classic
 
 on:
   push:
