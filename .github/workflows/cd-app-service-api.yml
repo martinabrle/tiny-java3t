@@ -338,7 +338,7 @@ jobs:
         if: ${{ steps.init.outputs.ENVIRONMENT_DEPLOYED == 'true' }}
         run: |
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
-          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./${{env.RELEASE_DIR_NAME}}/db.sql -v ON_ERROR_STOP=1
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./${{env.RELEASE_DIR_NAME}}/scripts/db.sql -v ON_ERROR_STOP=1
       
       - name: Grant AppService default slot DB user rights
         run: |
