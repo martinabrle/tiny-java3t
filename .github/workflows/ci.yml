@@ -195,14 +195,13 @@ jobs:
           mv ./pom.xml ./pom.xml.bak
           ls -la
           java ../scripts/JavaUtils.java -update_pom_version ./pom.xml.bak ${{env.VERSION}} ./pom.xml
-
+      
       - name: Set the git commit id
         run: |
           mv ./pom.xml ./pom.xml.bak
           ls -la
           java ../scripts/JavaUtils.java -update_git_commit_id ./pom.xml.bak "${GITHUB_SHA}" ./pom.xml
-          cat ./pom.xml
-
+      
       - name: Build the .jar
         run: |
           ./mvnw clean package -DskipTests
@@ -301,6 +300,12 @@ jobs:
           mv ./pom.xml ./pom.xml.bak
           ls -la
           java ../scripts/JavaUtils.java -update_pom_version ./pom.xml.bak ${{env.VERSION}} ./pom.xml
+      
+      - name: Set the git commit id
+        run: |
+          mv ./pom.xml ./pom.xml.bak
+          ls -la
+          java ../scripts/JavaUtils.java -update_git_commit_id ./pom.xml.bak "${GITHUB_SHA}" ./pom.xml
 
       - name: Build the .jar
         run: |
