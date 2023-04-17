@@ -342,7 +342,6 @@ jobs:
       
       - name: Grant AppService default slot DB user rights
         run: |
-          ls -la ./${{env.RELEASE_DIR_NAME}}/scripts/
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
           ./${{env.RELEASE_DIR_NAME}}/scripts/grant_aad_app_user_rights.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
                                                                            -d ${{secrets.AZURE_DB_NAME}} \
@@ -351,6 +350,7 @@ jobs:
       
       - name: Grant AppService staging slot DB user rights
         run: |
+          export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
           ./${{env.RELEASE_DIR_NAME}}/scripts/grant_aad_app_user_rights.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
                                                                            -d ${{secrets.AZURE_DB_NAME}} \
                                                                            -a "${{secrets.AZURE_DBA_GROUP_NAME}}" \
