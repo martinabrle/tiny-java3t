@@ -175,6 +175,7 @@ jobs:
       
       - name: Grant AppService default slot DB user rights
         run: |
+          ls -la ./${{env.RELEASE_DIR_NAME}}/scripts/
           ./${{env.RELEASE_DIR_NAME}}/scripts/grant_app_user_rights.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
                                                                        -d ${{secrets.AZURE_DB_NAME}} \
                                                                        -a ${{steps.vars.outputs.DB_ADMIN_NAME}} \
