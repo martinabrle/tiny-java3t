@@ -62,7 +62,7 @@ jobs:
           echo "RELEASE_ARCHIVE_NAME=todo${releaseType}-${releaseVersionNumber}.zip" >> $GITHUB_OUTPUT
           echo "RELEASE_FILE_NAME=todo${releaseType}-${releaseVersionNumber}.jar" >> $GITHUB_OUTPUT
 
-  deploy_api_app_svc_classic:
+  deploy_classic_api_app_svc_:
     needs: [init]
     runs-on: ubuntu-latest
     environment: APP-SERVICE-CLASSIC
@@ -242,7 +242,7 @@ jobs:
         run: |
           az postgres flexible-server firewall-rule delete --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
   
-  deploy_api_app_svc_mi:
+  deploy_mi_api_app_svc:
     needs: [init]
     runs-on: ubuntu-latest
     environment: APP-SERVICE-MI
