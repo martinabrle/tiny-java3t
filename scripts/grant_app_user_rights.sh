@@ -16,6 +16,7 @@ Help()
    echo
 }
 
+
 # Get the options
 dbServerName=""
 dbName=""
