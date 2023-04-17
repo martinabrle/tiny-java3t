@@ -1,4 +1,4 @@
-name: app-service-vnet-infra
+name: infra-app-service-vnet
 
 on:
   push:
