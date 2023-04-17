@@ -15,7 +15,8 @@ import org.w3c.dom.Document;
 
 public class JavaUtils {
     public static void main(String args[]) {
-        // String[] args2 = {"-get_highest_semver_from_file", "./scripts/container_tags.txt"};
+        // String[] args2 = {"-get_highest_semver_from_file",
+        // "./scripts/container_tags.txt"};
         // args = args2;
 
         try {
@@ -31,6 +32,16 @@ public class JavaUtils {
                     throw new Exception("Wrong parameters");
                 }
                 displayPomVersion(fileName);
+            } else if (params.containsKey("update_git_commit_id")) {
+                var options = params.get("update_git_commit_id");
+                var fileName = options.get(0);
+                var commitId = options.get(1);
+                var newFileName = options.get(2);
+                if (fileName == null || fileName.isEmpty() || commitId == null || commitId.isEmpty()
+                        || newFileName == null || newFileName.isEmpty()) {
+                    throw new Exception("Wrong parameters");
+                }
+                updateCommitId(fileName, commitId, newFileName);
             } else if (params.containsKey("update_pom_version")) {
                 var options = params.get("update_pom_version");
                 var fileName = options.get(0);
@@ -41,6 +52,14 @@ public class JavaUtils {
                     throw new Exception("Wrong parameters");
                 }
                 updatePomVersion(fileName, version, newFileName);
+            } else if (params.containsKey("get_git_commit_id")) {
+                var options = params.get("get_git_commit_id");
+                var fileName = options.get(0);
+
+                if (fileName == null || fileName.isEmpty()) {
+                    throw new Exception("Wrong parameters");
+                }
+                displayCommitId(fileName);
             } else if (params.containsKey("get_highest_semver_from_file")) {
                 var options = params.get("get_highest_semver_from_file");
                 var fileName = options.get(0);
@@ -202,6 +221,48 @@ public class JavaUtils {
         TransformerFactory.newInstance().newTransformer().transform(source, output);
     }
 
+    private static void updateCommitId(String fileName, String commitId, String newFileName) throws Exception {
+        boolean updated = false;
+
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setValidating(false);
+        factory.setIgnoringElementContentWhitespace(true);
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        File file = new File(fileName);
+        if (!file.exists()) {
+            System.err.println(String.format("File '%s' does not exist.", fileName));
+            throw new Exception(String.format("File '%s' does not exist.", fileName));
+        }
+        Document doc = builder.parse(file);
+        var nodeList = doc.getChildNodes();
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            var node = nodeList.item(i);
+            if ("project".compareTo(node.getNodeName()) == 0) {
+                var childNodeList = node.getChildNodes();
+                for (int j = 0; j < childNodeList.getLength(); j++) {
+                    var childNode = childNodeList.item(j);
+                    if (childNode != null && childNode.getNodeType() == org.w3c.dom.Node.COMMENT_NODE) {
+                        String commentContent = childNode.getTextContent();
+                        if (commentContent != null && commentContent.contains("GIT_COMMIT_ID")) {
+                            childNode.setTextContent(String.format("GIT_COMMIT_ID:%s", commitId));
+                            updated = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (!updated) {
+            System.err.println(
+                    String.format("An error has occured, while updating the git commit id in file '%s'", fileName));
+            throw new Exception(
+                    String.format("An error has occured, while updating the git commit id in file '%s'", fileName));
+        }
+        DOMSource source = new DOMSource(doc);
+        StreamResult output = new StreamResult(new File(newFileName));
+        TransformerFactory.newInstance().newTransformer().transform(source, output);
+    }
+
     private static void displayPomVersion(String fileName) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setValidating(false);
@@ -233,12 +294,50 @@ public class JavaUtils {
         }
     }
 
+    private static void displayCommitId(String fileName) throws Exception {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setValidating(false);
+        factory.setIgnoringElementContentWhitespace(true);
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        File file = new File(fileName);
+        if (!file.exists()) {
+            System.err.println(String.format("File '%s' does not exist.", fileName));
+            throw new Exception(String.format("File '%s' does not exist.", fileName));
+        }
+        Document doc = builder.parse(file);
+        var nodeList = doc.getChildNodes();
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            var node = nodeList.item(i);
+            if ("project".compareTo(node.getNodeName()) == 0) {
+                var childNodeList = node.getChildNodes();
+                for (int j = 0; j < childNodeList.getLength(); j++) {
+                    var childNode = childNodeList.item(j);
+                    if (childNode != null && childNode.getNodeType() == org.w3c.dom.Node.COMMENT_NODE) {
+                        String commentContent = childNode.getTextContent();
+                        if (commentContent != null && commentContent.contains("GIT_COMMIT_ID")) {
+                            commentContent = commentContent.replace(" ", "");
+                            commentContent = commentContent.replace("GIT_COMMIT_ID:", "");
+                            System.out.println(commentContent);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private static void displayHelp() {
         System.out.println(String.format("USAGE: java %s.java [ARGS]", getShortClassName()));
         System.out.println("\t-get_pom_version ./pom.xml - retrieves the current version from a pom.xml file");
         System.out
                 .println(
-                        "\t-update_pom_version ./pom.xml 3.11.0 - saves the new version (3.11.0 into the pom.xml file)");
+                        "\t-update_pom_version ./pom.xml 3.11.0 - saves the new version (3.11.0) into the pom.xml file");
+        System.out
+                .println(
+                        "\t-get_git_commit_id ./pom.xml - retrieves the commit id (d35a0c5) from the pom.xml file");
+        System.out
+                .println(
+                        "\t-update_git_commit_id ./pom.xml d35a0c5 - saves the new commit id (d35a0c5) into the pom.xml file");
         System.out.println(
                 "\t-get_highest_semver_from_file ./file_with_semver_numbers.txt - retrieves the highest SemVer version from a text file");
         System.out.println("\t-get_higher_semver 1.3.4 1.3.5 - returns a higher semver from a list (of two)");

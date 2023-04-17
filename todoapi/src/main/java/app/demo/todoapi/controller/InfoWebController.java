@@ -17,6 +17,7 @@ public class InfoWebController {
 		LOGGER.debug("TODO GET called with action '/'");
 
 		model.addAttribute("version", new AppConfig().getVersion());
+		model.addAttribute("commit", app.demo.todoapi.utils.Utils.getCommitId());
 		model.addAttribute("environment", new AppConfig().getEnvironment());
 
 		return "info";
