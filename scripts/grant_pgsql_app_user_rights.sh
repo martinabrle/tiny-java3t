@@ -2,10 +2,10 @@
 Help()
 {
    # Display Help
-   echo "grant_app_user_rights.sh - utility for granting app user CONNECT, USAGE, SELECT, INSERT,"
-   echo "                           UPDATE and DELETE privileges on the target database."
+   echo "grant_pgsql_app_user_rights.sh - utility for granting app user CONNECT, USAGE, SELECT, INSERT,"
+   echo "                                 UPDATE and DELETE privileges on the target database."
    echo ""
-   echo "Syntax: grant_app_user_rights.sh [-h|n|s|d|a|p|n]"
+   echo "Syntax: grant_pgsql_app_user_rights.sh [-h|s|d|a|p|n]"
    echo "options:"
    echo "h     Print this Help."
    echo "s     PGSQL server name"
