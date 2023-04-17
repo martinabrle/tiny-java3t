@@ -1,4 +1,4 @@
-name: spring-apps-infra
+name: infra-spring-apps
 # test
 on:
   push:
