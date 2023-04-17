@@ -79,8 +79,6 @@ if [[ -z "${dbUserName}" ]]; then
 fi
 
 
-dbUserExists=`psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}"  -tAc "SELECT 1 FROM pg_roles WHERE rolname='${dbUserName}';" -v ON_ERROR_STOP=1`
-
 echo "GRANT CONNECT ON DATABASE ${dbName} TO ${dbUserName};" > ./assign_privileges.sql
 echo "GRANT USAGE ON SCHEMA public TO ${dbUserName};" >> ./assign_privileges.sql
 echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${dbUserName};" >> ./assign_privileges.sql
@@ -89,9 +87,9 @@ echo " " >> ./assign_privileges.sql
 echo "User '${dbAADAdminName}' is assigning privileges using this script:"
 cat  ./assign_privileges.sql
 
-psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./assign_privileges.sql -v ON_ERROR_STOP=1
+psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}" --file=./assign_privileges.sql -v ON_ERROR_STOP=1
 
 echo ""
 echo "List of existing users:"
-psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" -tAc "SELECT * FROM pg_roles;" -v ON_ERROR_STOP=1
+psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}" -tAc "SELECT * FROM pg_roles;" -v ON_ERROR_STOP=1
 
