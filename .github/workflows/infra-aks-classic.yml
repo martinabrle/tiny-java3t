@@ -197,8 +197,6 @@ jobs:
                            keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
                            appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
                            dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
-                           dbServerAADAdminGroupObjectId=${{steps.vars.outputs.AZURE_DBA_GROUP_ID}} \
-                           dbServerAADAdminGroupName="${{secrets.AZURE_DBA_GROUP_NAME}}" \
                            dbName=${{secrets.AZURE_DB_NAME}} \
                            dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                            dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
