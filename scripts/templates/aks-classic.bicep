@@ -155,7 +155,7 @@ module rbacContainerRegistryACRPull './components/role-assignment-container-regi
 }
 
 //To use system assigned identities, aksService needs to exist before this template runs...
-resource aksService 'Microsoft.ContainerService/managedClusters@2022-11-02-preview' = {
+resource aksService 'Microsoft.ContainerService/managedClusters@2023-02-02-preview' = {
   name: aksClusterName
   location: location
   tags: tagsArray
