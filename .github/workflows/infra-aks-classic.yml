@@ -120,10 +120,6 @@ jobs:
           echo "Client IP: $clientIP"
           echo "Deployment type: ${{steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT}}"
 
-          appClientId=`az ad sp list --display-name "${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}" --query "[?displayName=='${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}'].appId" --out tsv`
-          echo "APP_CLIENT_ID=${appClientId}" >> $GITHUB_OUTPUT
-          echo "AppClientId: $appClientId"
-
           dbAdminName=`az postgres flexible-server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
           if [[ -z "$dbAdminName" ]]; then
             echo "This is a new deployment, generating a new admin name"
@@ -153,7 +149,7 @@ jobs:
 
           if [[ ! -z "$kvExists" ]]; then
             kvSecretExists=`az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "[?name=='SPRING-DATASOURCE-PASSWORD'].name" -o tsv`
-            if [[ ! -z "$kvExists" ]]; then
+            if [[ ! -z "$kvSecretExists" ]]; then
               dbAppUserPassword=`az keyvault secret show --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --name "SPRING-DATASOURCE-PASSWORD" --query "[value]" -o tsv`
             fi
           fi
@@ -162,20 +158,11 @@ jobs:
           fi
           echo "::add-mask::$dbAppUserPassword"
           echo "DB_APP_USER_PASSWORD=${dbAppUserPassword}" >> $GITHUB_OUTPUT
-
-          dbAppUserNameExternal=`echo "${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}" | tr '-' '_'`;
-          echo "DB_APP_USER_NAME_EXTERNAL=${dbAppUserNameExternal}" >> $GITHUB_OUTPUT
-          echo "External app user name: $dbAppUserNameExternal"
-
-          dbaGroupId=`az ad group show --group "${{secrets.AZURE_DBA_GROUP_NAME}}" --query '[id]' -o tsv`
-          echo "DBA Group Name: '${{secrets.AZURE_DBA_GROUP_NAME}}'"
-          echo "DBA Group Id: $dbaGroupId"
-          echo "AZURE_DBA_GROUP_ID=${dbaGroupId}" >> $GITHUB_OUTPUT
-
+          
           aksAdminGroupId=`az ad group show --group "${{secrets.AZURE_AKS_ADMIN_GROUP_NAME}}" --query '[id]' -o tsv`
           echo "AKS Admin Group Id: $aksAdminGroupId"
           echo "AZURE_AKS_ADMIN_GROUP_ID=${aksAdminGroupId}" >> $GITHUB_OUTPUT
-        
+
       - name: Deploy Azure resources
         id: deployment
         run: |
@@ -184,8 +171,6 @@ jobs:
           echo "API App port: '${{secrets.AZURE_API_APP_PORT}}'"
           echo "WEB App service name: '${{secrets.AZURE_WEB_APP_NAME}}'"
           echo "WEB App port: '${{secrets.AZURE_WEB_APP_PORT}}'"
-          echo "DBA Group Name: '${{secrets.AZURE_DBA_GROUP_NAME}}'"
-          echo "DBA Group Id: '${{steps.vars.outputs.AZURE_DBA_GROUP_ID}}'"
           echo "User name: '${{steps.vars.outputs.DB_APP_USER_NAME}}'"
           
           az deployment group create \
