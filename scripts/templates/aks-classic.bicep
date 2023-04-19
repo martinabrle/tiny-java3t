@@ -63,9 +63,8 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
     storage: {
       storageSizeGB: 32
     }
-
     authConfig: {
-      activeDirectoryAuth: 'Enabled'
+      activeDirectoryAuth: 'Disabled'
       passwordAuth: 'Enabled'
     }
     highAvailability: {
@@ -87,6 +86,9 @@ resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases
 
 resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
   name: 'AllowDeploymentClientIP'
+  dependsOn: [
+    postgreSQLDatabase
+  ]
   parent: postgreSQLServer
   properties: {
     endIpAddress: deploymentClientIPAddress
@@ -97,6 +99,9 @@ resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/fi
 resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
   name: 'AllowAllWindowsAzureIps'
   parent: postgreSQLServer
+  dependsOn: [
+    allowClientIPFirewallRule
+  ]
   properties: {
     startIpAddress: '0.0.0.0'
     endIpAddress: '0.0.0.0'
@@ -105,6 +110,9 @@ resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/fire
 
 resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: '${dbServerName}-db-logs'
+  dependsOn: [
+    allowAllIPsFirewallRule
+  ]
   scope: postgreSQLServer
   properties: {
     logs: [
@@ -205,7 +213,7 @@ resource aksService 'Microsoft.ContainerService/managedClusters@2022-11-02-previ
       omsAgent: {
         enabled: true
         config: {
-          logAnalyticsWorkspaceResourceID: logAnalyticsWorkspace.id 
+          logAnalyticsWorkspaceResourceID: logAnalyticsWorkspace.id
         }
       }
     }
