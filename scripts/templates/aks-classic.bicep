@@ -5,9 +5,6 @@ param appInsightsName string
 param keyVaultName string
 param dbServerName string
 
-param dbServerAADAdminGroupObjectId string
-param dbServerAADAdminGroupName string
-
 param dbName string
 
 @secure()
@@ -16,11 +13,11 @@ param dbAdminName string
 param dbAdminPassword string
 @secure()
 param dbUserName string
-param appClientId string
+@secure()
+param dbUserPassword string
 @secure()
 param containerRegistryName string
 param aksClusterName string
-param apiUserManagedIdentityName string
 param aksAdminGroupObjectId string
 param deploymentClientIPAddress string
 
@@ -32,12 +29,6 @@ param tagsArray object = resourceGroup().tags
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
   name: logAnalyticsWorkspaceName
   scope: resourceGroup(logAnalyticsWorkspaceRG)
-}
-
-resource apiUserManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview' = {
-  name: apiUserManagedIdentityName
-  location: location
-  tags: tagsArray
 }
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
@@ -82,20 +73,6 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
     }
     administratorLogin: dbAdminName
     administratorLoginPassword: dbAdminPassword
-  }
-}
-
-resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
-  parent: postgreSQLServer
-  name: dbServerAADAdminGroupObjectId 
-  dependsOn: [
-    postgreSQLDatabase
-    postgreSQLServerDiagnotsicsLogs
-  ]
-  properties: {
-    principalType: 'Group'
-    principalName: dbServerAADAdminGroupName 
-    tenantId: subscription().tenantId
   }
 }
 
@@ -236,6 +213,10 @@ resource aksService 'Microsoft.ContainerService/managedClusters@2022-11-02-previ
   }
 }
 
+// resource keyVaultAccessIndentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview' existing = {
+//   name: keyVaultAccessIndentityName
+// }
+
 resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
   name: keyVaultName
   dependsOn: [
@@ -299,20 +280,20 @@ resource kvSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2022-07-
   }
 }
 
-resource kvSecretAppClientId 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVault
-  name: 'SPRING-DATASOURCE-APP-CLIENT-ID'
-  properties: {
-    value: appClientId
-    contentType: 'string'
-  }
-}
-
 resource kvSecretDbUserName 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-USERNAME'
   properties: {
     value: dbUserName
+    contentType: 'string'
+  }
+}
+
+resource kvSecretDbUserPassword 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
+  name: 'SPRING-DATASOURCE-PASSWORD'
+  properties: {
+    value: dbUserPassword
     contentType: 'string'
   }
 }
@@ -324,6 +305,9 @@ module rbacKV './components/role-assignment-kv.bicep' = {
     roleAssignmentNameGuid: guid(aksService.properties.addonProfiles.azureKeyvaultSecretsProvider.identity.clientId, keyVault.id, keyVaultSecretsUser.id)
     roleDefinitionId: keyVaultSecretsUser.id
     principalId: aksService.properties.addonProfiles.azureKeyvaultSecretsProvider.identity.objectId
+    //clientId
+    //aksService.properties.identityProfile.kubeletidentity.objectId
+    //keyVaultAccessIndentity.properties.principalId
   }
 }
 

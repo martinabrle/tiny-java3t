@@ -1,4 +1,4 @@
-name: aks-infra
+name: infra-aks-classic
 
 on:
   # push:
@@ -16,7 +16,7 @@ on:
 jobs:
   cleanup_if_requested:
     runs-on: ubuntu-latest
-    environment: AKS
+    environment: AKS-CLASSIC
     steps:
       - name: Azure login
         if: github.event.inputs.run_cleanup == 'true'
@@ -42,7 +42,7 @@ jobs:
     # workspace would be outside of the current subscription
     needs: [cleanup_if_requested]
     runs-on: ubuntu-latest
-    environment: AKS
+    environment: AKS-CLASSIC
     defaults:
       run:
         working-directory: ./scripts
@@ -81,7 +81,7 @@ jobs:
   deploy_infra:
     needs: [deploy_log_analytics_if_needed]
     runs-on: ubuntu-latest
-    environment: AKS
+    environment: AKS-CLASSIC
     defaults:
       run:
         working-directory: ./scripts
@@ -190,7 +190,7 @@ jobs:
           
           az deployment group create \
               --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} \
-              --template-file ./templates/aks-mi.bicep \
+              --template-file ./templates/aks-classic.bicep \
               --parameters location=${{secrets.AZURE_LOCATION}}  \
                            logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
                            logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}}  \
@@ -201,25 +201,14 @@ jobs:
                            dbServerAADAdminGroupName="${{secrets.AZURE_DBA_GROUP_NAME}}" \
                            dbName=${{secrets.AZURE_DB_NAME}} \
                            dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
-                           appClientId="${{steps.vars.outputs.APP_CLIENT_ID}}" \
                            dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                            dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \
                            dbUserPassword=${{steps.vars.outputs.DB_APP_USER_PASSWORD}} \
                            containerRegistryName=${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} \
                            aksClusterName=${{secrets.AZURE_AKS_NAME}} \
                            aksAdminGroupObjectId=${{steps.vars.outputs.AZURE_AKS_ADMIN_GROUP_ID}} \
-                           apiUserManagedIdentityName=${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}} \
                            deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
                            nodeResoureGroup=${{secrets.AZURE_AKS_NODE_RESOURCE_GROUP}}
-      
-      - name: Init AAD ClientId
-        id: deployment_aad
-        run: |
-          dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}" --query "[?displayName=='${{secrets.AZURE_API_APP_MANAGED_IDENTITY_NAME}}'].appId" --out tsv`
-          echo "DB_APP_USER_ID=${dbAppUserId}" >> $GITHUB_OUTPUT
-          echo "App Client Id: ${dbAppUserId}"
-          #Following is a workaround - I still did not figure out how to retrieve AppId in bicep
-          az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${dbAppUserId}"
         
       - name: Create classic DB User
         run: |
@@ -230,17 +219,6 @@ jobs:
                                  -n ${{steps.vars.outputs.DB_APP_USER_NAME}} \
                                  -m ${{steps.vars.outputs.DB_APP_USER_PASSWORD}}
       
-      - name: Create Managed Identity DB User
-        run: |
-          export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
-          ./create_aad_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
-                                     -d ${{secrets.AZURE_DB_NAME}} \
-                                     -a "${{secrets.AZURE_DBA_GROUP_NAME}}" \
-                                     -b "${{steps.vars.outputs.DB_ADMIN_NAME}}" \
-                                     -p "${{steps.vars.outputs.DB_ADMIN_PASSWORD}}" \
-                                     -n ${{steps.vars.outputs.DB_APP_USER_NAME_EXTERNAL}} \
-                                     -o ${{steps.deployment_aad.outputs.DB_APP_USER_ID}}
-        
       - name: Remove DB Firewall exception used for DB setup
         run: |
           az postgres flexible-server firewall-rule delete --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
