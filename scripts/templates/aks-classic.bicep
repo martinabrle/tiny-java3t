@@ -164,7 +164,7 @@ resource aksService 'Microsoft.ContainerService/managedClusters@2023-02-02-previ
   }
   sku: {
     name: 'Base'
-    tier: 'Paid'
+    tier: 'Standard'
   }
   properties: {
     dnsPrefix: 'maabaks'
