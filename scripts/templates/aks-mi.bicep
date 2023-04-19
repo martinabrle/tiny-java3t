@@ -72,7 +72,6 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
     storage: {
       storageSizeGB: 32
     }
-
     authConfig: {
       activeDirectoryAuth: 'Enabled'
       passwordAuth: 'Enabled'
@@ -88,10 +87,6 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
 resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
   parent: postgreSQLServer
   name: dbServerAADAdminGroupObjectId 
-  dependsOn: [
-    postgreSQLDatabase
-    postgreSQLServerDiagnotsicsLogs
-  ]
   properties: {
     principalType: 'Group'
     principalName: dbServerAADAdminGroupName 
@@ -101,6 +96,7 @@ resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/admini
 
 resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
   parent: postgreSQLServer
+  dependsOn: [ postgreSQLServerAdmin ]
   name: dbName
   properties: {
     charset: 'utf8'
@@ -110,6 +106,9 @@ resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases
 
 resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
   name: 'AllowDeploymentClientIP'
+  dependsOn: [
+    postgreSQLServerAdmin
+  ]
   parent: postgreSQLServer
   properties: {
     endIpAddress: deploymentClientIPAddress
@@ -120,6 +119,9 @@ resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/fi
 resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
   name: 'AllowAllWindowsAzureIps'
   parent: postgreSQLServer
+  dependsOn: [
+    allowClientIPFirewallRule
+  ]
   properties: {
     startIpAddress: '0.0.0.0'
     endIpAddress: '0.0.0.0'
@@ -128,6 +130,9 @@ resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/fire
 
 resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: '${dbServerName}-db-logs'
+  dependsOn: [
+    allowAllIPsFirewallRule
+  ]
   scope: postgreSQLServer
   properties: {
     logs: [
@@ -170,7 +175,7 @@ module rbacContainerRegistryACRPull './components/role-assignment-container-regi
 }
 
 //To use system assigned identities, aksService needs to exist before this template runs...
-resource aksService 'Microsoft.ContainerService/managedClusters@2022-11-02-preview' = {
+resource aksService 'Microsoft.ContainerService/managedClusters@2023-02-02-preview' = {
   name: aksClusterName
   location: location
   tags: tagsArray
@@ -178,8 +183,8 @@ resource aksService 'Microsoft.ContainerService/managedClusters@2022-11-02-previ
     type: 'SystemAssigned'
   }
   sku: {
-    name: 'Basic'
-    tier: 'Paid'
+    name: 'Base'
+    tier: 'Standard'
   }
   properties: {
     dnsPrefix: 'maabaks'
@@ -228,7 +233,7 @@ resource aksService 'Microsoft.ContainerService/managedClusters@2022-11-02-previ
       omsAgent: {
         enabled: true
         config: {
-          logAnalyticsWorkspaceResourceID: logAnalyticsWorkspace.id 
+          logAnalyticsWorkspaceResourceID: logAnalyticsWorkspace.id
         }
       }
     }
