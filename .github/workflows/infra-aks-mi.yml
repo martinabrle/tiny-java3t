@@ -74,9 +74,10 @@ jobs:
       - name: Deploy Log Workspace
         if: steps.logs_rg_exists.outputs.LOGS_RG_EXISTS == 'false'
         run: |
-          az deployment group create --resource-group ${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} --template-file ./templates/components/logs.bicep \
-                        --parameters location=${{secrets.AZURE_LOCATION}}  \
-                                     logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}
+          az deployment group create --resource-group ${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} \
+                                     --template-file ./templates/components/logs.bicep \
+                                     --parameters location=${{secrets.AZURE_LOCATION}}  \
+                                                  logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}
 
   deploy_infra:
     needs: [deploy_log_analytics_if_needed]

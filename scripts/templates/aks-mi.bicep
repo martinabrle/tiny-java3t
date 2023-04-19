@@ -75,13 +75,13 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
 
     authConfig: {
       activeDirectoryAuth: 'Enabled'
-      passwordAuth: 'Disabled'
+      passwordAuth: 'Enabled'
     }
     highAvailability: {
       mode: 'Disabled'
     }
-    // administratorLogin: dbAdminName
-    // administratorLoginPassword: dbAdminPassword
+    administratorLogin: dbAdminName
+    administratorLoginPassword: dbAdminPassword
   }
 }
 
