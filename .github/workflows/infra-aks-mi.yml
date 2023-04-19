@@ -42,7 +42,7 @@ jobs:
     # workspace would be outside of the current subscription
     needs: [cleanup_if_requested]
     runs-on: ubuntu-latest
-    environment: AKS
+    environment: AKS-MI
     defaults:
       run:
         working-directory: ./scripts
