@@ -163,7 +163,7 @@ resource aksService 'Microsoft.ContainerService/managedClusters@2023-02-02-previ
     type: 'SystemAssigned'
   }
   sku: {
-    name: 'Basic'
+    name: 'Base'
     tier: 'Paid'
   }
   properties: {
