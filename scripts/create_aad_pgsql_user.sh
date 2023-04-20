@@ -140,9 +140,10 @@ echo " " >> ./assign_privileges.sql
 #echo "User '${dbAdminName}' is assigning privileges using this script:"
 echo "User '${dbAdminName}' is assigning privileges using this script:"
 cat  ./assign_privileges.sql
-# displays warnings due to missing AAD Admin rights on public (probably): psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}" --file=./assign_privileges.sql -v ON_ERROR_STOP=1
-dbConnectionString="host=${dbServerName}.postgres.database.azure.com port=5432 dbname=${dbName} user=${dbAdminName} password=${dbAdminPassword} sslmode=require"
-psql "${dbConnectionString}" --file=./assign_privileges.sql -v ON_ERROR_STOP=1
+# displays warnings due to missing AAD Admin rights on public (probably): 
+psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}" --file=./assign_privileges.sql -v ON_ERROR_STOP=1
+#dbConnectionString="host=${dbServerName}.postgres.database.azure.com port=5432 dbname=${dbName} user=${dbAdminName} password=${dbAdminPassword} sslmode=require"
+#psql "${dbConnectionString}" --file=./assign_privileges.sql -v ON_ERROR_STOP=1
 
 echo ""
 echo "List of existing users:"
