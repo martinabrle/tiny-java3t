@@ -71,7 +71,7 @@ dbDatabaseExists=`psql --set=sslmode=require -h ${dbServerName}.postgres.databas
 
 if [[ "${dbDatabaseExists}" != "1" ]]; then
   echo "Database '${dbName}' does not exist yet, creating the database"
-  psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}"  -XtAc "CREATE DATABASE ${dbName};" -v ON_ERROR_STOP=1
+  psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d postgres -U "${dbAADAdminName}"  -XtAc "CREATE DATABASE ${dbName};" -v ON_ERROR_STOP=1
 else
   echo "Database '${dbName}' does already exists"
 fi
