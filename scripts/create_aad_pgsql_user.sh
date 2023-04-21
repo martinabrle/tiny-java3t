@@ -12,8 +12,8 @@ Help()
    echo "s     PGSQL server name"
    echo "d     Database name"
    echo "a     AAD Admin's user name"
-   echo "b     Traditional Admin's user name"
-   echo "p     Traditional Admin's password"
+  #  echo "b     Traditional Admin's user name"
+  #  echo "p     Traditional Admin's password"
    echo "n     New user's name"
    echo "o     New user's ObjectId"
    echo
@@ -23,8 +23,8 @@ Help()
 dbServerName=""
 dbName=""
 dbAADAdminName=""
-dbAdminName=""
-dbAdminPassword=""
+# dbAdminName=""
+# dbAdminPassword=""
 dbUserName=""
 dbUserObjectId=""
 while getopts ":h:s:d:a:p:n:o:b:" OPT; do
@@ -42,12 +42,12 @@ while getopts ":h:s:d:a:p:n:o:b:" OPT; do
       a) # Admin's AAD user name
          dbAADAdminName=$OPTARG
          ;;
-      b) # Tradditional admin's user name
-         dbAdminName=$OPTARG
-         ;;
-      p) # Tradditional admin's password
-         dbAdminPassword=$OPTARG
-         ;;
+      # b) # Tradditional admin's user name
+      #    dbAdminName=$OPTARG
+      #    ;;
+      # p) # Tradditional admin's password
+      #    dbAdminPassword=$OPTARG
+      #    ;;
       n) # New user's name
          dbUserName=$OPTARG
          ;;
@@ -64,7 +64,7 @@ done
 
 echo "dbServerName: '${dbServerName}'"
 echo "dbName: '${dbName}'"
-echo "dbAdminName: '${dbAdminName}'"
+echo "dbAADAdminName: '${dbAADAdminName}'"
 echo "dbUserName: '${dbUserName}'"
 echo "dbUserObjectId: '${dbUserObjectId}'"
 
@@ -89,16 +89,16 @@ if [[ -z "${PGPASSWORD}" ]]; then
   Help
   exit 1
 fi
-if [[ -z "${dbAdminName}" ]]; then
-  echo "Error: Database admin's name is empty"
-  Help
-  exit 1
-fi
-if [[ -z "${dbAdminPassword}" ]]; then
-  echo "Error: Database admin's password is empty"
-  Help
-  exit 1
-fi
+# if [[ -z "${dbAdminName}" ]]; then
+#   echo "Error: Database admin's name is empty"
+#   Help
+#   exit 1
+# fi
+# if [[ -z "${dbAdminPassword}" ]]; then
+#   echo "Error: Database admin's password is empty"
+#   Help
+#   exit 1
+# fi
 if [[ -z "${dbUserName}" ]]; then
   echo "Error: New database user's name is empty"
   Help
@@ -109,7 +109,6 @@ if [[ -z "${dbUserObjectId}" ]]; then
   Help
   exit 1
 fi
-
 
 dbUserExists=`psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}"  -tAc "SELECT 1 FROM pg_roles WHERE rolname='${dbUserName}';" -v ON_ERROR_STOP=1`
 
@@ -138,7 +137,7 @@ echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${d
 echo " " >> ./assign_privileges.sql
 
 #echo "User '${dbAdminName}' is assigning privileges using this script:"
-echo "User '${dbAdminName}' is assigning privileges using this script:"
+echo "User '${dbAADAdminName}' is assigning privileges using this script:"
 cat  ./assign_privileges.sql
 # displays warnings due to missing AAD Admin rights on public (probably): 
 psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}" --file=./assign_privileges.sql -v ON_ERROR_STOP=1

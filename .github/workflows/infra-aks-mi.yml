@@ -125,28 +125,28 @@ jobs:
           echo "APP_CLIENT_ID=${appClientId}" >> $GITHUB_OUTPUT
           echo "AppClientId: $appClientId"
 
-          dbAdminName=`az postgres flexible-server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
-          if [[ -z "$dbAdminName" ]]; then
-            echo "This is a new deployment, generating a new admin name"
-            dbAdminName="a`openssl rand -hex 5`"
-          fi
-          echo "Admin name: $dbAdminName"
-          echo "DB_ADMIN_NAME=${dbAdminName}" >> $GITHUB_OUTPUT
+          # dbAdminName=`az postgres flexible-server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
+          # if [[ -z "$dbAdminName" ]]; then
+          #   echo "This is a new deployment, generating a new admin name"
+          #   dbAdminName="a`openssl rand -hex 5`"
+          # fi
+          # echo "Admin name: $dbAdminName"
+          # echo "DB_ADMIN_NAME=${dbAdminName}" >> $GITHUB_OUTPUT
           
-          dbAdminPassword=""
-          kvExists=`az keyvault list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[?name=='${{secrets.AZURE_KEY_VAULT_NAME}}'].name" -o tsv`
-          if [[ ! -z "$kvExists" ]]; then
-            kvSecretExists=`az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "[?name=='DB-ADMIN-PASSWORD'].name" -o tsv`
-            if [[ ! -z "$kvExists" ]]; then
-              dbAdminPassword=`az keyvault secret show --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --name "DB-ADMIN-PASSWORD" --query "[value]" -o tsv`
-            fi
-          fi
-          if [[ -z "$dbAdminPassword" ]]; then
-            dbAdminPassword="`openssl rand -hex 25`#@"
-          fi
-          echo "::add-mask::$dbAdminPassword"
-          echo "Admin password: $dbAdminPassword"
-          echo "DB_ADMIN_PASSWORD=${dbAdminPassword}" >> $GITHUB_OUTPUT
+          # dbAdminPassword=""
+          # kvExists=`az keyvault list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[?name=='${{secrets.AZURE_KEY_VAULT_NAME}}'].name" -o tsv`
+          # if [[ ! -z "$kvExists" ]]; then
+          #   kvSecretExists=`az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "[?name=='DB-ADMIN-PASSWORD'].name" -o tsv`
+          #   if [[ ! -z "$kvExists" ]]; then
+          #     dbAdminPassword=`az keyvault secret show --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --name "DB-ADMIN-PASSWORD" --query "[value]" -o tsv`
+          #   fi
+          # fi
+          # if [[ -z "$dbAdminPassword" ]]; then
+          #   dbAdminPassword="`openssl rand -hex 25`#@"
+          # fi
+          # echo "::add-mask::$dbAdminPassword"
+          # echo "Admin password: $dbAdminPassword"
+          # echo "DB_ADMIN_PASSWORD=${dbAdminPassword}" >> $GITHUB_OUTPUT
           
           dbAppUserName=`echo "${{secrets.AZURE_API_APP_NAME}}" | tr '-' '_'`;
           echo "DB_APP_USER_NAME=${dbAppUserName}" >> $GITHUB_OUTPUT
@@ -201,9 +201,7 @@ jobs:
                            dbServerAADAdminGroupObjectId=${{steps.vars.outputs.AZURE_DBA_GROUP_ID}} \
                            dbServerAADAdminGroupName="${{secrets.AZURE_DBA_GROUP_NAME}}" \
                            dbName=${{secrets.AZURE_DB_NAME}} \
-                           dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                            appClientId="${{steps.vars.outputs.APP_CLIENT_ID}}" \
-                           dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                            dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \
                            containerRegistryName=${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} \
                            aksClusterName=${{secrets.AZURE_AKS_NAME}} \
@@ -212,8 +210,11 @@ jobs:
                            deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
                            nodeResoureGroup=${{secrets.AZURE_AKS_NODE_RESOURCE_GROUP}}
       
+                          #  dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                          #  dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
       - name: Create Database
         run: |
+          # When the database gets created using a script, AAD accounts gets full permissions on public schema and can assign roles
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
           ./create_aad_db.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
                              -d ${{secrets.AZURE_DB_NAME}} \
@@ -234,11 +235,11 @@ jobs:
           ./create_aad_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
                                      -d ${{secrets.AZURE_DB_NAME}} \
                                      -a "${{secrets.AZURE_DBA_GROUP_NAME}}" \
-                                     -b "${{steps.vars.outputs.DB_ADMIN_NAME}}" \
-                                     -p "${{steps.vars.outputs.DB_ADMIN_PASSWORD}}" \
                                      -n ${{steps.vars.outputs.DB_APP_USER_NAME_EXTERNAL}} \
                                      -o ${{steps.deployment_aad.outputs.DB_APP_USER_ID}}
-        
+                                    
+                                    #  -b "${{steps.vars.outputs.DB_ADMIN_NAME}}" \
+                                    #  -p "${{steps.vars.outputs.DB_ADMIN_PASSWORD}}" \
       - name: Remove DB Firewall exception used for DB setup
         run: |
           az postgres flexible-server firewall-rule delete --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
