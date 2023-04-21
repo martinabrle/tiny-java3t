@@ -90,7 +90,7 @@ resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/admini
   parent: postgreSQLServer
   name: dbServerAADAdminGroupObjectId //'20de3c04-d6a6-483d-a88e-edf44e6c437d'
   dependsOn: [
-    postgreSQLDatabase
+    //postgreSQLDatabase
     postgreSQLServerDiagnotsicsLogs
   ]
   properties: {
@@ -100,14 +100,14 @@ resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/admini
   }
 }
 
-resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
-  parent: postgreSQLServer
-  name: dbName
-  properties: {
-    charset: 'utf8'
-    collation: 'en_US.utf8'
-  }
-}
+// resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
+//   parent: postgreSQLServer
+//   name: dbName
+//   properties: {
+//     charset: 'utf8'
+//     collation: 'en_US.utf8'
+//   }
+// }
 
 resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
   name: 'AllowAllWindowsAzureIps'

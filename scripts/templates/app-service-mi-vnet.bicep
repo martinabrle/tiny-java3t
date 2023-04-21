@@ -261,17 +261,17 @@ resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/admini
   }
 }
 
-resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
-  parent: postgreSQLServer
-  name: dbName
-  dependsOn: [
-    postgreSQLServerAdmin
-  ]
-  properties: {
-    charset: 'utf8'
-    collation: 'en_US.utf8'
-  }
-}
+// resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
+//   parent: postgreSQLServer
+//   name: dbName
+//   dependsOn: [
+//     postgreSQLServerAdmin
+//   ]
+//   properties: {
+//     charset: 'utf8'
+//     collation: 'en_US.utf8'
+//   }
+// }
 
 //TODO: does the VNET integration create a NIC automatically?
 // resource privateEndpointPostgresqlServer 'Microsoft.Network/privateEndpoints@2022-07-01' = {
