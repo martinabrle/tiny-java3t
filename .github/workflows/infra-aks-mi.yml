@@ -212,6 +212,13 @@ jobs:
                            deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
                            nodeResoureGroup=${{secrets.AZURE_AKS_NODE_RESOURCE_GROUP}}
       
+      - name: Create Database
+        run: |
+          export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
+          ./create_aad_db.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
+                             -d ${{secrets.AZURE_DB_NAME}} \
+                             -a "${{secrets.AZURE_DBA_GROUP_NAME}}"
+            
       - name: Init AAD ClientId
         id: deployment_aad
         run: |
