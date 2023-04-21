@@ -203,8 +203,6 @@ jobs:
                                       ghRunnerVMName=${{secrets.AZURE_GH_RUNNER_NAME}} \
                                       ghRunnerVMAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                       ghRunnerVMAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
-                                      dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
-                                      dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                                       dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \
                                       dbStagingUserName=${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
                                       appClientId="${{steps.vars.outputs.APP_CLIENT_ID}}" \
@@ -215,7 +213,9 @@ jobs:
                                       webAppServicePort=${{secrets.AZURE_WEB_APP_PORT}} \
                                       apiHealthCheckPath="${{steps.vars.outputs.API_HEALTH_CHECK_PATH}}" \
                                       webHealthCheckPath="${{steps.vars.outputs.WEB_HEALTH_CHECK_PATH}}"
-      
+
+                                      # dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                      # dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \      
       - name: Init AAD ClientId
         id: deployment_aad
         run: |

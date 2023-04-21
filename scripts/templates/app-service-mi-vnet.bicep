@@ -21,10 +21,10 @@ param ghRunnerVMName string
 param ghRunnerVMAdminName string
 @secure()
 param ghRunnerVMAdminPassword string
-@secure()
-param dbAdminName string
-@secure()
-param dbAdminPassword string
+// @secure()
+// param dbAdminName string
+// @secure()
+// param dbAdminPassword string
 @secure()
 param dbUserName string
 @secure()
@@ -237,13 +237,13 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
 
     authConfig: {
       activeDirectoryAuth: 'Enabled'
-      passwordAuth: 'Enabled'
+      passwordAuth: 'Disabled' // 'Enabled'
     }
     highAvailability: {
       mode: 'Disabled'
     }
-    administratorLogin: dbAdminName
-    administratorLoginPassword: dbAdminPassword
+    // administratorLogin: dbAdminName
+    // administratorLoginPassword: dbAdminPassword
     network: {
       delegatedSubnetResourceId: dbSubnet.id
       privateDnsZoneArmResourceId: privateDNSZonePostgresqlServer.id
@@ -377,7 +377,9 @@ resource privateLinkDNSZoneAppService 'Microsoft.Network/privateDnsZones/virtual
 }
 
 resource pvtEndpointDnsGroupApiAppService 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
-  name: '${privateEndpointApiAppService.name}/default'
+  parent: privateEndpointApiAppService
+  //name: '${privateEndpointApiAppService.name}/default'
+  name: 'default'
   properties: {
     privateDnsZoneConfigs: [
       {
@@ -391,7 +393,9 @@ resource pvtEndpointDnsGroupApiAppService 'Microsoft.Network/privateEndpoints/pr
 }
 
 resource pvtEndpointDnsGroupWebAppService 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2022-07-01' = {
-  name: '${privateEndpointWebAppService.name}/default'
+  parent: privateEndpointWebAppService
+  //name: '${privateEndpointWebAppService.name}/default'
+  name: 'default'
   properties: {
     privateDnsZoneConfigs: [
       {
@@ -552,14 +556,14 @@ resource kvAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/secrets@2022
   }
 }
 
-resource kvSecretDbAdminPassword 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVault
-  name: 'DB-ADMIN-PASSWORD'
-  properties: {
-    value: dbAdminPassword
-    contentType: 'string'
-  }
-}
+// resource kvSecretDbAdminPassword 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+//   parent: keyVault
+//   name: 'DB-ADMIN-PASSWORD'
+//   properties: {
+//     value: dbAdminPassword
+//     contentType: 'string'
+//   }
+// }
 
 resource kvSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault

@@ -10,10 +10,10 @@ param dbServerAADAdminGroupName string
 
 param dbName string
 
-@secure()
-param dbAdminName string
-@secure()
-param dbAdminPassword string
+// @secure()
+// param dbAdminName string
+// @secure()
+// param dbAdminPassword string
 @secure()
 param dbUserName string
 @secure()
@@ -76,13 +76,13 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01'
 
     authConfig: {
       activeDirectoryAuth: 'Enabled'
-      passwordAuth: 'Enabled'
+      passwordAuth: 'Disabled' //'Enabled'
     }
     highAvailability: {
       mode: 'Disabled'
     }
-    administratorLogin: dbAdminName
-    administratorLoginPassword: dbAdminPassword
+    // administratorLogin: dbAdminName
+    // administratorLoginPassword: dbAdminPassword
   }
 }
 
@@ -283,14 +283,14 @@ resource kvAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/secrets@2022
   }
 }
 
-resource kvSecretDbAdminPassword 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVault
-  name: 'DB-ADMIN-PASSWORD'
-  properties: {
-    value: dbAdminPassword
-    contentType: 'string'
-  }
-}
+// resource kvSecretDbAdminPassword 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+//   parent: keyVault
+//   name: 'DB-ADMIN-PASSWORD'
+//   properties: {
+//     value: dbAdminPassword
+//     contentType: 'string'
+//   }
+// }
 
 resource kvSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault

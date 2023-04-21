@@ -201,8 +201,6 @@ jobs:
                                       dbServerAADAdminGroupObjectId=${{steps.vars.outputs.AZURE_DBA_GROUP_ID}} \
                                       dbServerAADAdminGroupName="${{secrets.AZURE_DBA_GROUP_NAME}}" \
                                       dbName=${{secrets.AZURE_DB_NAME}} \
-                                      dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
-                                      dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                                       dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \
                                       dbStagingUserName=${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
                                       appClientId="${{steps.vars.outputs.APP_CLIENT_ID}}" \
@@ -214,6 +212,17 @@ jobs:
                                       deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
                                       apiHealthCheckPath="${{steps.vars.outputs.API_HEALTH_CHECK_PATH}}" \
                                       webHealthCheckPath="${{steps.vars.outputs.WEB_HEALTH_CHECK_PATH}}"
+
+                                      # dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                      # dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \      
+
+      - name: Create Database
+        run: |
+          # When the database gets created using a script, AAD accounts gets full permissions on public schema and can assign roles
+          export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
+          ./create_aad_db.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
+                             -d ${{secrets.AZURE_DB_NAME}} \
+                             -a "${{secrets.AZURE_DBA_GROUP_NAME}}"      
       
       - name: Init AAD ClientId
         id: deployment_aad
@@ -234,22 +243,23 @@ jobs:
           ./create_aad_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
                                      -d ${{secrets.AZURE_DB_NAME}} \
                                      -a "${{secrets.AZURE_DBA_GROUP_NAME}}" \
-                                     -b "${{steps.vars.outputs.DB_ADMIN_NAME}}" \
-                                     -p "${{steps.vars.outputs.DB_ADMIN_PASSWORD}}" \
                                      -n ${{steps.vars.outputs.DB_APP_USER_NAME}} \
                                      -o ${{steps.deployment_aad.outputs.DB_APP_USER_ID}}
-        
+
+                                    #  -b "${{steps.vars.outputs.DB_ADMIN_NAME}}" \
+                                    #  -p "${{steps.vars.outputs.DB_ADMIN_PASSWORD}}" \        
       - name: Create AppService staging slot DB user
         run: |
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
           ./create_aad_pgsql_user.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
                                      -d ${{secrets.AZURE_DB_NAME}} \
                                      -a "${{secrets.AZURE_DBA_GROUP_NAME}}" \
-                                     -b "${{steps.vars.outputs.DB_ADMIN_NAME}}" \
-                                     -p "${{steps.vars.outputs.DB_ADMIN_PASSWORD}}" \
                                      -n ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
                                      -o ${{steps.deployment_aad.outputs.DB_STAGING_APP_USER_ID}}
-        
+
+                                    #  -b "${{steps.vars.outputs.DB_ADMIN_NAME}}" \
+                                    #  -p "${{steps.vars.outputs.DB_ADMIN_PASSWORD}}" \
+
       - name: Remove DB Firewall exception used for DB setup
         run: |
           az postgres flexible-server firewall-rule delete --rule-name "AllowDeploymentClientIP" --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
