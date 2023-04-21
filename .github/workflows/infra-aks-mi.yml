@@ -218,7 +218,7 @@ jobs:
           ./create_aad_db.sh -s ${{secrets.AZURE_DB_SERVER_NAME}} \
                              -d ${{secrets.AZURE_DB_NAME}} \
                              -a "${{secrets.AZURE_DBA_GROUP_NAME}}"
-            
+      
       - name: Init AAD ClientId
         id: deployment_aad
         run: |
