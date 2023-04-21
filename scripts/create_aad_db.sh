@@ -67,7 +67,7 @@ if [[ -z "${PGPASSWORD}" ]]; then
   exit 1
 fi
 
-dbDatabaseExists=`psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d ${dbName} -U "${dbAADAdminName}"  -XtAc "SELECT 1 FROM pg_database WHERE datname='${dbName}';" -v ON_ERROR_STOP=1`
+dbDatabaseExists=`psql --set=sslmode=require -h ${dbServerName}.postgres.database.azure.com -p 5432 -d postgres -U "${dbAADAdminName}"  -XtAc "SELECT 1 FROM pg_database WHERE datname='${dbName}';" -v ON_ERROR_STOP=1`
 
 if [[ "${dbDatabaseExists}" != "1" ]]; then
   echo "Database '${dbName}' does not exist yet, creating the database"
