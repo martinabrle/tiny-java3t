@@ -1256,3 +1256,5 @@ resource ghRunnerVM 'Microsoft.Compute/virtualMachines@2022-03-01' = {
     }
   }
 }
+
+output cloudInit string = base64(ghRunnerFinalCloudInitCustomData)
