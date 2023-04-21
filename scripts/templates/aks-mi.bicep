@@ -94,15 +94,16 @@ resource postgreSQLServerAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/admini
   }
 }
 
-resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
-  parent: postgreSQLServer
-  dependsOn: [ postgreSQLServerAdmin ]
-  name: dbName
-  properties: {
-    charset: 'utf8'
-    collation: 'en_US.utf8'
-  }
-}
+// solved with .sh
+// resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
+//   parent: postgreSQLServer
+//   dependsOn: [ postgreSQLServerAdmin ]
+//   name: dbName
+//   properties: {
+//     charset: 'utf8'
+//     collation: 'en_US.utf8'
+//   }
+// }
 
 resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
   name: 'AllowDeploymentClientIP'
