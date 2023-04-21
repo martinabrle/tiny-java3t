@@ -186,33 +186,36 @@ jobs:
           echo "DBA Group Id: '${{steps.vars.outputs.AZURE_DBA_GROUP_ID}}'"
           echo "User name: '${{steps.vars.outputs.DB_APP_USER_NAME}}'"
           
-          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi-vnet.bicep \
+          az deployment group create \
+                        --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} \
+                        --template-file ./templates/app-service-mi-vnet.bicep \
                         --parameters location=${{secrets.AZURE_LOCATION}}  \
-                                      logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
-                                      logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} \
-                                      keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
-                                      appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
-                                      dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
-                                      dbServerAADAdminGroupObjectId=${{steps.vars.outputs.AZURE_DBA_GROUP_ID}} \
-                                      dbServerAADAdminGroupName="${{secrets.AZURE_DBA_GROUP_NAME}}" \
-                                      dbName=${{secrets.AZURE_DB_NAME}} \
-                                      bastionName=${{secrets.AZURE_BASTION_NAME}} \
-                                      managementVMName=${{secrets.AZURE_MGMT_VM_NAME}} \
-                                      managementVMAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
-                                      managementVMAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
-                                      ghRunnerVMName=${{secrets.AZURE_GH_RUNNER_NAME}} \
-                                      ghRunnerVMAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
-                                      ghRunnerVMAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
-                                      dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \
-                                      dbStagingUserName=${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
-                                      appClientId="${{steps.vars.outputs.APP_CLIENT_ID}}" \
-                                      stagingAppClientId="${{steps.vars.outputs.STAGING_APP_CLIENT_ID}}" \
-                                      apiAppServiceName=${{secrets.AZURE_API_APP_NAME}} \
-                                      apiAppServicePort=${{secrets.AZURE_API_APP_PORT}} \
-                                      webAppServiceName=${{secrets.AZURE_WEB_APP_NAME}} \
-                                      webAppServicePort=${{secrets.AZURE_WEB_APP_PORT}} \
-                                      apiHealthCheckPath="${{steps.vars.outputs.API_HEALTH_CHECK_PATH}}" \
-                                      webHealthCheckPath="${{steps.vars.outputs.WEB_HEALTH_CHECK_PATH}}"
+                                     logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
+                                     logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} \
+                                     keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
+                                     appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
+                                     dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
+                                     dbServerAADAdminGroupObjectId=${{steps.vars.outputs.AZURE_DBA_GROUP_ID}} \
+                                     dbServerAADAdminGroupName="${{secrets.AZURE_DBA_GROUP_NAME}}" \
+                                     dbName=${{secrets.AZURE_DB_NAME}} \
+                                     bastionName=${{secrets.AZURE_BASTION_NAME}} \
+                                     managementVMName=${{secrets.AZURE_MGMT_VM_NAME}} \
+                                     managementVMAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                     managementVMAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                     ghRunnerVMName=${{secrets.AZURE_GH_RUNNER_NAME}} \
+                                     ghRunnerVMAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                     ghRunnerVMAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                     ghRunnerToken=${{secrets.GH_RUNNER_TOKEN}} \
+                                     dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \
+                                     dbStagingUserName=${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
+                                     appClientId="${{steps.vars.outputs.APP_CLIENT_ID}}" \
+                                     stagingAppClientId="${{steps.vars.outputs.STAGING_APP_CLIENT_ID}}" \
+                                     apiAppServiceName=${{secrets.AZURE_API_APP_NAME}} \
+                                     apiAppServicePort=${{secrets.AZURE_API_APP_PORT}} \
+                                     webAppServiceName=${{secrets.AZURE_WEB_APP_NAME}} \
+                                     webAppServicePort=${{secrets.AZURE_WEB_APP_PORT}} \
+                                     apiHealthCheckPath="${{steps.vars.outputs.API_HEALTH_CHECK_PATH}}" \
+                                     webHealthCheckPath="${{steps.vars.outputs.WEB_HEALTH_CHECK_PATH}}"
 
                                       # dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                       # dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \      

@@ -43,6 +43,11 @@ param webAppServicePort string
 param apiHealthCheckPath string = '/'
 param webHealthCheckPath string = '/'
 
+param ghRunnerToken string
+param ghOrganization string = 'martinabrle'
+param ghRepository string = 'tiny-java3t'
+param ghRunnerVersion string = '2.303.0'
+
 param location string = resourceGroup().location
 
 param tagsArray object = resourceGroup().tags
@@ -1195,6 +1200,9 @@ resource ghRunnerVMNIC 'Microsoft.Network/networkInterfaces@2022-05-01' = {
   }
 }
 
+var ghRunnerCloudInitCustomData = loadTextContent('./gh-runner-cloud-init')
+var ghRunnerFinalCloudInitCustomData = format(ghRunnerCloudInitCustomData, ghRunnerVersion, '${ghOrganization}/${ghRepository}', ghRunnerToken)
+
 resource ghRunnerVM 'Microsoft.Compute/virtualMachines@2022-03-01' = {
   name: ghRunnerVMName
   location: location
@@ -1226,6 +1234,7 @@ resource ghRunnerVM 'Microsoft.Compute/virtualMachines@2022-03-01' = {
       computerName: ghRunnerVMName
       adminUsername: ghRunnerVMAdminName
       adminPassword: ghRunnerVMAdminPassword
+      customData: base64(ghRunnerFinalCloudInitCustomData)
       linuxConfiguration: {
         patchSettings: {
           patchMode: 'AutomaticByPlatform'

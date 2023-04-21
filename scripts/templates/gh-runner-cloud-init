@@ -1,0 +1,10 @@
+#cloud-config
+runcmd:
+- [mkdir, '/actions-runner']
+- cd /actions-runner
+- [curl, -o, 'actions-runner.tar.gz', -L, 'https://github.com/actions/runner/releases/download/v{0}/actions-runner-linux-x64-{0}.tar.gz']
+- [tar, -xzf, 'actions-runner.tar.gz']
+- [chmod, -R, 777, '/actions-runner']
+- [su, adminRunner, -c, '/actions-runner/config.sh --url https://github.com/{1} --token {2} --runnergroup Default']
+- [su, adminRunner, -c, '/actions-runner/run.sh']
+- [rm, '/actions-runner/actions-runner.tar.gz']
