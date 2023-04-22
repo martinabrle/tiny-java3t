@@ -1228,7 +1228,7 @@ resource ghRunnerVMNIC 'Microsoft.Network/networkInterfaces@2022-05-01' = {
 }
 
 var ghRunnerCloudInitCustomData = loadTextContent('./gh-runner-cloud-init')
-var ghRunnerFinalCloudInitCustomData = format(ghRunnerCloudInitCustomData, ghRunnerVersion, '${ghOrganization}/${ghRepository}', ghRunnerToken)
+var ghRunnerFinalCloudInitCustomData = format(ghRunnerCloudInitCustomData, ghRunnerVersion, ghRunnerVMAdminName,'${ghOrganization}/${ghRepository}', ghRunnerToken)
 
 resource ghRunnerVM 'Microsoft.Compute/virtualMachines@2022-03-01' = {
   name: ghRunnerVMName
