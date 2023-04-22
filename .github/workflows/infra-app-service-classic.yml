@@ -134,7 +134,7 @@ jobs:
           kvExists=`az keyvault list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[?name=='${{secrets.AZURE_KEY_VAULT_NAME}}'].name" -o tsv`
           if [[ ! -z "$kvExists" ]]; then
             kvSecretExists=`az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "[?name=='DB-ADMIN-PASSWORD'].name" -o tsv`
-            if [[ ! -z "$kvExists" ]]; then
+            if [[ ! -z "$kvSecretExists" ]]; then
               dbAdminPassword=`az keyvault secret show --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --name "DB-ADMIN-PASSWORD" --query "[value]" -o tsv`
             fi
           fi

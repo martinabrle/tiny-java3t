@@ -115,28 +115,49 @@ jobs:
       - name: Initialize deployment variables
         id: vars
         run: |
-          dbAdminName=`az postgres flexible-server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
-          if [[ -z "$dbAdminName" ]]; then
-            echo "This is a new deployment, generating a new admin name"
-            dbAdminName="a`openssl rand -hex 5`"
-          fi
-          echo "Admin name: $dbAdminName"
-          echo "DB_ADMIN_NAME=${dbAdminName}" >> $GITHUB_OUTPUT
-          
-          dbAdminPassword=""
+          ghVMAdminName=""
+          ghVMAdminPassword=""
+          mgmtVMAdminName=""
+          mgmtVMAdminPassword=""
           kvExists=`az keyvault list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[?name=='${{secrets.AZURE_KEY_VAULT_NAME}}'].name" -o tsv`
           if [[ ! -z "$kvExists" ]]; then
-            kvSecretExists=`az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "[?name=='DB-ADMIN-PASSWORD'].name" -o tsv`
-            if [[ ! -z "$kvExists" ]]; then
-              dbAdminPassword=`az keyvault secret show --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --name "DB-ADMIN-PASSWORD" --query "[value]" -o tsv`
+            kvSecretExists=`az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "[?name=='GH-RUNNER-VM-ADMIN-NAME'].name" -o tsv`
+            if [[ ! -z "$kvSecretExists" ]]; then
+              ghVMAdminName=`az keyvault secret show --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --name "GH-RUNNER-VM-ADMIN-NAME" --query "[value]" -o tsv`
+            fi
+            kvSecretExists=`az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "[?name=='GH-RUNNER-VM-ADMIN-PWD'].name" -o tsv`
+            if [[ ! -z "$kvSecretExists" ]]; then
+              ghVMAdminPassword=`az keyvault secret show --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --name "GH-RUNNER-VM-ADMIN-PWD" --query "[value]" -o tsv`
+            fi
+            kvSecretExists=`az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "[?name=='MGMT-VM-ADMIN-NAME'].name" -o tsv`
+            if [[ ! -z "$kvSecretExists" ]]; then
+              mgmtVMAdminName=`az keyvault secret show --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --name "MGMT-VM-ADMIN-NAME" --query "[value]" -o tsv`
+            fi
+            kvSecretExists=`az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "[?name=='MGMT-VM-ADMIN-PWD'].name" -o tsv`
+            if [[ ! -z "$kvSecretExists" ]]; then
+              mgmtVMAdminPassword=`az keyvault secret show --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --name "MGMT-VM-ADMIN-PWD" --query "[value]" -o tsv`
             fi
           fi
-          if [[ -z "$dbAdminPassword" ]]; then
-            dbAdminPassword="`openssl rand -hex 25`#@"
+          
+          if [[ -z "$ghVMAdminName" ]]; then
+            ghVMAdminName="a`openssl rand -hex 6`"
           fi
-          echo "::add-mask::$dbAdminPassword"
-          echo "Admin password: $dbAdminPassword"
-          echo "DB_ADMIN_PASSWORD=${dbAdminPassword}" >> $GITHUB_OUTPUT
+          if [[ -z "$ghVMAdminPassword" ]]; then
+            ghVMAdminPassword="`openssl rand -hex 25`#@"
+          fi
+          if [[ -z "$mgmtVMAdminName" ]]; then
+            mgmtVMAdminName="a`openssl rand -hex 6`"
+          fi
+          if [[ -z "$mgmtVMAdminPassword" ]]; then
+            mgmtVMAdminPassword="`openssl rand -hex 25`#@"
+          fi
+
+          echo "GH Admin name: $ghVMAdminName"
+          echo "GH_VM_ADMIN_NAME=${ghVMAdminName}" >> $GITHUB_OUTPUT
+
+          echo "::add-mask::$ghVMAdminPassword"
+          echo "GH Admin password: $ghVMAdminPassword"
+          echo "GH_VM_ADMIN_PASSWORD=${ghVMAdminPassword}" >> $GITHUB_OUTPUT
           
           dbAppUserName=`echo "${{secrets.AZURE_API_APP_NAME}}" | tr '-' '_'`;
           echo "DB_APP_USER_NAME=${dbAppUserName}" >> $GITHUB_OUTPUT
@@ -200,11 +221,11 @@ jobs:
                                      dbName=${{secrets.AZURE_DB_NAME}} \
                                      bastionName=${{secrets.AZURE_BASTION_NAME}} \
                                      managementVMName=${{secrets.AZURE_MGMT_VM_NAME}} \
-                                     managementVMAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
-                                     managementVMAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                     managementVMAdminName=${{steps.vars.outputs.MGMT_VM_ADMIN_NAME}} \
+                                     managementVMAdminPassword=${{steps.vars.outputs.MGMT_VM_ADMIN_PWD}} \
                                      ghRunnerVMName=${{secrets.AZURE_GH_RUNNER_NAME}} \
-                                     ghRunnerVMAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
-                                     ghRunnerVMAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                     ghRunnerVMAdminName=${{steps.vars.outputs.GH_RUNNER_VM_ADMIN_NAME}} \
+                                     ghRunnerVMAdminPassword=${{steps.vars.outputs.GH_RUNNER_VM_ADMIN_PWD}} \
                                      ghRunnerToken=${{secrets.GH_RUNNER_TOKEN}} \
                                      dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \
                                      dbStagingUserName=${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \

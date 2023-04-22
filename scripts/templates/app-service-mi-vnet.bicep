@@ -561,14 +561,41 @@ resource kvAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/secrets@2022
   }
 }
 
-// resource kvSecretDbAdminPassword 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-//   parent: keyVault
-//   name: 'DB-ADMIN-PASSWORD'
-//   properties: {
-//     value: dbAdminPassword
-//     contentType: 'string'
-//   }
-// }
+resource kvSecretGHRunnerVMAdminName 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
+  name: 'GH-RUNNER-VM-ADMIN-NAME'
+  properties: {
+    value: ghRunnerVMAdminName
+    contentType: 'string'
+  }
+}
+
+resource kvSecretGHRunnerVMAdminPwd 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
+  name: 'GH-RUNNER-VM-ADMIN-PWD'
+  properties: {
+    value: ghRunnerVMAdminPassword
+    contentType: 'string'
+  }
+}
+
+resource kvSecretMgmtVMAdminName 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
+  name: 'MGMT-VM-ADMIN-NAME'
+  properties: {
+    value: managementVMAdminName
+    contentType: 'string'
+  }
+}
+
+resource kvSecretMgmtVMAdminPwd 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
+  name: 'MGMT-VM-ADMIN-PWD'
+  properties: {
+    value: managementVMAdminPassword
+    contentType: 'string'
+  }
+}
 
 resource kvSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
