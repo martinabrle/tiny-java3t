@@ -241,8 +241,8 @@ jobs:
           webAppClientId=`az ad sp list --display-name "${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_WEB_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_WEB_APP_NAME}}'].appId" --out tsv`
           echo "WEB_APP_CLIENT_ID=${webAppClientId}" >> $GITHUB_OUTPUT
 
-          az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${apiAppClientId}"
-          az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "WEB-APP-CLIENT-ID" --value "${webAppClientId}"
+          az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${apiAppClientId}" --content-type "string"
+          az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "WEB-APP-CLIENT-ID" --value "${webAppClientId}" --content-type "string"
       
       - name: Create SpringApps API classic DB user
         run: |

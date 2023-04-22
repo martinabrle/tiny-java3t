@@ -227,7 +227,7 @@ jobs:
           echo "DB_APP_USER_ID=${dbAppUserId}" >> $GITHUB_OUTPUT
           echo "App Client Id: ${dbAppUserId}"
           #Following is a workaround - I still did not figure out how to retrieve AppId in bicep
-          az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${dbAppUserId}"
+          az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${dbAppUserId}" --content-type "string"
         
       - name: Create Managed Identity DB User
         run: |
