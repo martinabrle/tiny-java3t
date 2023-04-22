@@ -5,6 +5,6 @@ runcmd:
 - [curl, -o, 'actions-runner.tar.gz', -L, 'https://github.com/actions/runner/releases/download/v{0}/actions-runner-linux-x64-{0}.tar.gz']
 - [tar, -xzf, 'actions-runner.tar.gz']
 - [chmod, -R, 777, '/actions-runner']
-- [su, {1}, -c, '/actions-runner/config.sh --url https://github.com/{2} --token {3} --runnergroup Default']
+- [su, {1}, -c, '/actions-runner/config.sh --url https://github.com/{2} --token {3} --runnergroup Default --unattended']
 - [su, {1}, -c, '/actions-runner/run.sh']
 - [rm, '/actions-runner/actions-runner.tar.gz']
