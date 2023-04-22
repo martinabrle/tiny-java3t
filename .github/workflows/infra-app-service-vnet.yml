@@ -153,11 +153,11 @@ jobs:
           fi
 
           echo "GH Admin name: $ghVMAdminName"
-          echo "GH_VM_ADMIN_NAME=${ghVMAdminName}" >> $GITHUB_OUTPUT
+          echo "GH_RUNNER_VM_ADMIN_NAME=${ghVMAdminName}" >> $GITHUB_OUTPUT
 
           echo "::add-mask::$ghVMAdminPassword"
           echo "GH Admin password: $ghVMAdminPassword"
-          echo "GH_VM_ADMIN_PASSWORD=${ghVMAdminPassword}" >> $GITHUB_OUTPUT
+          echo "GH_RUNNER_VM_ADMIN_PASSWORD=${ghVMAdminPassword}" >> $GITHUB_OUTPUT
           
           echo "MGMT VM Admin name: $mgmtVMAdminName"
           echo "MGMT_VM_ADMIN_NAME=${mgmtVMAdminName}" >> $GITHUB_OUTPUT
