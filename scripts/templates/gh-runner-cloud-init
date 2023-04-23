@@ -6,6 +6,6 @@ runcmd:
 - [tar, -xzf, 'actions-runner.tar.gz']
 - [su, {1}, -c, 'chmod -R 777 /actions-runner']
 - [su, {1}, -c, '/actions-runner/config.sh --url https://github.com/{2} --token {3} --runnergroup Default --unattended']
-- [su, {1}, -c, '/actions-runner/svc.sh install']
-- [su, {1}, -c, '/actions-runner/svc.sh start']
+- [su, {1}, -c, '/actions-runner/bin/svc.sh install']
+- [su, {1}, -c, '/actions-runner/bin/svc.sh start']
 - [rm, '/actions-runner/actions-runner.tar.gz']
