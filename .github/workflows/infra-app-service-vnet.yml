@@ -201,7 +201,20 @@ jobs:
             stagingAppClientId=`az ad sp list --display-name "${{secrets.AZURE_API_APP_NAME}}/slots/staging" --query "[?displayName=='${{secrets.AZURE_API_APP_NAME}}/slots/staging'].appId" --out tsv`
             echo "STAGING_APP_CLIENT_ID=${stagingAppClientId}" >> $GITHUB_OUTPUT
           fi
-        
+      
+      - name: Generate a GH registration token
+        id: gh_registration_token
+        run: |
+          token=`curl -L \
+                      -X POST \
+                      -H "Accept: application/vnd.github+json" \
+                      -H "Authorization: Bearer ${{secrets.GH_TOKEN}}"\
+                      -H "X-GitHub-Api-Version: 2022-11-28" \
+                      https://api.github.com/orgs/ORG/actions/runners/registration-token`
+          echo "token"
+          echo $token
+          token=`jq -r ".token"`
+          echo "TOKEN=${token}" >> $GITHUB_OUTPUT
       - name: Deploy Azure resources
         id: deployment
         run: |
@@ -213,6 +226,7 @@ jobs:
           echo "DBA Group Name: '${{secrets.AZURE_DBA_GROUP_NAME}}'"
           echo "DBA Group Id: '${{steps.vars.outputs.AZURE_DBA_GROUP_ID}}'"
           echo "User name: '${{steps.vars.outputs.DB_APP_USER_NAME}}'"
+          echo "GH Token: '${{steps.vars.outputs.TOKEN}}'"
           
           az deployment group create \
                         --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} \
@@ -233,7 +247,7 @@ jobs:
                                      ghRunnerVMName=${{secrets.AZURE_GH_RUNNER_NAME}} \
                                      ghRunnerVMAdminName=${{steps.vars.outputs.GH_RUNNER_VM_ADMIN_NAME}} \
                                      ghRunnerVMAdminPassword=${{steps.vars.outputs.GH_RUNNER_VM_ADMIN_PWD}} \
-                                     ghRunnerToken=${{secrets.GH_RUNNER_TOKEN}} \
+                                     ghRunnerToken=${{steps.vars.outputs.TOKEN}} \
                                      dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \
                                      dbStagingUserName=${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
                                      appClientId="${{steps.vars.outputs.APP_CLIENT_ID}}" \
