@@ -60,15 +60,27 @@ jobs:
     - name: Set API Version
       id: api_version
       run: |
+         isTagged=false
+         if [[ ! -z "${{steps.semver_api_version.outputs.version_tag}}" ]]; then
+           version="${{steps.semver_api_version.outputs.version_tag}}"
+           version="${version:1}"
+           rx='^([0-9]+\.){2}(\*|[0-9]+)(-.*)?$'
+           if [[ $version =~ $rx ]]; then
+             echo "Tagged"
+             isTagged=true
+           else
+             echo "NOT Tagged with semver"
+           fi
+         fi
          echo "Version: ${{steps.semver_api_version.outputs.version}}"
          echo "VersionTag: ${{steps.semver_api_version.outputs.version_tag}}"
          echo "IsChanged: ${{steps.semver_api_version.outputs.changed}}"
-         echo "IsTagged: ${{steps.semver_api_version.outputs.is_tagged}}"
+         echo "IsTagged: ${isTagged}"
          
          echo "VERSION=${{steps.semver_api_version.outputs.version}}" >> $GITHUB_OUTPUT
          echo "VERSION_TAG=${{steps.semver_api_version.outputs.version_tag}}" >> $GITHUB_OUTPUT
          echo "IS_CHANGED=${{steps.semver_api_version.outputs.changed}}" >> $GITHUB_OUTPUT
-         echo "IS_TAGGED=${{steps.semver_api_version.outputs.is_tagged}}" >> $GITHUB_OUTPUT
+         echo "IS_TAGGED=${isTagged}" >> $GITHUB_OUTPUT
 
   web_version:
     runs-on: ubuntu-latest
@@ -103,15 +115,27 @@ jobs:
     - name: Set WEB Version
       id: web_version
       run: |
+         isTagged=false
+         if [[ ! -z "${{steps.semver_web_version.outputs.version_tag}}" ]]; then
+           version="${{steps.semver_web_version.outputs.version_tag}}"
+           version="${version:1}"
+           rx='^([0-9]+\.){2}(\*|[0-9]+)(-.*)?$'
+           if [[ $version =~ $rx ]]; then
+             echo "Tagged"
+             isTagged=true
+           else
+             echo "NOT Tagged with semver"
+           fi
+         fi
          echo "Version: ${{steps.semver_web_version.outputs.version}}"
          echo "VersionTag: ${{steps.semver_web_version.outputs.version_tag}}"
          echo "IsChanged: ${{steps.semver_web_version.outputs.changed}}"
-         echo "IsTagged: ${{steps.semver_web_version.outputs.is_tagged}}"
+         echo "IsTagged: ${isTagged}"
 
          echo "VERSION=${{steps.semver_web_version.outputs.version}}" >> $GITHUB_OUTPUT
          echo "VERSION_TAG=${{steps.semver_web_version.outputs.version_tag}}" >> $GITHUB_OUTPUT
          echo "IS_CHANGED=${{steps.semver_web_version.outputs.changed}}" >> $GITHUB_OUTPUT
-         echo "IS_TAGGED=${{steps.semver_web_version.outputs.is_tagged}}" >> $GITHUB_OUTPUT
+         echo "IS_TAGGED=${isTagged}" >> $GITHUB_OUTPUT
   
   validation:
     needs: [api_version, web_version]
@@ -172,14 +196,15 @@ jobs:
       VERSION_TAG: ${{ needs.api_version.outputs.VERSION_TAG }}
       IS_CHANGED: ${{ needs.api_version.outputs.IS_CHANGED }}
       IS_TAGGED: ${{ needs.api_version.outputs.IS_TAGGED }}
+    outputs:
+      RELEASE_NAME: ${{ steps.create_archive.outputs.RELEASE_NAME }}
     
     steps:
       - uses: actions/checkout@v3
       
-      - name: Azure login
-        uses: azure/login@v1
+      - uses: azure/login@v1
         with:
-          creds: ${{secrets.AZURE_CREDENTIALS}}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Set default Azure subscription
         run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
@@ -207,6 +232,7 @@ jobs:
           ./mvnw clean package -DskipTests
       
       - name: Build ZIP including scripts directory
+        id: create_archive
         run: |
           ls -la ./target
           if [[ ! -f "./target/todoapi-${{env.VERSION}}.jar" ]]; then
@@ -219,6 +245,7 @@ jobs:
           rm -rf ./todoapi-${{env.VERSION}}/scripts/templates
           zip -r todoapi-${{env.VERSION}}.zip ./todoapi-${{env.VERSION}}
           ls -la
+          echo "RELEASE_NAME=todoapi-${{env.VERSION}}" >> $GITHUB_OUTPUT
           
       - name: 'Upload build artifact'
         uses: actions/upload-artifact@v2
@@ -277,14 +304,15 @@ jobs:
       VERSION_TAG: ${{ needs.web_version.outputs.VERSION_TAG }}
       IS_CHANGED: ${{ needs.web_version.outputs.IS_CHANGED }}
       IS_TAGGED: ${{ needs.web_version.outputs.IS_TAGGED }}
+    outputs:
+      RELEASE_NAME: ${{ steps.create_archive.outputs.RELEASE_NAME }}
     
     steps:
       - uses: actions/checkout@v3
       
-      - name: Azure login
-        uses: azure/login@v1
+      - uses: azure/login@v1
         with:
-          creds: ${{secrets.AZURE_CREDENTIALS}}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Set default Azure subscription
         run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
@@ -312,6 +340,7 @@ jobs:
           ./mvnw clean package -DskipTests
       
       - name: Build ZIP including scripts directory
+        id: create_archive
         run: |
           ls -la ./target
           if [[ ! -f "./target/todoweb-${{env.VERSION}}.jar" ]]; then
@@ -324,6 +353,7 @@ jobs:
           rm -rf ./todoweb-${{env.VERSION}}/scripts/templates
           zip -r todoweb-${{env.VERSION}}.zip ./todoweb-${{env.VERSION}}
           ls -la
+          echo "RELEASE_NAME=todoweb-${{env.VERSION}}" >> $GITHUB_OUTPUT
           
       - name: 'Upload build artifact'
         uses: actions/upload-artifact@v2
@@ -345,7 +375,7 @@ jobs:
       VERSION_TAG: ${{ needs.web_version.outputs.VERSION_TAG }}
       IS_CHANGED: ${{ needs.web_version.outputs.IS_CHANGED }}
       IS_TAGGED: ${{ needs.web_version.outputs.IS_TAGGED }}
-      RELEASE_NAME: ${{ needs.web_version.outputs.RELEASE_NAME }}
+      RELEASE_NAME: ${{ needs.web_build.outputs.RELEASE_NAME }}
     
     steps:
       - uses: actions/checkout@v3
