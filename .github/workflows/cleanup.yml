@@ -12,9 +12,10 @@ on:
 
 jobs:
   cleanup-runner:
-    permissions:
-      contents: read
-      actions: read
+    permissions: write-all
+    # permissions: 
+    #   contents: read
+    #   actions: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
