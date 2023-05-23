@@ -9,125 +9,51 @@ on:
       run_cleanup_log_analytics:
         type: boolean
         description: DELETE LOG ANALYTICS WORKSPACE TOO
+
 jobs:
-  cleanup_app_service:
+  cleanup-runner:
+    permissions:
+      contents: read
+      actions: read
     runs-on: ubuntu-latest
-    environment: APP-SERVICE
     steps:
-      - name: Azure login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - run: |
+          environmentsJson=`curl -L -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}"\
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/martinabrle/tiny-java3t/environments`
+          
+          echo "environmentsJSON:"
+          echo $environmentsJson
+          echo "-----------------"
+          echo " "
 
-      - name: Set default Azure subscription
-        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      
-      - name: Remove the resource group
-        run: |
-          RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[ "$RG_EXISTS" == "true" ]]; then
-             echo "Deleting the Todo App app resource group"
-             az group delete --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
-          fi
+          environmentsJsonArray=`echo $environmentsJson | jq --compact-output '[.environments[].name]'`
+          echo "environmentsJSONArray:"
+          echo $environmentsJsonArray
+          echo "----------------------"
+          echo " "
 
-      - name: Remove Log Analytics (if chosen by the user)
-        if: github.event.inputs.run_cleanup_log_analytics == 'true'
-        run: |
-          LOG_RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[ "$LOG_RG_EXISTS" == "true" ]]; then
-             echo "Deleting the Log Analytics Workspace resource group"
-             az group delete --resource-group ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
-          fi
-      
-      - name: Purge deleted KV if found
-        run: |
-          kvDeletedQuery="[?name == '${{secrets.AZURE_KEY_VAULT_NAME}}'].id"
-          kvDeletedExists=`az keyvault list-deleted --query "$kvDeletedQuery" -o tsv`
-          if [[ ! -z "$kvDeletedExists" ]]; then
-            echo "Deleted KeyVault exists, purging it and waiting for 10 mins"
-            az keyvault purge -l ${{secrets.AZURE_LOCATION}} -n ${{secrets.AZURE_KEY_VAULT_NAME}}
-          fi
-  
-  cleanup_spring_apps:
-    runs-on: ubuntu-latest
-    environment: SPRING-APPS
-    steps:
-      - name: Azure login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          #remove both leading and trailing whitespaces
+          environmentsList=`echo $environmentsJsonArray | sed $'s/^[ \t]*//;s/[ \t]*$//'`
+          #remove square brackets
+          environmentsList=`echo $environmentsList | sed $'s/[][]//g'`
+          #remove both leading and trailing whitespaces
+          environmentsList=`echo $environmentsList | sed $'s/^[ \t]*//;s/[ \t]*$//'`
+          #replace comma with a new line
+          environmentsList=`echo $environmentsList | sed $'s/,/\\\n/g'`
+          #remove quotes
+          environmentsList=`echo $environmentsList | sed $'s/\"//g'`
+          
+          echo "Environment list:"
+          echo $environmentsList
+          echo "-----------------"
+          echo " "
 
-      - name: Set default Azure subscription
-        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      
-      - name: Remove the resource group
-        run: |
-          RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[ "$RG_EXISTS" == "true" ]]; then
-             echo "Deleting the Todo App app resource group"
-             az group delete --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
-          fi
+          environmentsArray=($environmentsList)
+          echo "Environment array: ${environmentsArray[@]}"
 
-      - name: Remove Log Analytics (if chosen by the user)
-        if: github.event.inputs.run_cleanup_log_analytics == 'true'
-        run: |
-          LOG_RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[ "$LOG_RG_EXISTS" == "true" ]]; then
-             echo "Deleting the Log Analytics Workspace resource group"
-             az group delete --resource-group ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
-          fi
-
-      - name: Purge deleted KV if found
-        run: |
-          kvDeletedQuery="[?name == '${{secrets.AZURE_KEY_VAULT_NAME}}'].id"
-          kvDeletedExists=`az keyvault list-deleted --query "$kvDeletedQuery" -o tsv`
-          if [[ ! -z "$kvDeletedExists" ]]; then
-            echo "Deleted KeyVault exists, purging it and waiting for 10 mins"
-            az keyvault purge -l ${{secrets.AZURE_LOCATION}} -n ${{secrets.AZURE_KEY_VAULT_NAME}}
-          fi
-  
-  cleanup_aks:
-    runs-on: ubuntu-latest
-    environment: AKS
-    steps:
-      - name: Azure login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Set default Azure subscription
-        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      
-      - name: Remove the node resource group
-        run: |
-          RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_AKS_NODE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[ "$RG_EXISTS" == "true" ]]; then
-             echo "Deleting the Todo App app AKS NODES resource group"
-             az group delete --resource-group ${{ secrets.AZURE_AKS_NODE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
-          fi
-
-      - name: Remove the main resource group
-        run: |
-          RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[ "$RG_EXISTS" == "true" ]]; then
-             echo "Deleting the Todo App app AKS resource group"
-             az group delete --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
-          fi
-
-      - name: Remove Log Analytics (if chosen by the user)
-        if: github.event.inputs.run_cleanup_log_analytics == 'true'
-        run: |
-          LOG_RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[ "$LOG_RG_EXISTS" == "true" ]]; then
-             echo "Deleting the Log Analytics Workspace resource group"
-             az group delete --resource-group ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
-          fi
-
-      - name: Purge deleted KV if found
-        run: |
-          kvDeletedQuery="[?name == '${{secrets.AZURE_KEY_VAULT_NAME}}'].id"
-          kvDeletedExists=`az keyvault list-deleted --query "$kvDeletedQuery" -o tsv`
-          if [[ ! -z "$kvDeletedExists" ]]; then
-            echo "Deleted KeyVault exists, purging it and waiting for 10 mins"
-            az keyvault purge -l ${{secrets.AZURE_LOCATION}} -n ${{secrets.AZURE_KEY_VAULT_NAME}}
-          fi
+          for i in "${environmentsArray[@]}"
+          do
+            echo "Environment: $i"
+          done
