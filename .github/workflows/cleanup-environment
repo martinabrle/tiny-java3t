@@ -1,0 +1,35 @@
+name: cleanup-environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'The environment to clean up'
+        required: true
+jobs:
+    environment: workflow_dispatch.inputs.environment
+    steps:
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set default Azure subscription
+        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Remove the resource group
+        run: |
+          RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
+          if [[ "$RG_EXISTS" == "true" ]]; then
+             echo "Deleting the Todo App app resource group"
+             az group delete --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
+          fi
+      
+      - name: Purge deleted KV if found
+        run: |
+          kvDeletedQuery="[?name == '${{secrets.AZURE_KEY_VAULT_NAME}}'].id"
+          kvDeletedExists=`az keyvault list-deleted --query "$kvDeletedQuery" -o tsv`
+          if [[ ! -z "$kvDeletedExists" ]]; then
+            echo "Deleted KeyVault exists, purging it"
+            az keyvault purge -l ${{secrets.AZURE_LOCATION}} -n ${{secrets.AZURE_KEY_VAULT_NAME}}
+          fi

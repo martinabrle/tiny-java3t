@@ -56,4 +56,7 @@ jobs:
           for i in "${environmentsArray[@]}"
           do
             echo "Environment: $i"
+            if [[ ! -z $i ]]; then
+              gh workflow run cleanup-environment.yml -f environment=$i
+            fi
           done
