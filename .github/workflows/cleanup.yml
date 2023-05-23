@@ -17,6 +17,8 @@ jobs:
       actions: read
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
+      
       - name: Dispatch clean-up jobs
         env:
           GH_TOKEN: ${{ github.token }}
