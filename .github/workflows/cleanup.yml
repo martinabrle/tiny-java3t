@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Dispatch clean-up jobs
         env:
           GH_TOKEN: ${{ github.token }}
@@ -62,6 +62,6 @@ jobs:
           do
             echo "Environment: $i"
             if [[ ! -z $i ]]; then
-              gh workflow run cleanup-environment.yml -f environment=$i
+              gh workflow run cleanup-environment.yml -f environment_input=$i
             fi
           done

@@ -3,11 +3,11 @@ name: cleanup-environment
 on:
   workflow_dispatch:
     inputs:
-      environment:
+      environment_input:
         description: 'The environment to clean up'
         required: true
 jobs:
-    environment: workflow_dispatch.inputs.environment
+    #environment: workflow_dispatch.inputs.environment
     steps:
       - name: Azure login
         uses: azure/login@v1
