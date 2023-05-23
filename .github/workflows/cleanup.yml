@@ -12,7 +12,6 @@ on:
 
 jobs:
   cleanup-runner:
-    #permissions: write-all
     permissions: 
       contents: read
       actions: write
@@ -66,3 +65,12 @@ jobs:
               gh workflow run cleanup-environment.yml -f environment_input=$i
             fi
           done
+      
+      - name: Delete log analytics
+        if: github.event.inputs.run_cleanup_log_analytics == 'true'
+        run: |
+            LOG_RG_EXISTS=$(az group exists --name ${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}})
+            if [[ "$LOG_RG_EXISTS" -eq true ]]; then
+               echo "Deleting the Log Analytics Workspace resource group"
+               az group delete --resource-group ${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}} --yes
+            fi
