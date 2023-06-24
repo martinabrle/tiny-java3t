@@ -14,17 +14,17 @@ jobs:
       - name: Azure login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          creds: ${{secrets.AZURE_CREDENTIALS}}
       
       - name: Set default Azure subscription
-        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
       
       - name: Remove the resource group
         run: |
-          RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
+          RG_EXISTS=$(az group exists --name ${{secrets.AZURE_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}})
           if [[ "$RG_EXISTS" == "true" ]]; then
              echo "Deleting the Todo App app resource group"
-             az group delete --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
+             az group delete --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}} --yes --force-deletion-types {Microsoft.Compute/virtualMachineScaleSets, Microsoft.Compute/virtualMachines}
           fi
       
       - name: Purge deleted KV if found
