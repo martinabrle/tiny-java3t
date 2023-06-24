@@ -1,11 +1,11 @@
 #cloud-config
+# https://charotamine.medium.com/github-actions-deploy-self-hosted-runners-using-azure-bicep-2add738a9036
 runcmd:
   - mkdir /actions-runner
   - cd /actions-runner
   - curl -o ./actions-runner.tar.gz -L 'https://github.com/actions/runner/releases/download/v{0}/actions-runner-linux-x64-{0}.tar.gz'
   - tar -xzf ./actions-runner.tar.gz
   - chmod -R 777 /actions-runner
-  - chown -R {1} /actions-runner
   - su {1} -c '/actions-runner/config.sh --url https://github.com/{2} --token {3} --runnergroup Default --unattended'
   - su {1} -c '/actions-runner/bin/runsvc.sh install'
   - su {1} -c '/actions-runner/bin/runsvc.sh start'
